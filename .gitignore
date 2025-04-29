@@ -1,2 +1,3 @@
-./myrtle_tile_size_gen_out
-./ref
+myrtle_tile_size_gen_out/*
+ref/*
+myenv/*
