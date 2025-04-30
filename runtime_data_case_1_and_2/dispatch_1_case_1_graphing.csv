@@ -1,0 +1,19 @@
+JSON Name,Row Dim,Reduction Dim,Space Needed in L1,Weight Matrix Tile Size,Space Remaining,Case,Kernel Name,Kernel Time,Total Time
+0-24-8,24,8,3136,192,68064,1,main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64,351842,2158774
+0-24-40,24,40,15680,960,55520,1,main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64,139659,1308333
+0-24-50,24,50,19600,1200,51600,1,main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64,139659,1308333
+0-24-80,24,80,31360,1920,39840,1,main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64,120533,1231430
+0-24-100,24,100,39200,2400,32000,1,main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64,105051,1172888
+0-40-8,40,8,5184,320,66016,1,main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64,256068,1776377
+0-40-40,40,40,25920,1600,45280,1,main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64,108303,1183714
+0-40-50,40,50,32400,2000,38800,1,main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64,110811,1194951
+0-40-80,40,80,51840,3200,19360,1,main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64,107160,1180624
+0-40-100,40,100,64800,4000,6400,1,main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64,89658,1110948
+0-48-8,48,8,6208,384,64992,1,main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64,239465,1708958
+0-48-40,48,40,31040,1920,40160,1,main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64,106206,1176438
+0-48-50,48,50,38800,2400,32400,1,main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64,109639,1190676
+0-48-80,48,80,62080,3840,9120,1,main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64,106720,1177628
+0-80-8,80,8,10304,640,60896,1,main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64,354369,2169751
+0-80-40,80,40,51520,3200,19680,1,main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64,106157,1176118
+0-80-50,80,50,64400,4000,6800,1,main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64,109169,1188538
+
