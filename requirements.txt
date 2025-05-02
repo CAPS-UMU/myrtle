@@ -1,2 +1,5 @@
 xdsl[riscv]
 pandas
+numpy
+matplotlib
+PyQt6
