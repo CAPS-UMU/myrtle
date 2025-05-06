@@ -1,6 +1,0 @@
-xdsl[riscv]
-pandas
-numpy
-matplotlib
-PyQt6
-marimo

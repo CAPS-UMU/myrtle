@@ -1,36 +1,46 @@
 # myrtle
 tiling cost model for the [snitch cluster](https://ieeexplore.ieee.org/document/9216552) *and beyond!*
 
-### setup
-
-Create your virtual environment:
+### new setup
 
 ```
-python3 -m venv myenv
+uv venv
 ```
 
-Activate it:
-
 ```
-source myenv/bin/activate
+source .venv/bin/activate
 ```
 
-Install dependencies:
-
 ```
-pip install -r requirements.txt
+uv sync
 ```
 
-You're off to the races!
+now you can run commands as normal!
+
+To activate:
+
+```
+source .venv/bin/activate
+```
+
+To deactivate:
+
+```
+deactivate
+```
+
+Run commands in environment without activating the environment: `uv + command`, for example,
+
+```
+uv marimo edit docs/marimo
+```
 
 ## Examples: Quidditch "Dispatches"
 
 Each of these "dispatches"
 
 - Consists of `linalg_matmul_transpose_b` with type `<MxK>, <NxK> -> <MxN>` where M = 1 (only matrix-vector operations)
-
 - Followed by an element-wise addition
-- Each dispatch is really a fusion of two NsNet Kernels
 
 1. Generate tile size search space for Quidditch dispatch `main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64` with
    ```
@@ -50,4 +60,6 @@ Each of these "dispatches"
    ```
 
    
+
+## Combining Static Analysis with empirical data
 

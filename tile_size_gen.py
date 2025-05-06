@@ -341,6 +341,8 @@ def annotationColumnNames():
 def exportOptionsToCSV(caseNo, options):
     flat = list(map(lambda tup: flattenThenAnnotateMore(tup,caseNo), options))
     cols = (annotationColumnNames()+["Case"])+qlc.LoadCountingAnnColumnNames()
+    # print(f"flat: {flat}")
+    # print(f"cols: {cols}")
     df = pd.DataFrame(flat, columns=cols)
     # df["Case"] = caseNo
     df.to_csv(
