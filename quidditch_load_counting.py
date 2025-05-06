@@ -57,6 +57,7 @@ def LoadCountingAnnColumnNames():
     columns = [
         "Regular Loads",
         "Streaming Loads",
+        "Reused Streaming Loads"
         "Outer Loop Iters",
         "HW Loop Body",
         "HW Loop Iters",
@@ -79,7 +80,8 @@ def getLoadCountingAnn(mat: InputMatrix, sizes: TileSizes):
     outer_loop_iters = oLoop.iters if oLoop.exists else 1
     regular_loads_per_micro = outer_loop_iters*hLoop.body_size
     streaming_loads_per_micro = outer_loop_iters*(hLoop.body_size+1)*hLoop.loop_repeats
-    return(regular_loads_per_micro*count,streaming_loads_per_micro*count,outer_loop_iters, hLoop.body_size, hLoop.loop_repeats)
+    reused_streaming_loads_per_micro = outer_loop_iters*(1)*hLoop.loop_repeats
+    return(regular_loads_per_micro*count,streaming_loads_per_micro*count,reused_streaming_loads_per_micro*count,outer_loop_iters, hLoop.body_size, hLoop.loop_repeats)
 
 def main():
     yodel()
