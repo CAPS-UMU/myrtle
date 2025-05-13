@@ -24,6 +24,16 @@ class Keys2D:
     x_label: str = "x label"
     y_label: str = "y label"
 
+@dataclass
+class CustomMarker:
+    """Class for storing functions from row data to marker style"""
+
+    marker : Callable[[T], mpl.markers.MarkerStyle]= lambda x="o": "o"
+    label : Callable[[T], str]= lambda y="no label": "no label"
+    size : Callable[[T], int]= (lambda y=0: mpl.rcParams['lines.markersize'] ** 2)
+    fill : Callable[[T], str]= lambda y="YellowGreen": "YellowGreen"
+    stroke : Callable[[T], str]= lambda y="Black": "Black"
+    
 
 @dataclass
 class Graph2D(Generic[T]):
@@ -41,31 +51,15 @@ class Graph2D(Generic[T]):
     get_marker_size : Callable[[T], int]= (lambda y=0: mpl.rcParams['lines.markersize'] ** 2)
     
     
-
-
-def moreGeneralGraph(ax, g:Graph2D):
+def generalGraph(ax, g:Graph2D):
     ax.set_title(g.title)
-    if not g.custom_marker:
-        for clr, edgeClr, data, label in g.scatterSets:
-            ax.scatter(
-                data[g.keys.x],
-                data[g.keys.y],
-                c=clr,
-                edgecolors=edgeClr,
-                marker="o",
-                label=label,
-            )
-    else:
-        for clr, edgeClr, data, label in g.scatterSets:
-            for index, row in data.iterrows():
-                ms=g.get_marker_size(row)
-                ax.scatter(row[g.keys.x], row[g.keys.y],c=clr,edgecolors=edgeClr,s = ms,label=g.get_marker_label(row),marker=g.get_marker(row))
+    for data, cm in g.scatterSets:
+        for index, row in data.iterrows():
+            ax.scatter(row[g.keys.x], row[g.keys.y],c=cm.fill(row),edgecolors=cm.stroke(row),s = cm.size(row),label=cm.label(row),marker=cm.marker(row))
     ax.set_xlabel(f"{g.keys.x_label} ({g.keys.x_unit})")
     ax.set_ylabel(f"{g.keys.y_label} ({g.keys.y_unit})")
     if g.legend:
-        ax.legend(loc=g.legend_pos,bbox_to_anchor=g.legend_bb)
-
-#marker_size=(mpl.rcParams['lines.markersize'] ** 2 *9)
+        ax.legend(loc=g.legend_pos, bbox_to_anchor=g.legend_bb)
 
 def graphEmAll(shape: tuple, graphs):
     if shape[0]*shape[1] != len(graphs):
@@ -73,7 +67,8 @@ def graphEmAll(shape: tuple, graphs):
     fig = plt.figure()
     for i in range(0,len(graphs)):
         ax = fig.add_subplot(shape[0], shape[1], i+1)
-        moreGeneralGraph(ax, graphs[i])
+        #moreGeneralGraph(ax, graphs[i])
+        generalGraph(ax, graphs[i])
     plt.show()
 
 
@@ -107,7 +102,9 @@ def getBestXFrom(df,by,x,lowIsGood):
 def getGraphXvsYrankedbyZ(dfs,x,x_unit, y,y_unit,z,lowIsGoodZ,dispatchNo,dispatchTitle):
     # rankings
     ranked = rankBy(dfs,(dispatchNo,1),z,lowIsGoodZ)
-    
+    cm = CustomMarker(
+        marker = lambda x : f'${x["rank"]}$'
+    )
     return Graph2D(
         keys=Keys2D(
             x=x,
@@ -119,11 +116,9 @@ def getGraphXvsYrankedbyZ(dfs,x,x_unit, y,y_unit,z,lowIsGoodZ,dispatchNo,dispatc
         ),
         title=dispatchTitle,
         scatterSets=[
-            ("YellowGreen", "Black", ranked, "no padding")
+            (ranked, cm)
         ],
-        legend=False,
-        custom_marker = True,
-        get_marker = lambda x : f'${x["rank"]}$'
+        legend=False
     )   
 
 def getGraphXvsYrankedbyZtopQ(dfs,x,x_unit, y,y_unit,z,lowIsGoodZ,dispatchNo,dispatchTitle,q):
@@ -134,7 +129,10 @@ def getGraphXvsYrankedbyZtopQ(dfs,x,x_unit, y,y_unit,z,lowIsGoodZ,dispatchNo,dis
     if (q <= 0) or (q > ranked.shape[0]):
         q = ranked.shape[0]
     top = getBestXFrom(ranked,"rank",q,True)
-    
+    cm = CustomMarker(
+        marker = lambda x : f'${x["rank"]}$',
+        label = lambda y : y["JSON Name"]
+    )
     return Graph2D(
         keys=Keys2D(
             x=x,
@@ -146,13 +144,10 @@ def getGraphXvsYrankedbyZtopQ(dfs,x,x_unit, y,y_unit,z,lowIsGoodZ,dispatchNo,dis
         ),
         title=dispatchTitle,
         scatterSets=[
-            ("YellowGreen", "Black", top, "no padding")
+            (top, cm)
         ],
         legend=True, 
-        legend_pos="upper right",
-        custom_marker = True, 
-        get_marker = lambda x : f'${x["rank"]}$',
-        get_marker_label = lambda y : y["JSON Name"]
+        legend_pos="upper right"
     )
 
 
@@ -162,29 +157,17 @@ def main():
     dfs = shortcutToData()
     titles = ["Dispatch 1\nmatvec: <1x400>, <1200x400> -> <1x1200>","Dispatch 8\nmatvec: <1x600>, <600x600> -> <1x600>","Dispatch 7\nmatvec: <1x400>, <600x400> -> <1x600>"]
     graphs = []
-    # for dispNo, dispTitle in zip([1,8,7], titles):
-    #     graphs.append(getGraphXvsYrankedbyZtopQ(dfs,"Streaming Loads","loads","Regular Loads","loads", "Kernel Time",True,dispNo,dispTitle,5))
-    # #graphEmAll((1,3),graphs)
+    for dispNo, dispTitle in zip([1,8,7], titles):
+        graphs.append(getGraphXvsYrankedbyZtopQ(dfs,"Streaming Loads","loads","Regular Loads","loads", "Kernel Time",True,dispNo,dispTitle,5))
+    graphEmAll((1,3),graphs)
 
     dispNo =1
     dispTitle = titles[0]
-    justOne = getGraphXvsYrankedbyZtopQ(dfs,"Streaming Loads","loads","Regular Loads","loads", "Kernel Time",True,dispNo,dispTitle,5)
+    justOne = getGraphXvsYrankedbyZ(dfs,"Streaming Loads","loads","Regular Loads","loads", "Kernel Time",True,dispNo,dispTitle)
+    
     graphEmAll((1,1),[justOne])
 
-    # d = {'job_id': [1, 2, 3, 4, 5, 6, 7, 8, 9], 
-    #  'hub': ['ZH1', 'ZH1', 'ZH1', 'ZH2', 'ZH2', 'ZH3', 'ZH3', 'ZH3', 'ZH3'], 
-    #  'alerts': [18, 35, 45, 8, 22, 34, 29, 20, 30],
-    # 'color': ['orange', 'orange', 'orange', 'green', 'green', 'lightblue', 'lightblue', 'lightblue', 'lightblue']}
-
-    # df=pd.DataFrame(data=d)
-
-    # ax=plt.subplot(111)
-    # for index, row in df.iterrows():
-    #     ax.text(index, row['alerts'],str(row['job_id']),
-    #         bbox={"boxstyle" : "circle", "color":row['color']})
-
-    #ax.set(xlim=(-1,len(df)), ylim=(df["alerts"].min()-5, df["alerts"].max()+5))
-    plt.show()
+    
 
 if __name__ == "__main__":
     main()

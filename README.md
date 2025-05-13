@@ -63,3 +63,8 @@ Each of these "dispatches"
 
 ## Combining Static Analysis with empirical data
 
+## Troubleshooting
+1. ```
+   UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
+   ```
+   Solution: Add `PyQt6` to `pyproject.toml`.
