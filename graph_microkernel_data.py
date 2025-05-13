@@ -1,7 +1,7 @@
 # plot tile dimensions vs cycles
 import pandas as pd
 import re
-from graphing.graph_dispatches import graphEmAll, Graph2D, Keys2D, CustomMarker
+from graphing.graph_utils import graphEmAll, Graph2D, Keys2D, CustomMarker
 
 def extractDims(x):
     pattern = re.compile(r"\w* (?P<M>\d+)x(?P<K>\d+)x(?P<N>\d+)xf(?P<precision>\d+)")

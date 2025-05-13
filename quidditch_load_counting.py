@@ -58,6 +58,7 @@ def LoadCountingAnnColumnNames():
     columns = [
         "Regular Loads",
         "Total Streaming Loads",
+        "Other Streaming Loads",
         "Start Reuse Streaming Loads",
         "Reused Streaming Loads",
         "Outer Loop Iters",
@@ -88,16 +89,18 @@ def getLoadCountingAnn(mat: InputMatrix, sizes: TileSizes):
     outer_loop_iters = oLoop.iters if oLoop.exists else 1
     # loads during micro kernel execution(s) per core
     regular_loads_per_core = outer_loop_iters*hLoop.body_size
+    other_streaming_loads_per_core = outer_loop_iters*(hLoop.body_size)*hLoop.loop_repeats
     total_streaming_loads_per_core = outer_loop_iters*(hLoop.body_size*2)*hLoop.loop_repeats
     start_reuse_streaming_loads_per_core = outer_loop_iters*(1)*hLoop.loop_repeats
     reused_streaming_loads_per_core = outer_loop_iters*(hLoop.body_size-1)*hLoop.loop_repeats
-    assert total_streaming_loads_per_core == (start_reuse_streaming_loads_per_core+reused_streaming_loads_per_core+(outer_loop_iters*(hLoop.body_size)*hLoop.loop_repeats))
+    assert total_streaming_loads_per_core == (start_reuse_streaming_loads_per_core+reused_streaming_loads_per_core+other_streaming_loads_per_core)
     # per cluster
     regular_loads = regular_loads_per_core * logicalCount
+    other_streaming_loads = other_streaming_loads_per_core * logicalCount
     total_streaming_loads = total_streaming_loads_per_core * logicalCount
     start_reuse_streaming_loads = start_reuse_streaming_loads_per_core * logicalCount
     reused_streaming_loads = reused_streaming_loads_per_core * logicalCount
-    return(regular_loads,total_streaming_loads,start_reuse_streaming_loads,reused_streaming_loads,outer_loop_iters, hLoop.body_size, hLoop.loop_repeats, logicalCount*outer_loop_iters)
+    return(regular_loads,total_streaming_loads,other_streaming_loads,start_reuse_streaming_loads,reused_streaming_loads,outer_loop_iters, hLoop.body_size, hLoop.loop_repeats, logicalCount*outer_loop_iters)
 
 def main():
     yodel()
