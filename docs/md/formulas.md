@@ -59,13 +59,13 @@ riscv_func.func @matmul_transpose_b(%A : !riscv.reg<a0>, %B : !riscv.reg<a1>, %C
 
 Resulting Snitch Assembly:
 
-![0-40-100](/home/emily/myrtle/docs/md/0-40-100.png)
+![0-40-100](../../docs/md/0-40-100.png)
 
 Close-up on hardware loop:
 
-![](/home/emily/myrtle/docs/md/0-40-100-HL.png)
+![](../../docs/md/0-40-100-HL.png)
 
-![](/home/emily/myrtle/docs/md/simple-rules.png)But wait! We started with a `matmul_transpose_b` of size  `<1x400>, <1200x400> -> <1x1200>`!
+![](../../docs/md/simple-rules.png)But wait! We started with a `matmul_transpose_b` of size  `<1x400>, <1200x400> -> <1x1200>`!
 
 Since we tile dimensions `M-N-K` with sizes `1-40-100`, our original operation turns into
 

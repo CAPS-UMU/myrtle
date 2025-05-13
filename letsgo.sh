@@ -1,4 +1,4 @@
-dataDir="/home/emily/myrtle/runtime_data_case_1_and_2"
+dataDir="./runtime_data_case_1_and_2"
 echo "Expanding runtime data with load and corrected size information"
 
 # case 1

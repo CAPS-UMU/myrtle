@@ -254,7 +254,7 @@ def graphAvsB(
 # get_marker= lambda x : "$\\usepackage{igo}\\whitestone{1}$",
 # get_marker= lambda x : "$\\textcircled{"+f'{x["rank"]}'+"}$",
 def graphABCDtopXD(a,b,c,d,x):
-    return 5;
+    return 5
 
 
 

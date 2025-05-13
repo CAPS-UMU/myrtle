@@ -27,7 +27,7 @@ class TileSizeGenerator:
       weightMatTiles = 2 * self.weightMatTileSize(row_dim, reduction_dim)
       space = inputVectorTile + weightMatTiles
       # space in  bytes
-      spaceInBytes = space * 8
+      spaceInBytes = space * 8 # number of elements * 8 bytes per element
       # print(f'0-{48}-{100}:\ninputVectorTile elts: {inputVectorTile} * 8 = {inputVectorTile*8}. \nweightMatTiles elts: {weightMatTiles} * 8 = {weightMatTiles*8}.\ntotal in bytes: {spaceInBytes}.')
       return spaceInBytes
 
