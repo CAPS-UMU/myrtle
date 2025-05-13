@@ -20,13 +20,14 @@ def coreTile(sz: int):
     else:
         return sz // 8
 
-
+# return total number of times microkernel runs to complete execution of linalg kernel
 def getMicroKernelCount(mat: InputMatrix, sizes: TileSizes):
     k_count = mat.k // sizes.k  # tile the k dimension once
     n_count = mat.n // sizes.n  # tile the n dimension once
     # tile the n dimension again (for each computer core)
     micro_n_sz = coreTile(sizes.n)
     per_cluster_count = sizes.n // micro_n_sz
+    assert per_cluster_count == 8
     micro_k_sz = mat.k // k_count
     cluster_tile = InputMatrix(n=sizes.n, k=micro_k_sz)
     microkernel_tile = InputMatrix(n=micro_n_sz, k=micro_k_sz)
@@ -56,8 +57,9 @@ def yodel():
 def LoadCountingAnnColumnNames():
     columns = [
         "Regular Loads",
-        "Streaming Loads",
-        "Reuse Marked Streaming Loads",
+        "Total Streaming Loads",
+        "Start Reuse Streaming Loads",
+        "Reused Streaming Loads",
         "Outer Loop Iters",
         "HW Loop Body",
         "HW Loop Iters",
@@ -68,8 +70,11 @@ def LoadCountingAnnColumnNames():
 # matrix-vector transpose with type `<MxK>, <NxK> -> <MxN>` where `M = 1`
 def getLoadCountingAnn(mat: InputMatrix, sizes: TileSizes):
     logicalInput = getLogicalSizeAfterPadding(mat, sizes)
-    count, microkernel_tile, cluster_tile = getMicroKernelCount(logicalInput, sizes)
-    left = microkernel_tile.n * microkernel_tile.k * count
+    # logicalCount = the number of times a core-sized tile gets processed = (8 * outer L1 tiling loops)
+    # this number could be different than the number of microkernel runs per core,
+    # because if unroll and jam is performed, a microkernel must run more than once to process a single core-sized tile.
+    logicalCount, microkernel_tile, cluster_tile = getMicroKernelCount(logicalInput, sizes)
+    left = microkernel_tile.n * microkernel_tile.k * logicalCount
     right = logicalInput.n * logicalInput.k
     # reality check
     if left != right:
@@ -77,11 +82,21 @@ def getLoadCountingAnn(mat: InputMatrix, sizes: TileSizes):
     res, hLoop, oLoop = peek_at_lowered_matvec_tiling(cluster_tile)
     if not res:
         raise Exception("Lowering to snitch hardware loop failed!")
+    # outer_loop_iters is equivalent to the number of micro-kernel runs needed to process one core-sized tile
+    # if unroll and jam was performed, this value > 1.
     outer_loop_iters = oLoop.iters if oLoop.exists else 1
-    regular_loads_per_micro = outer_loop_iters*hLoop.body_size
-    streaming_loads_per_micro = outer_loop_iters*(hLoop.body_size+1)*hLoop.loop_repeats
-    reuse_marked_streaming_loads_per_micro = outer_loop_iters*(1)*hLoop.loop_repeats
-    return(regular_loads_per_micro*count,streaming_loads_per_micro*count,reuse_marked_streaming_loads_per_micro*count,outer_loop_iters, hLoop.body_size, hLoop.loop_repeats)
+    # loads during micro kernel execution(s) per core
+    regular_loads_per_core = outer_loop_iters*hLoop.body_size
+    total_streaming_loads_per_core = outer_loop_iters*(hLoop.body_size*2)*hLoop.loop_repeats
+    start_reuse_streaming_loads_per_core = outer_loop_iters*(1)*hLoop.loop_repeats
+    reused_streaming_loads_per_core = outer_loop_iters*(hLoop.body_size-1)*hLoop.loop_repeats
+    assert total_streaming_loads_per_core == (start_reuse_streaming_loads_per_core+reused_streaming_loads_per_core+(outer_loop_iters*(hLoop.body_size)*hLoop.loop_repeats))
+    # per cluster
+    regular_loads = regular_loads_per_core * logicalCount
+    total_streaming_loads = total_streaming_loads_per_core * logicalCount
+    start_reuse_streaming_loads = start_reuse_streaming_loads_per_core * logicalCount
+    reused_streaming_loads = reused_streaming_loads_per_core * logicalCount
+    return(regular_loads,total_streaming_loads,start_reuse_streaming_loads,reused_streaming_loads,outer_loop_iters, hLoop.body_size, hLoop.loop_repeats)
 
 def main():
     yodel()

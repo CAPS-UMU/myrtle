@@ -127,7 +127,7 @@ def get_tile_shape(row_dim, col_dim):
     return shape
 
 def addMoreColsForConvenience(df):
-    df["Total Loads"] = df["Regular Loads"] + df["Streaming Loads"]
+    df["Total Loads"] = df["Regular Loads"] + df["Total Streaming Loads"]
     df["Tile Shape"] = df.apply(lambda x: get_tile_shape(x["Row Dim"], x["Reduction Dim"]), axis=1)
     return df
 
