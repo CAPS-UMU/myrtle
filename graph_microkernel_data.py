@@ -1,7 +1,7 @@
 # plot tile dimensions vs cycles
 import pandas as pd
 import re
-from graphing.graph_utils import graphEmAll, Graph2D, Keys2D, CustomMarker
+from graphing.graph_utils import graphEmAll, Graph2D, Keys2D, CustomMarker, Curve
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -100,13 +100,20 @@ def outerLoops(reductionDim):
     return reductionDim / unrollAndJamFactor(reductionDim)
 
 def estimateCycles(rowDim,reductionDim):
+    # cycles = 96.0/7.0 * reductionDim + 190.0/7
+    b = 0.0
+    if rowDim == 1:
+        b = 37.0
+    if rowDim > 1 :
+        b = 300
+    cycles = 4.0 * reductionDim + b
     # cycles =5.0*reductionDim+100.0
-   # rowDimCycles = outerLoops(reductionDim) *rowDim**2
+    # rowDimCycles = outerLoops(reductionDim) *rowDim**2
     # rowDimCycles = rowDim+2**outerLoops(reductionDim) / 500
     # reductionDimCycles = unrollAndJamFactor(reductionDim)
     # cycles = rowDimCycles + reductionDimCycles
     #cycles = rowDim * outerLoops(reductionDim)*unrollAndJamFactor(reductionDim)+outerLoops(reductionDim)*20
-    cycles = reductionDim*3+rowDim*outerLoops(reductionDim)
+    # cycles = reductionDim*3+rowDim*outerLoops(reductionDim)
     #cycles =5.0*rowDim*reductionDim*outerLoops(reductionDim) / 200.0#+100.0
     #cycles = outerLoops(reductionDim)*rowDim + unrollAndJamFactor(reductionDim)
     #cycles = outerLoops(reductionDim)*rowDim + unrollAndJamFactor(reductionDim)*outerLoops(reductionDim)
@@ -119,6 +126,100 @@ def estimate(df):
     #est['linalg_xdsl']=est["CC Reduction Dim"]*2.0 + 100.0
     #est = est[["CC Row Dim","CC Reduction Dim",'linalg_xdsl']]
     return est
+
+def unrollAndJamGraphs(df):
+    a = Graph2D(
+        keys=Keys2D(
+            x="CC Reduction Dim",
+            x_label="Reduction Dim",
+            x_unit="8 byte elements",
+            y='UnrollAndJam Factor',
+            y_label="unroll and jam factor",
+            y_unit="instructions",
+        ),
+        title="Reduction Dim vs. Unroll and Jam Factor",
+        scatterSets=[(df, CustomMarker())],
+        legend=False,
+    )
+    b = Graph2D(
+        keys=Keys2D(
+            x="CC Reduction Dim",
+            x_label="Reduction Dim",
+            x_unit="8 byte elements",
+            y='UnrollAndJam Outer Loops',
+            y_label="outer loops",
+            y_unit="loop count",
+        ),
+        title="Reduction Dim vs. Outer Loops",
+        scatterSets=[(df, CustomMarker())],
+        legend=False,
+    )
+    return [a,b]
+
+# x = np.array([0, 1, 2, 3, 4, 5])
+# y = np.array([0, 0.8, 0.9, 0.1, -0.8, -1.0])
+
+# # Perform linear fit
+# coefficients = np.polyfit(x, y, 1)
+# print("Linear Fit Coefficients:", coefficients)
+
+# # Create polynomial function
+# p = np.poly1d(coefficients)
+
+# plt.scatter(x, y, label='Data Points')
+# plt.plot(x, p(x), label='Linear Fit', color='red')
+# plt.legend()
+# plt.show()
+
+def approximateLinesGivenFixedRowDim(df):
+    rowDims = range(1,10)
+    colors = ["lightcoral","sienna","orangered","darkslateblue","orange","red","peachpuff","mediumvioletred","lightpink","blue"]
+
+    lines = []
+    for rowDim in rowDims:
+        c = colors[rowDim]
+        fixedRowD = df.loc[df["CC Row Dim"]==rowDim]
+        # Perform linear fit
+        x = pd.DataFrame.to_numpy(fixedRowD[["CC Reduction Dim"]]).flatten().tolist()
+        y = pd.DataFrame.to_numpy(fixedRowD[["linalg_xdsl"]]).flatten().tolist()
+        print(x) 
+        print(y) 
+        #coefficients = np.polyfit(x[0], y[0], 1)
+        #p = np.poly1d(coefficients)
+        p = np.polynomial.polynomial.Polynomial.fit(x, y, 1)
+        print(f"for rowDim {rowDim}, y intercept is {np.polynomial.polynomial.polyval(0,p.coef)} and roots are {p.coef}")
+        print(type(p))
+        print(p)
+        line = Curve(fixedRowD[["CC Reduction Dim"]],p,c,label=f'Linear Fit when Row Dim is {rowDim}')
+        lines.append(line)
+        # print(np.array(df.loc[df["CC Row Dim"]==rowDim][["CC Row Dim","CC Reduction Dim","linalg_xdsl"]]))
+        # print(rowDim)
+    return lines
+
+def approximateLine(df):
+    rowDims = [200]
+    fixedRowD = df.loc[df["CC Reduction Dim"]==100]
+    print(df.loc[df["CC Reduction Dim"]==100])
+    lines = []
+    for rowDim in rowDims:
+        c = "mediumvioletred"
+      
+        # Perform linear fit
+        x = pd.DataFrame.to_numpy(fixedRowD[["CC Row Dim"]]).flatten().tolist()
+        y = pd.DataFrame.to_numpy(fixedRowD[["linalg_xdsl"]]).flatten().tolist()
+        print(x) 
+        print(y) 
+        #coefficients = np.polyfit(x[0], y[0], 1)
+        #p = np.poly1d(coefficients)
+        p = np.polynomial.polynomial.Polynomial.fit(x, y, 2)
+        print(f"for rowDim {rowDim}, y intercept is {np.polynomial.polynomial.polyval(0,p.coef)} and roots are {p.coef}")
+        print(type(p))
+        print(p)
+        line = Curve(fixedRowD[["CC Row Dim"]],p,c,label=f'Fit when Reduction Dim is {rowDim}')
+        lines.append(line)
+        # print(np.array(df.loc[df["CC Row Dim"]==rowDim][["CC Row Dim","CC Reduction Dim","linalg_xdsl"]]))
+        # print(rowDim)
+    return lines
 
 def main():
     computeCoreDataToRead = "./graphing/toGraph/pivoted.cost_model.csv"
@@ -134,17 +235,55 @@ def main():
     df["CC Row * Reduction Dim"] = df.apply(
         lambda row: row["CC Row Dim"] * row["CC Reduction Dim"], axis=1
     )
-    print(df)
+    # add unrollAndJam info for each tile
+    df['UnrollAndJam Factor'] = df.apply(lambda y: unrollAndJamFactor(y["CC Reduction Dim"]), axis=1)
+    df['UnrollAndJam Outer Loops'] = df.apply(lambda y: outerLoops(y["CC Reduction Dim"]), axis=1)
+    # print(df)
     for d in [14,161,12,6,1]:
         print(f"unroll and jam factor for {d} is {unrollAndJamFactor(d)} with outerLoops {outerLoops(d)}")
     
-    # graphEmAll((1, 2), [inputSizeVsTime(df), dimsVsTime(df)])
-    graphEmAll((2, 2), [simpleDimsVsTime(df,"CC Row Dim","Row Dim"), 
-                        simpleDimsVsTime(df,"CC Reduction Dim","Col Dim"),
-                        simpleDimsVsTimeVsEstimated(df,"CC Row Dim","Row Dim"),
-                        simpleDimsVsTimeVsEstimated(df,"CC Reduction Dim","Col Dim"),
-                        ])
+    print(f"cycle estimate for (1x30) is {estimateCycles(1,30)}")
+    rowVsTime = simpleDimsVsTime(df,"CC Row Dim","Row Dim")
+    rowVsTime.legend=True
+    # rowVsTime.curves=approximateLine(df)
+    # rowVsTime.curves[0].data= df[["CC Row Dim"]]
+    rowVsTime.legend_pos="upper left"
+    rowVsTime.legend_bb=(0,1)
+    reductionVsTime = simpleDimsVsTime(df,"CC Reduction Dim","Col Dim")
+    # rowVsTime.legend=True
+    reductionVsTime.legend=True
+    reductionVsTime.legend_pos="upper left"
+    reductionVsTime.legend_bb=(0,1)
+    lines = approximateLinesGivenFixedRowDim(df.loc[df["CC Reduction Dim"]<40])
+    for line in lines:
+        line.data = df[["CC Reduction Dim"]]
+    reductionVsTime.curves = lines#approximateLinesGivenFixedRowDim(df.loc[df["CC Reduction Dim"]<40])
+    graphEmAll((1, 2), [rowVsTime,   
+                        reductionVsTime])
+    #graphEmAll((1, 1), [reductionVsTime])
 
+    #graphEmAll((1, 2), [simpleDimsVsTime(df,"CC Row Dim","Row Dim"),   
+                        #simpleDimsVsTime(df,"CC Reduction Dim","Col Dim")])
+    #df.loc[df['column_name'] == some_value]
+    #graphEmAll((1, 2), [inputSizeVsTime(df), dimsVsTime(df)])
+    # graphEmAll((2, 2), [simpleDimsVsTime(df,"CC Row Dim","Row Dim"), 
+    #                     simpleDimsVsTime(df,"CC Reduction Dim","Col Dim"),
+    #                     simpleDimsVsTime(df.loc[df["CC Row Dim"]==5],'UnrollAndJam Factor',"Unroll and Jam Factor"),
+    #                     simpleDimsVsTime(df.loc[df["CC Row Dim"]==5],'UnrollAndJam Outer Loops',"Outer Loops"),
+    #                     ])
+
+    # graphEmAll((1, 2), examinations(df.loc[df["CC Row Dim"]==3]))
+    #graphEmAll((1, 2), unrollAndJamGraphs(df))
+    # graphEmAll((1, 2), [simpleDimsVsTime(df.loc[df["CC Reduction Dim"]==30],"CC Row Dim","Row Dim"),   
+    #                     simpleDimsVsTime(df.loc[df["CC Row Dim"]==3],"CC Reduction Dim","Col Dim")])
+    
+
+    # graphEmAll((2, 2), [simpleDimsVsTime(df,"CC Row Dim","Row Dim"), 
+    #                     simpleDimsVsTime(df,"CC Reduction Dim","Col Dim"),
+    #                     simpleDimsVsTimeVsEstimated(df,"CC Row Dim","Row Dim"),
+    #                     simpleDimsVsTimeVsEstimated(df,"CC Reduction Dim","Col Dim"),
+    #                     ])
+    
     # fig = plt.figure()
     # ax = fig.add_subplot(projection='3d')
     # for index, row in df.iterrows():

@@ -13,6 +13,13 @@ from typing import TypeVar, Generic
 
 T = TypeVar('T')
 
+@dataclass #p(x), label='Linear Fit', color='red')
+class Curve:
+    data:np.ndarray =[],
+    func : np.polynomial.polynomial.Polynomial = field(default_factory=np.polynomial.polynomial.Polynomial)#np.poly1d([1,2])
+    color : str = 'red',
+    label : str = 'Linear Fit'
+
 @dataclass
 class Keys2D:
     """Class for keeping track of 2D graph axes + label"""
@@ -29,7 +36,7 @@ class CustomMarker:
     """Class for storing functions from row data to marker style"""
 
     marker : Callable[[T], mpl.markers.MarkerStyle]= lambda x="o": "o"
-    label : Callable[[T], str]= lambda y="no label": "no label"
+    label : Callable[[T], str]= lambda y="no label": "_no label"
     size : Callable[[T], int]= (lambda y=0: mpl.rcParams['lines.markersize'] ** 2)
     fill : Callable[[T], str]= lambda y="YellowGreen": "YellowGreen"
     stroke : Callable[[T], str]= lambda y="Black": "Black"
@@ -46,6 +53,7 @@ class Graph2D(Generic[T]):
     legend_pos : str = "upper right"
     legend_bb : tuple[int,int] = (1,1) #bbox_to_anchor
     custom_marker : bool = False
+    curves = []
     get_marker : Callable[[T], mpl.markers.MarkerStyle]= field(default_factory=lambda x="o": "o")
     get_marker_label : Callable[[T], str]= lambda y="no label": "no label"#field(default_factory=lambda y="no label": "no label")
     get_marker_size : Callable[[T], int]= (lambda y=0: mpl.rcParams['lines.markersize'] ** 2)
@@ -58,6 +66,14 @@ def generalGraph(ax, g:Graph2D):
             ax.scatter(row[g.keys.x], row[g.keys.y],c=cm.fill(row),edgecolors=cm.stroke(row),s = cm.size(row),label=cm.label(row),marker=cm.marker(row))
     ax.set_xlabel(f"{g.keys.x_label} ({g.keys.x_unit})")
     ax.set_ylabel(f"{g.keys.y_label} ({g.keys.y_unit})")
+    if len(g.curves):
+        labels = []
+        lines = []
+        for curve in g.curves:
+            line = ax.plot(curve.data, curve.func(curve.data), label=curve.label, color=curve.color, linestyle='-', linewidth=2.0)
+        #     labels.append(curve.label)
+        #     lines.append(line)
+        # ax.legend(lines,labels)
     if g.legend:
         ax.legend(loc=g.legend_pos, bbox_to_anchor=g.legend_bb)
 
