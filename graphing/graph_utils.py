@@ -376,9 +376,20 @@ def main():
         top10[dispNo] = (quid,est)
     #graphEmAll((3, 2), graphs)
 
-    g = top10[1]
+    g = top10[7]
     graphEmAll((1,2), (g[0],g[1]))
-    print(g[0].scatterSets[0][0])
+    data = g[0].scatterSets[0][0]
+    print(data)
+    top5=getBestXFrom(data, "Kernel Time", 5, True)
+    print(top5)
+    print("hooodle")
+    for i in range(0,5):
+        better = top5.iloc[i]["Kernel Time"]
+        print(top5.iloc[i]["JSON Name"],end=" compared to\n")
+        for j in range(i+1,5):  
+            worse = top5.iloc[j]["Kernel Time"]
+            percentage = ((worse + 0.0) - (better + 0.0) )/ (worse + 0.0)   * 100.0   
+            print("\t",end=f'{top5.iloc[j]["JSON Name"]} is {percentage:.2f} % better\n')
 
 
 if __name__ == "__main__":
