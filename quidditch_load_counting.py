@@ -64,7 +64,9 @@ def LoadCountingAnnColumnNames():
         "Outer Loop Iters",
         "HW Loop Body",
         "HW Loop Iters",
-        "Actual HW Loop Runs"
+        "Microkernel Count",
+        "Microkernel Row Dim",
+        "Microkernel Reduction Dim",
     ]
     return columns
 
@@ -100,7 +102,7 @@ def getLoadCountingAnn(mat: InputMatrix, sizes: TileSizes):
     total_streaming_loads = total_streaming_loads_per_core * logicalCount
     start_reuse_streaming_loads = start_reuse_streaming_loads_per_core * logicalCount
     reused_streaming_loads = reused_streaming_loads_per_core * logicalCount
-    return(regular_loads,total_streaming_loads,other_streaming_loads,start_reuse_streaming_loads,reused_streaming_loads,outer_loop_iters, hLoop.body_size, hLoop.loop_repeats, logicalCount*outer_loop_iters)
+    return(regular_loads,total_streaming_loads,other_streaming_loads,start_reuse_streaming_loads,reused_streaming_loads,outer_loop_iters, hLoop.body_size, hLoop.loop_repeats, logicalCount,microkernel_tile.n ,microkernel_tile.k)
 
 def main():
     yodel()

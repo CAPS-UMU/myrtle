@@ -8,7 +8,6 @@ def roundUpToNearestMultipleOf(num, row_dim):
   else:
     return num
 
-
 @dataclass
 class InputMatrix:
     """Class for keeping track of matrix dimensions in"""
@@ -37,3 +36,15 @@ class EnclosingSCFLoop:
     name: str = "an enclosing loop"
     iters : int = 1   # number of times the enclosing loop executes
     exists : bool = False # whether the hardware loop is in fact enclosed by another loop
+
+def unrollAndJamFactor(rowDim):
+    options = [7,6,5,4,3,2]
+    factor = 1
+    for option in options:
+        if rowDim % option == 0:
+            factor = option
+            break
+    return factor
+
+def unrollAndJamOuterLoops(rowDim):
+    return rowDim / unrollAndJamFactor(rowDim)

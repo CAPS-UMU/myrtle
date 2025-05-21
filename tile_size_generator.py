@@ -20,7 +20,6 @@ class TileSizeGenerator:
   def weightMatTileSize(self, row_dim, reduction_dim):
     return row_dim * reduction_dim
 
-
   def spaceForTiles(self, row_dim, reduction_dim):
       # space in element count
       inputVectorTile = 1 * reduction_dim

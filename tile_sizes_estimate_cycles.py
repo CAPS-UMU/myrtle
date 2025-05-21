@@ -2,13 +2,38 @@ from dataclasses import dataclass, field
 import pandas as pd
 import sys
 import quidditch_load_counting as qlc
-from utils import InputMatrix, TileSizes, roundUpToNearestMultipleOf
+from utils import unrollAndJamFactor,unrollAndJamOuterLoops
+import pickle
 
-def get_cycle_estimate(row_dim, col_dim): #, n, k):
-    outerLoops = "???"
-   # return "hoodle"
-   # res = f"{row_dim}x{col_dim} X {outerLoops} outer loops; n={n} and k={k}"
-    return row_dim
+# open a file, where you stored the pickled data
+# file = open('important', 'rb')
+
+# # dump information to that file
+# data = pickle.load(file)
+
+# # close the file
+# file.close()
+
+# print('Showing the pickled data:')
+
+# cnt = 0
+# for item in data:
+#     print('The data ', cnt, ' is : ', item)
+#     cnt += 1
+
+class Myrtle:
+  def __init__(self, timeEstimateFuncs):
+    self.timeEstimateFuncs = timeEstimateFuncs
+
+  def get_cycle_estimate(self,row_dim, col_dim, outerLoopIters, microCount): #, n, k):
+    if outerLoopIters == 1:
+       return self.timeEstimateFuncs[row_dim](row_dim) * microCount
+    else:
+       return self.timeEstimateFuncs[row_dim/outerLoopIters](row_dim/outerLoopIters)*microCount
+
+
+
+
     
 
 def addMoreColsForConvenience(df):
@@ -29,8 +54,22 @@ def main():
     df=pd.read_csv(args[2])
     dispatchName = args[3]
     caseNo = int(args[4])
-    df["Kernel Time Estimate"] = df.apply(lambda x: get_cycle_estimate(x["Row Dim"], x["Reduction Dim"]), axis=1)
-    print(df[["JSON Name","Row Dim","Reduction Dim","Kernel Time","Kernel Time Estimate"]])
+
+    # add unrollAndJam info for each tile
+    df['UnrollAndJam Factor'] = df.apply(lambda y: unrollAndJamFactor(y["Row Dim"]), axis=1)
+    df['UnrollAndJam Outer Loops'] = df.apply(lambda y: unrollAndJamOuterLoops(y["Row Dim"]), axis=1)
+
+    linearApproxFilePath = "linesOfBestFit.pickle"
+    file = open(linearApproxFilePath, 'rb')
+    curves = pickle.load(file)
+    lines = {}
+    for c in curves:
+        lines[c.id]=c.func
+    print(lines)
+    m = Myrtle(lines)
+
+    df["Kernel Time Estimate"] = df.apply(lambda x: m.get_cycle_estimate(x["Microkernel Row Dim"], x["Microkernel Reduction Dim"],x["Outer Loop Iters"],x["Microkernel Count"]), axis=1)
+    print(df[["JSON Name","Row Dim","Reduction Dim","Kernel Time","Microkernel Row Dim","Microkernel Reduction Dim","Microkernel Count","Kernel Time Estimate"]])
 
     df.to_csv(f"estimated_cycles_out/{dispatchName}_case{caseNo}_everything.csv",index=False)
     

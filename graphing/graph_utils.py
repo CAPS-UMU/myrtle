@@ -19,6 +19,7 @@ class Curve:
     func : np.polynomial.polynomial.Polynomial = field(default_factory=np.polynomial.polynomial.Polynomial)#np.poly1d([1,2])
     color : str = 'red',
     label : str = 'Linear Fit'
+    id : int = -1
 
 @dataclass
 class Keys2D:
