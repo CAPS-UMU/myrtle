@@ -56,8 +56,8 @@ def main():
     caseNo = int(args[4])
 
     # add unrollAndJam info for each tile
-    df['UnrollAndJam Factor'] = df.apply(lambda y: unrollAndJamFactor(y["Row Dim"]), axis=1)
-    df['UnrollAndJam Outer Loops'] = df.apply(lambda y: unrollAndJamOuterLoops(y["Row Dim"]), axis=1)
+    df['UnrollAndJam Factor'] = df.apply(lambda y: unrollAndJamFactor(y["Microkernel Row Dim"]), axis=1)
+    df['UnrollAndJam Outer Loops'] = df.apply(lambda y: unrollAndJamOuterLoops(y["Microkernel Row Dim"]), axis=1)
 
     linearApproxFilePath = "linesOfBestFit.pickle"
     file = open(linearApproxFilePath, 'rb')
@@ -71,7 +71,8 @@ def main():
     df["Kernel Time Estimate"] = df.apply(lambda x: m.get_cycle_estimate(x["Microkernel Row Dim"], x["Microkernel Reduction Dim"],x["Outer Loop Iters"],x["Microkernel Count"]), axis=1)
     print(df[["JSON Name","Row Dim","Reduction Dim","Kernel Time","Microkernel Row Dim","Microkernel Reduction Dim","Microkernel Count","Kernel Time Estimate"]])
 
-    df.to_csv(f"estimated_cycles_out/{dispatchName}_case{caseNo}_everything.csv",index=False)
+    # df.to_csv(f"estimated_cycles_out/{dispatchName}_case{caseNo}_everything.csv",index=False)
+    df.to_csv(f"estimated_cycles_out_2/{dispatchName}_case{caseNo}_everything.csv",index=False)
     
        
     qlc.yodel()

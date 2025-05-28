@@ -59,6 +59,12 @@ class Graph2D(Generic[T]):
     legend_pos: str = "upper right"
     legend_bb: tuple[int, int] = (1, 1)  # bbox_to_anchor
     custom_marker: bool = False
+    table: bool = False
+    table_pos : str = "upper right"
+    table_bb : tuple[int, int] = (1, 1)
+    table_col_labels : list[str] = field(default_factory=list)
+    table_row_labels : list[str] = field(default_factory=list)
+    table_data : list[list[str]] = field(default_factory=list)
     curves = []
     get_marker: Callable[[T], mpl.markers.MarkerStyle] = field(
         default_factory=lambda x="o": "o"
@@ -103,6 +109,15 @@ def generalGraph(ax, g: Graph2D):
         # ax.legend(lines,labels)
     if g.legend:
         ax.legend(loc=g.legend_pos, bbox_to_anchor=g.legend_bb)
+    if g.table:#bbox, loc,rowLabels,colLabels, cellText
+        #xmin, ymin, width, height bbox=(1,0,1,1),
+        t=plt.table(loc='right',colLabels=g.table_col_labels,cellText=g.table_data.values.tolist())
+        t.auto_set_font_size(False)
+        t.set_fontsize(10)
+        #the_table.scale(2, 2)
+        ax.add_table(t)
+        #.values.tolist()
+        #ax.table(bbox=g.table_bb,loc=g.table_pos,rowLabels=g.table_row_labels,colLabels=g.table_col_labels,cellText=g.table_data)
 
 
 def graphEmAll(shape: tuple, graphs):
@@ -365,31 +380,31 @@ def main():
         "Dispatch 8\nmatvec: <1x600>, <600x600> -> <1x600>",
         "Dispatch 7\nmatvec: <1x400>, <600x400> -> <1x600>",
     ]
-    graphs = []
-    dfs = shortcutToData("../estimated_cycles_out")
-    top10 = {}
-    for dispNo, dispTitle in zip([1, 8, 7], titles):
-        quid = dimsVsQuidditchTime(dfs, dispNo, dispTitle)
-        est = dimsVsEstimatedTime(dfs, dispNo, dispTitle)
-        graphs.append(quid)
-        graphs.append(est)
-        top10[dispNo] = (quid,est)
-    #graphEmAll((3, 2), graphs)
+    # graphs = []
+    # dfs = shortcutToData("../estimated_cycles_out")
+    # top10 = {}
+    # for dispNo, dispTitle in zip([1, 8, 7], titles):
+    #     quid = dimsVsQuidditchTime(dfs, dispNo, dispTitle)
+    #     est = dimsVsEstimatedTime(dfs, dispNo, dispTitle)
+    #     graphs.append(quid)
+    #     graphs.append(est)
+    #     top10[dispNo] = (quid,est)
+    # #graphEmAll((3, 2), graphs)
 
-    g = top10[7]
-    graphEmAll((1,2), (g[0],g[1]))
-    data = g[0].scatterSets[0][0]
-    print(data)
-    top5=getBestXFrom(data, "Kernel Time", 5, True)
-    print(top5)
-    print("hooodle")
-    for i in range(0,5):
-        better = top5.iloc[i]["Kernel Time"]
-        print(top5.iloc[i]["JSON Name"],end=" compared to\n")
-        for j in range(i+1,5):  
-            worse = top5.iloc[j]["Kernel Time"]
-            percentage = ((worse + 0.0) - (better + 0.0) )/ (worse + 0.0)   * 100.0   
-            print("\t",end=f'{top5.iloc[j]["JSON Name"]} is {percentage:.2f} % better\n')
+    # g = top10[7]
+    # graphEmAll((1,2), (g[0],g[1]))
+    # data = g[0].scatterSets[0][0]
+    # print(data)
+    # top5=getBestXFrom(data, "Kernel Time", 5, True)
+    # print(top5)
+    # print("hooodle")
+    # for i in range(0,5):
+    #     better = top5.iloc[i]["Kernel Time"]
+    #     print(top5.iloc[i]["JSON Name"],end=" compared to\n")
+    #     for j in range(i+1,5):  
+    #         worse = top5.iloc[j]["Kernel Time"]
+    #         percentage = ((worse + 0.0) - (better + 0.0) )/ (worse + 0.0)   * 100.0   
+    #         print("\t",end=f'{top5.iloc[j]["JSON Name"]} is {percentage:.2f} % better\n')
 
 
 if __name__ == "__main__":

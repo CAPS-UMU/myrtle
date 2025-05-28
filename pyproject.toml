@@ -8,7 +8,8 @@ dependencies = [
     "numpy>=2.2.5",
     "pandas>=2.2.3",
     "xdsl[docs]==0.31.0",
-    "PyQt6"
+    "PyQt6",
+    "marimo==0.13.11"
 ]
 
 [dependency-groups]
