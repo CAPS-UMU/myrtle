@@ -132,10 +132,13 @@ def addMoreColsForConvenience(df):
 
 def main():
     args = sys.argv[1:]
-    if len(args) != 5:
-      print(f"USAGE: python3 tile_size_generator.py <N> <K> <tilesRequested.csv> <dispatchName> <CaseNo>")
+    if len(args) != 6:
+      print("USAGE: python3 tile_size_generator.py <N> <K> <tilesRequested.csv> <dispatchName> <CaseNo> <oracle-output-dir>")
       print(
             "\twhere N, K, refer to dimensions in a\n\tmatrix-vector transpose with type `<MxK>, <NxK> -> <MxN>` where `M = 1`"
+      )
+      print(
+            "\tNote: when <tilesRequested.csv> is set to ORACLE_MODE, \n\t      the tile generator will automatically generate a set of valid tile sizes, \n\t      placing them in <oracle-output-dir>."
       )
       exit(1)
     jen = TileSizeGenerator(int(args[0]),int(args[1]))
