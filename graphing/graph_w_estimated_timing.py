@@ -141,8 +141,8 @@ def unrollVsUnrollLegend(dfs, dispNo, dispTitle):
         return f'{x["Microkernel Row Dim"]}{x["UnrollAndJam Factor"]}{x["UnrollAndJam Outer Loops"]}'
     b = Graph2D(
         keys=Keys2D(
-            x="Microkernel Row Dim",
-            x_label="Microkernel Row Dim",
+            x="Reduction Dim",
+            x_label="Reduction Dim",
             x_unit="elements",
             y="Kernel Time",
             y_label="Kernel Time",
@@ -154,7 +154,7 @@ def unrollVsUnrollLegend(dfs, dispNo, dispTitle):
                 ranked,#dfs[(dispNo, 1)],
                 CustomMarker(
                     #label= lambda y: f'    {y["JSON Name"]}', 
-                    label= lambda y: f'({y["Microkernel Row Dim"]}, UaJ = {y["UnrollAndJam Factor"]}, {y["UnrollAndJam Outer Loops"]} outer loops)',                   
+                    label= lambda y: f'{y["Microkernel Row Dim"]},     {y["UnrollAndJam Factor"]},     {y["UnrollAndJam Outer Loops"]}',                   
                     marker=lambda x: f'${x["rank"]}$',#f'$({x["UnrollAndJam Factor"]},{int(x["UnrollAndJam Outer Loops"])})$',
                     size=lambda y=0: (mpl.rcParams["lines.markersize"] ** 2)*2,
                     stroke=lambda x: 'Black',#"Purple",
@@ -164,9 +164,9 @@ def unrollVsUnrollLegend(dfs, dispNo, dispTitle):
         ],
         legend=True,
         legend_pos="upper left",
-        legend_bb=(1.5,1.5),
+        legend_bb=(1,1),
    
-        legend_title="n' U&J OLoops",
+        legend_title="         n'   U&J    OuterLoops",
       #  legend_pos='upper right',
         # legend_bb=(0,2),
         # table = False,
@@ -230,7 +230,7 @@ def microKernelRowDimVsQuidditchTime(dfs, dispNo, dispTitle):
         legend=True,
         legend_title = "estimate timing",
         legend_pos="upper right",
-        legend_bb=(1.7,1)
+        legend_bb=(0.5,0.5)
     )
     return b
 
@@ -314,7 +314,7 @@ def main():
 
     g = top10[7]
     for i in [1]:#[1, 8, 7]:
-        graphEmAll((1,1), [top10[i][4]])
+        graphEmAll((1,1), [top10[i][0]])
 
     #microKernelRowDimVsVsUnrollVsQuidditchTime(dfs,7,titles[2])
 

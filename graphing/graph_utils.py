@@ -111,14 +111,15 @@ def generalGraph(ax, g: Graph2D):
         #     lines.append(line)
         # ax.legend(lines,labels)
     if g.legend:
-        ax.legend(loc=g.legend_pos, bbox_to_anchor=g.legend_bb,title=g.legend_title)
+        leg = ax.legend(loc=g.legend_pos, bbox_to_anchor=g.legend_bb,title=g.legend_title)
         #leg.set_title("")  
+        leg._legend_box.align = "left"
         blue_line = mlines.Line2D([], [], color='blue', marker=f'${"0"}$',
                           markersize=15, label=g.legend_title)
         #red_patch = mpatches.Patch(color='red', label='The red data')
         #ax.legend(handles=[red_patch])
-        h, l = ax.get_legend_handles_labels()
-        ax.legend(handles=[blue_line] + h)
+      #  h, l = ax.get_legend_handles_labels()
+      #  ax.legend(handles=[blue_line] + h)
         
     if g.table:#bbox, loc,rowLabels,colLabels, cellText#colWidths
         #xmin, ymin, width, height bbox=(1,0,1,1),
