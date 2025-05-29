@@ -103,8 +103,8 @@ def unrollVsUnrollTable(dfs, dispNo, dispTitle):
     # best = getBestXFrom(ranked, "Kernel Time Estimate", 10, True)
     b = Graph2D(
         keys=Keys2D(
-            x="Microkernel Row Dim",
-            x_label="Microkernel Row Dim",
+            x="Row Dim",
+            x_label="L1 Row Dim",
             x_unit="elements",
             y="Kernel Time",
             y_label="Kernel Time",
@@ -131,6 +131,49 @@ def unrollVsUnrollTable(dfs, dispNo, dispTitle):
         table_col_labels=["rank","CC Row Dim","U&J Factor","CC Outer Loops","L1 Row Dim","L1 Col Dim"],
         table_row_labels=[],
         table_data=ranked[["rank","Microkernel Row Dim","UnrollAndJam Factor","UnrollAndJam Outer Loops","Row Dim","Reduction Dim"]]
+    )
+    return b
+
+def unrollVsUnrollLegend(dfs, dispNo, dispTitle):
+    ranked = rankBy(dfs, (dispNo, 1), "Kernel Time", True)
+    # best = getBestXFrom(ranked, "Kernel Time Estimate", 10, True)
+    def getInfo(x):
+        return f'{x["Microkernel Row Dim"]}{x["UnrollAndJam Factor"]}{x["UnrollAndJam Outer Loops"]}'
+    b = Graph2D(
+        keys=Keys2D(
+            x="Microkernel Row Dim",
+            x_label="Microkernel Row Dim",
+            x_unit="elements",
+            y="Kernel Time",
+            y_label="Kernel Time",
+            y_unit="cycles",
+        ),
+        title=dispTitle,
+        scatterSets=[
+            (
+                ranked,#dfs[(dispNo, 1)],
+                CustomMarker(
+                    #label= lambda y: f'    {y["JSON Name"]}', 
+                    label= lambda y: f'({y["Microkernel Row Dim"]}, UaJ = {y["UnrollAndJam Factor"]}, {y["UnrollAndJam Outer Loops"]} outer loops)',                   
+                    marker=lambda x: f'${x["rank"]}$',#f'$({x["UnrollAndJam Factor"]},{int(x["UnrollAndJam Outer Loops"])})$',
+                    size=lambda y=0: (mpl.rcParams["lines.markersize"] ** 2)*2,
+                    stroke=lambda x: 'Black',#"Purple",
+                    fill=lambda x: 'Black'#"Purple",
+                ),
+            )
+        ],
+        legend=True,
+        legend_pos="upper left",
+        legend_bb=(1.5,1.5),
+   
+        legend_title="n' U&J OLoops",
+      #  legend_pos='upper right',
+        # legend_bb=(0,2),
+        # table = False,
+        # table_bb=(1,1),
+        # table_col_labels=["rank","CC Row Dim","U&J Factor","CC Outer Loops","L1 Row Dim","L1 Col Dim"],
+        # table_row_labels=[],
+        # table_data=ranked[["rank","Microkernel Row Dim","UnrollAndJam Factor","UnrollAndJam Outer Loops","Row Dim","Reduction Dim"]]
     )
     return b
 
@@ -185,8 +228,9 @@ def microKernelRowDimVsQuidditchTime(dfs, dispNo, dispTitle):
             )
         ],
         legend=True,
-        legend_pos="upper left",
-        legend_bb=(1,1)
+        legend_title = "estimate timing",
+        legend_pos="upper right",
+        legend_bb=(1.7,1)
     )
     return b
 
@@ -256,19 +300,21 @@ def main():
     dfs = shortcutToData("../estimated_cycles_out_2")
     top10 = {}
     for dispNo, dispTitle in zip([1, 8, 7], titles):
+        leg = unrollVsUnrollLegend(dfs, dispNo, dispTitle)
         quid = unrollVsQuidditchTime(dfs, dispNo, dispTitle)
         est = rowDimVsQuidditchTime(dfs, dispNo, dispTitle)
         combo = microKernelRowDimVsQuidditchTime(dfs, dispNo, dispTitle)
         unrolled = unrollVsUnrollTable(dfs, dispNo, dispTitle)
+        graphs.append(leg)
         graphs.append(quid)
         graphs.append(est)
         graphs.append(combo)
-        top10[dispNo] = (quid,est,combo,unrolled)
+        top10[dispNo] = (leg,quid,est,combo,unrolled)
     #graphEmAll((3, 2), graphs)
 
     g = top10[7]
     for i in [1]:#[1, 8, 7]:
-        graphEmAll((1,1), [top10[i][3]])
+        graphEmAll((1,1), [top10[i][4]])
 
     #microKernelRowDimVsVsUnrollVsQuidditchTime(dfs,7,titles[2])
 

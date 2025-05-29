@@ -10,6 +10,8 @@ import matplotlib.ticker as ticker
 from dataclasses import dataclass, field
 from typing import Callable
 from typing import TypeVar, Generic
+import matplotlib.lines as mlines
+import matplotlib.patches as mpatches
 
 T = TypeVar("T")
 
@@ -58,6 +60,7 @@ class Graph2D(Generic[T]):
     legend: bool = True
     legend_pos: str = "upper right"
     legend_bb: tuple[int, int] = (1, 1)  # bbox_to_anchor
+    legend_title : str = ""
     custom_marker: bool = False
     table: bool = False
     table_pos : str = "upper right"
@@ -108,10 +111,19 @@ def generalGraph(ax, g: Graph2D):
         #     lines.append(line)
         # ax.legend(lines,labels)
     if g.legend:
-        ax.legend(loc=g.legend_pos, bbox_to_anchor=g.legend_bb)
-    if g.table:#bbox, loc,rowLabels,colLabels, cellText
+        ax.legend(loc=g.legend_pos, bbox_to_anchor=g.legend_bb,title=g.legend_title)
+        #leg.set_title("")  
+        blue_line = mlines.Line2D([], [], color='blue', marker=f'${"0"}$',
+                          markersize=15, label=g.legend_title)
+        #red_patch = mpatches.Patch(color='red', label='The red data')
+        #ax.legend(handles=[red_patch])
+        h, l = ax.get_legend_handles_labels()
+        ax.legend(handles=[blue_line] + h)
+        
+    if g.table:#bbox, loc,rowLabels,colLabels, cellText#colWidths
         #xmin, ymin, width, height bbox=(1,0,1,1),
-        t=plt.table(loc='right',colLabels=g.table_col_labels,cellText=g.table_data.values.tolist())
+        columnWidths = [0.2]*len(g.table_col_labels)
+        t=plt.table(loc='right',colLabels=g.table_col_labels,colWidths=columnWidths,cellText=g.table_data.values.tolist())
         t.auto_set_font_size(False)
         t.set_fontsize(10)
         #the_table.scale(2, 2)
@@ -128,7 +140,9 @@ def graphEmAll(shape: tuple, graphs):
         ax = fig.add_subplot(shape[0], shape[1], i + 1)
         # moreGeneralGraph(ax, graphs[i])
         generalGraph(ax, graphs[i])
+    plt.savefig("frog.pdf", bbox_inches='tight')
     plt.show()
+
 
     # label: Callable[[T], str] = lambda y="no label": "_no label"
 
