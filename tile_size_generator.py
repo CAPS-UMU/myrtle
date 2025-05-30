@@ -141,6 +141,14 @@ def main():
             "\tNote: when <tilesRequested.csv> is set to ORACLE_MODE, \n\t      the tile generator will automatically generate a set of valid tile sizes, \n\t      placing them in <oracle-output-dir>."
       )
       exit(1)
+    if args[2] == "ORACLE_MODE":
+        print("we're in oracle mode!!")
+        dispatchName = args[3]
+        caseNo = int(args[4])
+        outputDir = args[5]
+        
+        print(f'wrote outputs to directory {outputDir}')
+        exit(0)
     jen = TileSizeGenerator(int(args[0]),int(args[1]))
     firstCSV=pd.read_csv(args[2])
     dispatchName = args[3]
