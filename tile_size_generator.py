@@ -15,7 +15,15 @@ class TileSizeGenerator:
     self.me = InputMatrix(n=outputVectorEltCount,k=inputVectorEltCount)
 
   def myfunc(self):
-      print("I am " + self.me)
+      print(f'I am {self.me}')
+      self.validOptions(7,7)
+
+  def validOptions(self, n_prime_min, n_prime_max):
+     for i in range(8,1200+8,8):
+         print(i)
+         
+     return 4
+    # return self.me.n * self.me.k
 
   def weightMatTileSize(self, row_dim, reduction_dim):
     return row_dim * reduction_dim
@@ -146,7 +154,11 @@ def main():
         dispatchName = args[3]
         caseNo = int(args[4])
         outputDir = args[5]
-        
+        jen = TileSizeGenerator(int(args[0]),int(args[1]))
+        # sizeInfo = list(map(lambda tup: jen.annotateOption(tup), tups))
+        # sizeAndLoadInfo = jen.exportOptionsToCSV(dispatchName, caseNo, sizeInfo)
+        # extras = addMoreColsForConvenience(sizeAndLoadInfo)
+        print(jen.myfunc())
         print(f'wrote outputs to directory {outputDir}')
         exit(0)
     jen = TileSizeGenerator(int(args[0]),int(args[1]))
