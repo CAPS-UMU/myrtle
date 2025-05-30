@@ -53,7 +53,7 @@ class CustomMarker:
 @dataclass
 class Graph2D(Generic[T]):
     """Class for keeping track of 2D graph info _before_ calling scatter"""
-
+    imagePath : str =""
     title: str = "title of the graph"
     keys: Keys2D = field(default_factory=Keys2D)
     scatterSets: tuple = field(default_factory=tuple)
@@ -65,6 +65,7 @@ class Graph2D(Generic[T]):
     table: bool = False
     table_pos : str = "upper right"
     table_bb : tuple[int, int] = (1, 1)
+    table_col_widths : list[float] = field(default_factory=list)
     table_col_labels : list[str] = field(default_factory=list)
     table_row_labels : list[str] = field(default_factory=list)
     table_data : list[list[str]] = field(default_factory=list)
@@ -123,8 +124,9 @@ def generalGraph(ax, g: Graph2D):
         
     if g.table:#bbox, loc,rowLabels,colLabels, cellText#colWidths
         #xmin, ymin, width, height bbox=(1,0,1,1),
-        columnWidths = [0.2]*len(g.table_col_labels)
-        t=plt.table(loc='right',colLabels=g.table_col_labels,colWidths=columnWidths,cellText=g.table_data.values.tolist())
+        #columnWidths = [1/(len(g.table_col_labels))*0.25]*len(g.table_col_labels)
+        t=plt.table(loc='right',bbox=g.table_bb,colLabels=g.table_col_labels,colWidths=g.table_col_widths,cellText=g.table_data.values.tolist())
+       # t=plt.table(loc='right',bbox=g.table_bb,colLabels=g.table_col_labels,cellText=g.table_data.values.tolist())
         t.auto_set_font_size(False)
         t.set_fontsize(10)
         #the_table.scale(2, 2)
@@ -141,8 +143,16 @@ def graphEmAll(shape: tuple, graphs):
         ax = fig.add_subplot(shape[0], shape[1], i + 1)
         # moreGeneralGraph(ax, graphs[i])
         generalGraph(ax, graphs[i])
-    plt.savefig("frog.pdf", bbox_inches='tight')
-    plt.show()
+        plt.savefig(f"{graphs[i].imagePath}", bbox_inches='tight')
+    #fig = plt.gcf()  # Get the current figure
+    #Figure.dpi
+    #1187 × 265
+    #fig.set_dpi(72)
+    # fig.set_size_inches(1187/72.0,265/72.0)
+    # print(type(plt.Figure.dpi))
+    #fig.set_size_inches(4, 2)
+    # plt.savefig(f"{g.image}.png", bbox_inches='tight')
+    # plt.show()
 
 
     # label: Callable[[T], str] = lambda y="no label": "_no label"
@@ -167,7 +177,7 @@ def getBestX(dfs, id, by, x, lowIsGood):
 
 def rankBy(dfs, id, by, lowIsGood):
     df_sorted = dfs[id].sort_values(by=by, ascending=lowIsGood)
-    df_sorted["rank"] = range(1, df_sorted.shape[0] + 1)
+    df_sorted["rank"] = range(1, int(df_sorted.shape[0] + 1))
     return df_sorted
 
 
