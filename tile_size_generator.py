@@ -14,15 +14,33 @@ class TileSizeGenerator:
   def __init__(self, outputVectorEltCount, inputVectorEltCount):
     self.me = InputMatrix(n=outputVectorEltCount,k=inputVectorEltCount)
 
+  def dividesIntoN(self,num):
+    return self.me.n % num == 0
+
+  def dividesIntoK(self,num):
+    return self.me.k % num == 0
+
   def myfunc(self):
       print(f'I am {self.me}')
-      self.validOptions(7,7)
+      self.validOptions()
 
-  def validOptions(self, n_prime_min, n_prime_max):
-     for i in range(8,1200+8,8):
-         print(i)
-         
-     return 4
+  def validOptions(self):
+    # all possible values for n and k
+    little_n_options = list(range(8,self.me.n+8,8))
+    little_k_options=list(range(1,self.me.k+1,1))
+    # filter for n's and k's that divide evenly into N and K
+    little_n_no_pad = list(filter(lambda x: self.dividesIntoN(x), little_n_options))
+    little_k_no_pad = list(filter(lambda x: self.dividesIntoK(x), little_k_options))
+    # filter for size
+    print("[",end='')
+    for i in little_n_no_pad:
+         print(i, end=', ')
+    print("]")
+    print("[",end='')
+    for i in little_k_no_pad:
+         print(i, end=', ')
+    print("]")
+    return 4
     # return self.me.n * self.me.k
 
   def weightMatTileSize(self, row_dim, reduction_dim):
@@ -158,7 +176,7 @@ def main():
         # sizeInfo = list(map(lambda tup: jen.annotateOption(tup), tups))
         # sizeAndLoadInfo = jen.exportOptionsToCSV(dispatchName, caseNo, sizeInfo)
         # extras = addMoreColsForConvenience(sizeAndLoadInfo)
-        print(jen.myfunc())
+        jen.myfunc()
         print(f'wrote outputs to directory {outputDir}')
         exit(0)
     jen = TileSizeGenerator(int(args[0]),int(args[1]))

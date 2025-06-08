@@ -35,19 +35,19 @@ from PIL import Image
 def unrollVsUnrollTable(dfs, dispNo, dispTitle):
     ranked = rankBy(dfs, (dispNo, 1), "Kernel Time", True)
     ranked["rankAsStr"] = ranked.apply(lambda y: f'{y["rank"]}', axis=1)
-    tableData = ranked[["rankAsStr","Microkernel Row Dim","UnrollAndJam Factor","UnrollAndJam Outer Loops","Row Dim","Reduction Dim"]]
-    colLabels = ["rank","n'","U&J Factor","CC Outer Loops","n","k = k'"]
+    tableData = ranked[["rankAsStr","Microkernel Row Dim","UnrollAndJam Factor","UnrollAndJam Outer Loops","Microkernel Count","Row Dim","Reduction Dim"]]
+    colLabels = ["rank","n'","U&J Factor","CC Outer Loops","Micro Runs","n","k"]
     defW = (1/(len(colLabels)*3)) # default width
     print(defW)
-    tableColWidths = [defW,defW,defW*2,defW*2,defW,defW]#[defW]*len(colLabels)
+    tableColWidths = [defW,defW,defW*1.5,defW*1.5,defW*1.25,defW,defW]#[defW]*len(colLabels)
     # [1/(len(g.table_col_labels))*0.25]*len(g.table_col_labels)
     #[1/(len(g.table_col_labels))*0.25]*len(g.table_col_labels)
     b = Graph2D(
         imagePath=f'dispatch-{dispNo}-case-{1}',
         keys=Keys2D(
-            x="Row Dim",
-            x_label="L1 Row Dim",
-            x_unit="elements",
+            x="rank",
+            x_label="Rank",
+            x_unit="fastest to slowest",
             y="Kernel Time",
             y_label="Kernel Time",
             y_unit="cycles",
@@ -57,6 +57,74 @@ def unrollVsUnrollTable(dfs, dispNo, dispTitle):
             (
                 ranked,#dfs[(dispNo, 1)],
                 CustomMarker(
+                    y="Kernel Time",
+                    label= lambda y: f'    {y["JSON Name"]}', 
+                    # label= lambda y: f'{y["JSON Name"]} ({y["Microkernel Row Dim"]}, UaJ = {y["UnrollAndJam Factor"]}, {y["UnrollAndJam Outer Loops"]} outer loops)',                   
+                    marker=lambda x: f'${x["rank"]}$',#f'$({x["UnrollAndJam Factor"]},{int(x["UnrollAndJam Outer Loops"])})$',
+                    size=lambda y=0: (mpl.rcParams["lines.markersize"] ** 2)*2,
+                    stroke=lambda x: 'Black',#"Purple",
+                    fill=lambda x: 'Black'#"Purple",
+                ),
+            ),
+            (
+                ranked,#dfs[(dispNo, 1)],
+                CustomMarker(
+                    y="Kernel Time Estimate",
+                    label= lambda y: f'    {y["JSON Name"]}', 
+                    # label= lambda y: f'{y["JSON Name"]} ({y["Microkernel Row Dim"]}, UaJ = {y["UnrollAndJam Factor"]}, {y["UnrollAndJam Outer Loops"]} outer loops)',                   
+                    marker=lambda x: f'${x["rank"]}$',#f'$({x["UnrollAndJam Factor"]},{int(x["UnrollAndJam Outer Loops"])})$',
+                    size=lambda y=0: (mpl.rcParams["lines.markersize"] ** 2)*2,
+                    stroke=lambda x: "Purple",
+                    fill=lambda x: "Purple",
+                ),
+            )
+        ],
+        legend = False,
+        table = True,
+        table_pos="right",
+        table_bb=(1.01,0,1,1), #self.scale(rw / w, rh / h)
+        table_col_widths = tableColWidths,
+        table_col_labels=colLabels,
+        table_row_labels=[],
+        table_data=tableData
+    )
+    return b
+
+# Regular Loads,
+# Total Streaming Loads,
+# Other Streaming Loads,
+# Start Reuse Streaming Loads,
+# Reused Streaming Loads,
+def lookAtLoads(dfs, dispNo, dispTitle):
+    ranked = rankBy(dfs, (dispNo, 1), "Kernel Time", True)
+    ranked["rankAsStr"] = ranked.apply(lambda y: f'{y["rank"]}', axis=1)
+    ranked["Config Overhead"] = ranked.apply(lambda y: y["UnrollAndJam Outer Loops"] * y["Microkernel Count"], axis=1)
+    tableData = ranked[["rankAsStr","Microkernel Row Dim","UnrollAndJam Factor","UnrollAndJam Outer Loops","Microkernel Count","Regular Loads","Reused Streaming Loads","Start Reuse Streaming Loads","Row Dim","Reduction Dim"]]
+    colLabels = ["rank","n'","U&J","CC OLs","Micro Runs","RLs","Reused SLs","Start Reuse SLs","n","k"]
+    defW = (1/(len(colLabels)*3)) # default width
+    #print(defW)
+    tableColWidths = [defW*0.6,defW*0.5,defW*0.4,defW,defW*1.25,defW,defW*1.5,defW*1.6,defW*0.5,defW*0.5]#[defW]*len(colLabels)
+    # [1/(len(g.table_col_labels))*0.25]*len(g.table_col_labels)
+    #[1/(len(g.table_col_labels))*0.25]*len(g.table_col_labels)
+    b = Graph2D(
+        imagePath=f'dispatch-{dispNo}-case-{1}',
+        keys=Keys2D(
+            # x="Space Needed in L1",
+            # x_label="L1 Usage",
+            # x_unit="bytes",
+            x="Microkernel Count",
+            x_label="Microkernel Runs",
+            x_unit="",
+            y="Kernel Time",
+            y_label="Kernel Time",
+            y_unit="cycles",
+        ),
+        title=dispTitle,
+        scatterSets=[
+            (
+                ranked,#dfs[(dispNo, 1)],
+                CustomMarker(
+                    y="Kernel Time",
                     label= lambda y: f'    {y["JSON Name"]}', 
                     # label= lambda y: f'{y["JSON Name"]} ({y["Microkernel Row Dim"]}, UaJ = {y["UnrollAndJam Factor"]}, {y["UnrollAndJam Outer Loops"]} outer loops)',                   
                     marker=lambda x: f'${x["rank"]}$',#f'$({x["UnrollAndJam Factor"]},{int(x["UnrollAndJam Outer Loops"])})$',
@@ -88,25 +156,27 @@ def main():
     dfs = shortcutToData("../estimated_cycles_out_2")
 
     for dispNo, dispTitle in zip([1, 8, 7], titles):     
-        unrolled = unrollVsUnrollTable(dfs, dispNo, dispTitle)
+        # unrolled = unrollVsUnrollTable(dfs, dispNo, dispTitle)
+        unrolled = lookAtLoads(dfs, dispNo, dispTitle)
         graphs.append(unrolled)
     #graphEmAll((3, 2), graphs)
     # print(type(plt.Figure.get_dpi()))
-    graphEmAll((1, 1), [graphs[0]])
-    # graphEmAllImages((1, 1), ["frog.png"],"context.png")
+     # graphEmAllImages((1, 1), ["frog.png"],"context.png")
     #graphWContext((1, 1), [graphs[0]],"context.png")
     #graphWContext((2,1), [top[1],top[8]],"context.png")
    #1187 × 265
-    top = Image.open('context.png') # hard coded
-    bot = Image.open(f'{graphs[0].imagePath}.png')    
-    resized = top.copy()
-    resized.thumbnail(bot.size, Image.Resampling.LANCZOS)
-    resized.save("resized.png")
-    top = Image.open('resized.png')
-    canvas = Image.new('RGBA', (bot.size[0], bot.size[1]+top.size[1]), (0, 0, 0, 0))
-    canvas.paste(resized, (0, 0), resized)
-    canvas.paste(bot, (0, top.size[1]), bot)
-    canvas.save('Image.png')
+    for g in graphs:
+        graphEmAll((1, 1), [g])
+        top = Image.open('context2.png') # hard coded
+        bot = Image.open(f'{g.imagePath}.png')    
+        resized = top.copy()
+        resized.thumbnail(bot.size, Image.Resampling.LANCZOS)
+        resized.save("resized.png")
+        top = Image.open('resized.png')
+        canvas = Image.new('RGBA', (bot.size[0], bot.size[1]+top.size[1]), (0, 0, 0, 0))
+        canvas.paste(resized, (0, 0), resized)
+        canvas.paste(bot, (0, top.size[1]), bot)
+        canvas.save('Image.png')
   
 
 

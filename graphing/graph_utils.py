@@ -42,7 +42,7 @@ class Keys2D:
 @dataclass
 class CustomMarker:
     """Class for storing functions from row data to marker style"""
-
+    y : str = '',
     marker: Callable[[T], mpl.markers.MarkerStyle] = lambda x="o": "o"
     label: Callable[[T], str] = lambda y="no label": "_no label"
     size: Callable[[T], int] = lambda y=0: mpl.rcParams["lines.markersize"] ** 2
@@ -87,7 +87,7 @@ def generalGraph(ax, g: Graph2D):
         for index, row in data.iterrows():
             ax.scatter(
                 row[g.keys.x],
-                row[g.keys.y],
+                row[cm.y],
                 c=cm.fill(row),
                 edgecolors=cm.stroke(row),
                 s=cm.size(row),
@@ -139,6 +139,9 @@ def graphEmAll(shape: tuple, graphs):
     if shape[0] * shape[1] != len(graphs):
         raise Exception("area of shape and graph count must be equal!")
     fig = plt.figure()
+    #fig.set_size_inches(4, 2)
+    #fig.set_size_inches(1098/72.0,476/72.0) # 15.25 x 6.61
+    fig.set_size_inches(8,6.5)
     for i in range(0, len(graphs)):
         ax = fig.add_subplot(shape[0], shape[1], i + 1)
         # moreGeneralGraph(ax, graphs[i])
@@ -147,6 +150,7 @@ def graphEmAll(shape: tuple, graphs):
     #fig = plt.gcf()  # Get the current figure
     #Figure.dpi
     #1187 × 265
+    # 1068x476 became 2477 x 615
     #fig.set_dpi(72)
     # fig.set_size_inches(1187/72.0,265/72.0)
     # print(type(plt.Figure.dpi))
