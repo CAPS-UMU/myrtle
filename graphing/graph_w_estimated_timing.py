@@ -5,7 +5,7 @@ import pandas as pd
 from graph_utils import graphEmAll, getBestXFrom, shortcutToData, rankBy, Graph2D, Keys2D, CustomMarker, generalGraph
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from itertools import product
+from itertools import product, islice
 from PIL import Image
 
 # def graphEmAllImages(shape: tuple, graphs, context):
@@ -90,6 +90,36 @@ def unrollVsUnrollTable(dfs, dispNo, dispTitle):
     )
     return b
 
+#  df_sorted = dfs[id].sort_values(by=by, ascending=lowIsGood)
+#     df_sorted["rank"] = range(1, int(df_sorted.shape[0] + 1))
+# for index, row in data.iterrows():
+#print(list(islice(it, 3)))
+
+def printFiltering(df,by,num,lowIsGood):
+    df = df.sort_values(by, ascending=lowIsGood)
+    print("\t",end='')
+    print(f'by {by}:',)
+    for row in islice(df.iterrows(),num):
+        print("\t\t",end='')
+        print(f'{row[1]["Row Dim"]}x{row[1]["Reduction Dim"]}',end='')
+        print("\t",end='')
+        print(f'{row[1][by]}',end='')
+        print("\t",end='')
+        print(f'({row[1]["rankAsStr"]})')
+    return df.head(num)
+
+def naiveFiltering(df, dispatchNo, caseNo):
+    tableData = df[["rankAsStr","Kernel Time","Microkernel Row Dim","UnrollAndJam Factor","UnrollAndJam Outer Loops","Microkernel Count","Regular Loads","Reused Streaming Loads","Space Needed in L1","Row Dim","Reduction Dim"]]
+    print(f'Naive Filtering of Dispatch {dispatchNo} case {caseNo}:')
+    #tableData.sort_values("UnrollAndJam Factor", ascending=True)
+    #unroll = printFiltering(tableData,"UnrollAndJam Factor",5,True)
+    #byTime = printFiltering(tableData,"Kernel Time",5,True)
+    # = printFiltering(tableData,"Space Needed in L1",5,False)
+    byRuns = printFiltering(tableData,"Microkernel Count",4,True)
+    byRegularLoads = printFiltering(byRuns,"Regular Loads",3,True)
+    byStreamingLoads = printFiltering(byRegularLoads,"Reused Streaming Loads",2,False)
+  
+
 # Regular Loads,
 # Total Streaming Loads,
 # Other Streaming Loads,
@@ -98,9 +128,10 @@ def unrollVsUnrollTable(dfs, dispNo, dispTitle):
 def lookAtLoads(dfs, dispNo, dispTitle):
     ranked = rankBy(dfs, (dispNo, 1), "Kernel Time", True)
     ranked["rankAsStr"] = ranked.apply(lambda y: f'{y["rank"]}', axis=1)
+    naiveFiltering(ranked,dispNo,1)
     ranked["Config Overhead"] = ranked.apply(lambda y: y["UnrollAndJam Outer Loops"] * y["Microkernel Count"], axis=1)
-    tableData = ranked[["rankAsStr","Microkernel Row Dim","UnrollAndJam Factor","UnrollAndJam Outer Loops","Microkernel Count","Regular Loads","Reused Streaming Loads","Start Reuse Streaming Loads","Row Dim","Reduction Dim"]]
-    colLabels = ["rank","n'","U&J","CC OLs","Micro Runs","RLs","Reused SLs","Start Reuse SLs","n","k"]
+    tableData = ranked[["rankAsStr","Microkernel Row Dim","UnrollAndJam Factor","UnrollAndJam Outer Loops","Microkernel Count","Regular Loads","Reused Streaming Loads","Space Needed in L1","Row Dim","Reduction Dim"]]
+    colLabels = ["rank","n'","U&J","CC OLs","Micro Runs","RLs","Reused SLs","L1 Usage","n","k"]
     defW = (1/(len(colLabels)*3)) # default width
     #print(defW)
     tableColWidths = [defW*0.6,defW*0.5,defW*0.4,defW,defW*1.25,defW,defW*1.5,defW*1.6,defW*0.5,defW*0.5]#[defW]*len(colLabels)
@@ -109,12 +140,15 @@ def lookAtLoads(dfs, dispNo, dispTitle):
     b = Graph2D(
         imagePath=f'dispatch-{dispNo}-case-{1}',
         keys=Keys2D(
+            x="rank",
+            x_label="Rank",
+            x_unit="fastest to slowest",
             # x="Space Needed in L1",
             # x_label="L1 Usage",
             # x_unit="bytes",
-            x="Microkernel Count",
-            x_label="Microkernel Runs",
-            x_unit="",
+            # x="Microkernel Count",
+            # x_label="Microkernel Runs",
+            # x_unit="",
             y="Kernel Time",
             y_label="Kernel Time",
             y_unit="cycles",
@@ -177,6 +211,18 @@ def main():
         canvas.paste(resized, (0, 0), resized)
         canvas.paste(bot, (0, top.size[1]), bot)
         canvas.save('Image.png')
+    # put all the graphs in one image
+    top = Image.open('resized.png')
+    g0 = Image.open(f'{graphs[0].imagePath}.png')  
+    g1 = Image.open(f'{graphs[1].imagePath}.png')  
+    g2 = Image.open(f'{graphs[2].imagePath}.png')  
+    canvas = Image.new('RGBA', (g0.size[0], top.size[1]+g0.size[1]+g1.size[1]+g2.size[1]), (0, 0, 0, 0))
+    canvas.paste(top, (0, 0), top)
+    canvas.paste(g0, (0, top.size[1]), g0)
+    canvas.paste(g1, (0, top.size[1]+g0.size[1]), g1)
+    canvas.paste(g2, (0, top.size[1]+g0.size[1]+g1.size[1]), g2)
+    canvas.save('3-dispatches.png')
+
   
 
 
