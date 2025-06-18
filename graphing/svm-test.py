@@ -55,23 +55,23 @@ def shapeTest(dfs, dispNo, dispTitle):
     target_name = "shape"
     train = ranked[feature_names]
   
-    print(train.shape)
+    #print(train.shape)
     X = np.array(train)
     y = np.array(ranked[target_name])
-    print(f'size of x is {X.size} and shape is {X.shape} and type is {type(X)}')
-    print(f'size of y is {y.size} and shape is {y.shape} and type is {type(y)}')
+    # print(f'size of x is {X.size} and shape is {X.shape} and type is {type(X)}')
+    # print(f'size of y is {y.size} and shape is {y.shape} and type is {type(y)}')
    
     # Build the model
     svm = SVC(kernel="linear", gamma=0.5, C=1.0)
     # Train the model
     svm.fit(X, y)
 
-    for (row,answer) in zip(X,ranked[target_name]):
-        print(f'{row} {answer}')
-        if svm.predict([row]) != answer:
-           print(f'prediction for {row[0]}x{row[1]} is {svm.predict([row])} but it is actually {answer}')
-        else:
-            print(f'prediction for {row[0]}x{row[1]} is correct: {svm.predict([row])}')
+    # for (row,answer) in zip(X,ranked[target_name]):
+    #     print(f'{row} {answer}')
+    #     if svm.predict([row]) != answer:
+    #        print(f'prediction for {row[0]}x{row[1]} is {svm.predict([row])} but it is actually {answer}')
+    #     else:
+    #         print(f'prediction for {row[0]}x{row[1]} is correct: {svm.predict([row])}')
 
     # Plot Decision Boundary
     DecisionBoundaryDisplay.from_estimator(
@@ -157,22 +157,19 @@ def learnCostTest(dfs, dispNo, dispTitle):
     svm = SVR(kernel="linear", gamma=0.5, C=1.0) # maybe try poly or rbf?
     # Train the model
     svm.fit(X, y)
+    print(svm._decision_function)
 
     ranked["Predicted Kernel Time"] = ranked.apply(lambda y: svm.predict([y[["Microkernel Count","Regular Loads","Reused Streaming Loads","Space Needed in L1","Row Dim","Reduction Dim"]]])[0], axis=1)
     ranked = ranked.sort_values("Predicted Kernel Time", ascending=True)
     #print(ranked[["Kernel Time", "Predicted Kernel Time","rank"]])
 
-    for (row,answer) in zip(X,ranked[target_name]):
-        #print(f'{row} {answer}')
-        if svm.predict([row]) != answer:
-           print(f'prediction for {row[0]}x{row[1]} is {svm.predict([row])} but it is actually {answer}')
-        else:
-            print(f'prediction for {row[0]}x{row[1]} is correct: {svm.predict([row])}')
-    tableData = ranked[["rankAsStr","Microkernel Row Dim","UnrollAndJam Factor","UnrollAndJam Outer Loops","Microkernel Count","Row Dim","Reduction Dim"]]
-    colLabels = ["rank","n'","U&J Factor","CC Outer Loops","Micro Runs","n","k"]
-    defW = (1/(len(colLabels)*3)) # default width
-    print(defW)
-    tableColWidths = [defW,defW,defW*1.5,defW*1.5,defW*1.25,defW,defW]#[defW]*len(colLabels)
+    # for (row,answer) in zip(X,ranked[target_name]):
+    #     #print(f'{row} {answer}')
+    #     if svm.predict([row]) != answer:
+    #        print(f'prediction for {row[0]}x{row[1]} is {svm.predict([row])} but it is actually {answer}')
+    #     else:
+    #         print(f'prediction for {row[0]}x{row[1]} is correct: {svm.predict([row])}')
+
     # [1/(len(g.table_col_labels))*0.25]*len(g.table_col_labels)
     #[1/(len(g.table_col_labels))*0.25]*len(g.table_col_labels)
     b = createTableGraph(ranked,dispNo,dispTitle)
@@ -184,8 +181,8 @@ def learnCostTest(dfs, dispNo, dispTitle):
     dispatch_1 = rankBy(dfs, (1, 1), "Kernel Time", True)
     dispatch_1["rankAsStr"] = dispatch_1.apply(lambda y: f'{y["rank"]}', axis=1)
     dispatch_1["Predicted Kernel Time"] = dispatch_1.apply(lambda y: svm.predict([y[["Microkernel Count","Regular Loads","Reused Streaming Loads","Space Needed in L1","Row Dim","Reduction Dim"]]])[0], axis=1)
-    print("dispatch 1 ")
-    print(dispatch_1[["Kernel Time", "Predicted Kernel Time","rank"]])
+    #print("dispatch 1 ")
+    #print(dispatch_1[["Kernel Time", "Predicted Kernel Time","rank"]])
     d = createTableGraph(dispatch_1,1,"Dispatch 1\nmatvec: <1x400>, <1200x400> -> <1x1200>")
     gs = []
     gs.append(b)
@@ -205,7 +202,7 @@ def main():
 
     #shapeTest(dfs, 8, titles[1])
     gs = learnCostTest(dfs, 8, titles[1])
-    print(gs)
+    #print(gs)
     for g in gs:
         graphEmAll((1, 1), [g])
    
