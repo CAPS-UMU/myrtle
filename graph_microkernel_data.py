@@ -256,10 +256,9 @@ def main():
     for line in lines:
         line.data = df[["CC Reduction Dim"]]
     reductionVsTime.curves = lines
-    graphEmAll((1, 2), [rowVsTime,   
-                        reductionVsTime])
+    graphEmAll((1, 2), [rowVsTime,reductionVsTime])
     
-    graphEmAll((1, 2), unrollAndJamGraphs(df))
+    #graphEmAll((1, 2), unrollAndJamGraphs(df))
  
    
 

@@ -87,7 +87,7 @@ def generalGraph(ax, g: Graph2D):
         for index, row in data.iterrows():
             ax.scatter(
                 row[g.keys.x],
-                row[cm.y],
+                row[cm.y],#row[g.keys.y],#row[cm.y],
                 c=cm.fill(row),
                 edgecolors=cm.stroke(row),
                 s=cm.size(row),

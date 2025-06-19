@@ -9,7 +9,8 @@ dependencies = [
     "pandas>=2.2.3",
     "xdsl[docs]==0.31.0",
     "PyQt6",
-    "marimo==0.13.11"
+    "marimo==0.13.11",
+    "scikit-learn==1.7.0"
 ]
 
 [dependency-groups]

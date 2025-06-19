@@ -39,7 +39,7 @@ def unrollVsUnrollTable(dfs, dispNo, dispTitle):
     colLabels = ["rank","n'","U&J Factor","CC Outer Loops","Micro Runs","n","k"]
     defW = (1/(len(colLabels)*3)) # default width
     print(defW)
-    tableColWidths = [defW,defW,defW*1.5,defW*1.5,defW*1.25,defW,defW]#[defW]*len(colLabels)
+    tableColWidths = [defW,defW,defW*1.5,defW*1.5,defW*1.25,defW*0.5,defW*0.5]#[defW]*len(colLabels)
     # [1/(len(g.table_col_labels))*0.25]*len(g.table_col_labels)
     #[1/(len(g.table_col_labels))*0.25]*len(g.table_col_labels)
     b = Graph2D(
@@ -187,11 +187,13 @@ def main():
     ]
     graphs = []
     # dfs = shortcutToData("../estimated_cycles_out")
-    dfs = shortcutToData("../estimated_cycles_out_2")
+    # dfs = shortcutToData("../estimated_cycles_out_2")
+    dfs = shortcutToData("../estimated_cycles_overhead")
+    #dfs = shortcutToData("../estimated_cycles_no_overhead")
 
     for dispNo, dispTitle in zip([1, 8, 7], titles):     
-        # unrolled = unrollVsUnrollTable(dfs, dispNo, dispTitle)
-        unrolled = lookAtLoads(dfs, dispNo, dispTitle)
+        unrolled = unrollVsUnrollTable(dfs, dispNo, dispTitle)
+        #unrolled = lookAtLoads(dfs, dispNo, dispTitle)
         graphs.append(unrolled)
     #graphEmAll((3, 2), graphs)
     # print(type(plt.Figure.get_dpi()))
@@ -216,7 +218,7 @@ def main():
     g0 = Image.open(f'{graphs[0].imagePath}.png')  
     g1 = Image.open(f'{graphs[1].imagePath}.png')  
     g2 = Image.open(f'{graphs[2].imagePath}.png')  
-    canvas = Image.new('RGBA', (g0.size[0], top.size[1]+g0.size[1]+g1.size[1]+g2.size[1]), (0, 0, 0, 0))
+    canvas = Image.new('RGBA', (g2.size[0], top.size[1]+g0.size[1]+g1.size[1]+g2.size[1]), (0, 0, 0, 0))
     canvas.paste(top, (0, 0), top)
     canvas.paste(g0, (0, top.size[1]), g0)
     canvas.paste(g1, (0, top.size[1]+g0.size[1]), g1)

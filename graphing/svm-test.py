@@ -5,6 +5,7 @@ from sklearn.inspection import DecisionBoundaryDisplay
 from sklearn.svm import SVC, SVR
 from graph_utils import shortcutToData, rankBy, Graph2D, Keys2D, CustomMarker, graphEmAll
 import pandas as pd
+from PIL import Image
 
 def ex():
     cancer = load_breast_cancer()
@@ -203,9 +204,31 @@ def main():
     #shapeTest(dfs, 8, titles[1])
     gs = learnCostTest(dfs, 8, titles[1])
     #print(gs)
+    # for g in gs:
+    #     graphEmAll((1, 1), [g])
     for g in gs:
-        graphEmAll((1, 1), [g])
-   
+            graphEmAll((1, 1), [g])
+            top = Image.open('context2.png') # hard coded
+            bot = Image.open(f'{g.imagePath}.png')    
+            resized = top.copy()
+            resized.thumbnail(bot.size, Image.Resampling.LANCZOS)
+            resized.save("resized.png")
+            top = Image.open('resized.png')
+            canvas = Image.new('RGBA', (bot.size[0], bot.size[1]+top.size[1]), (0, 0, 0, 0))
+            canvas.paste(resized, (0, 0), resized)
+            canvas.paste(bot, (0, top.size[1]), bot)
+            canvas.save('Image.png')
+    # put all the graphs in one image
+    top = Image.open('resized.png')
+    g0 = Image.open(f'{gs[0].imagePath}.png')  
+    g1 = Image.open(f'{gs[1].imagePath}.png')  
+    g2 = Image.open(f'{gs[2].imagePath}.png')  
+    canvas = Image.new('RGBA', (g2.size[0], top.size[1]+g0.size[1]+g1.size[1]+g2.size[1]), (0, 0, 0, 0))
+    canvas.paste(top, (0, 0), top)
+    canvas.paste(g0, (0, top.size[1]), g0)
+    canvas.paste(g1, (0, top.size[1]+g0.size[1]), g1)
+    canvas.paste(g2, (0, top.size[1]+g0.size[1]+g1.size[1]), g2)
+    canvas.save('3-dispatches-svm.png')
     
 
 if __name__ == "__main__":
