@@ -34,7 +34,7 @@ class Myrtle:
           # so select function that estimates execution of microkernel
           # with row dimension 10 / 2 = 5, and multiply that by outer loops
           # TODO: ALSO, ADD A CONSTANT TO ACCOUNT FOR OVERHEAD OF SETTING UP STREAMING REGISTERS
-       return self.timeEstimateFuncs[row_dim/outerLoopIters](col_dim)*microCount + outerLoopIters*100
+       return self.timeEstimateFuncs[row_dim/outerLoopIters](col_dim)*microCount #+ outerLoopIters*100
 
 
 

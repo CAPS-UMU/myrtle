@@ -181,17 +181,17 @@ def lookAtLoads(dfs, dispNo, dispTitle):
 
 def main():
     titles = [
-        "Dispatch 1\nmatvec: <1x400>, <1200x400> -> <1x1200>",
         "Dispatch 8\nmatvec: <1x600>, <600x600> -> <1x600>",
         "Dispatch 7\nmatvec: <1x400>, <600x400> -> <1x600>",
+        "Dispatch 1\nmatvec: <1x400>, <1200x400> -> <1x1200>",
     ]
     graphs = []
     # dfs = shortcutToData("../estimated_cycles_out")
     # dfs = shortcutToData("../estimated_cycles_out_2")
-    dfs = shortcutToData("../estimated_cycles_overhead")
+    dfs = shortcutToData("../estimated_cycles_no_overhead")
     #dfs = shortcutToData("../estimated_cycles_no_overhead")
 
-    for dispNo, dispTitle in zip([1, 8, 7], titles):     
+    for dispNo, dispTitle in zip([8, 7, 1], titles):     
         unrolled = unrollVsUnrollTable(dfs, dispNo, dispTitle)
         #unrolled = lookAtLoads(dfs, dispNo, dispTitle)
         graphs.append(unrolled)
@@ -218,12 +218,13 @@ def main():
     g0 = Image.open(f'{graphs[0].imagePath}.png')  
     g1 = Image.open(f'{graphs[1].imagePath}.png')  
     g2 = Image.open(f'{graphs[2].imagePath}.png')  
-    canvas = Image.new('RGBA', (g2.size[0], top.size[1]+g0.size[1]+g1.size[1]+g2.size[1]), (0, 0, 0, 0))
+    canvas = Image.new('RGBA', (g1.size[0], top.size[1]+g0.size[1]+g1.size[1]+g2.size[1]), (0, 0, 0, 0))
+    #canvas = Image.new('RGBA', (g0.size[0], top.size[1]+g0.size[1]+g1.size[1]+g2.size[1]), (0, 0, 0, 0))
     canvas.paste(top, (0, 0), top)
     canvas.paste(g0, (0, top.size[1]), g0)
     canvas.paste(g1, (0, top.size[1]+g0.size[1]), g1)
     canvas.paste(g2, (0, top.size[1]+g0.size[1]+g1.size[1]), g2)
-    canvas.save('3-dispatches.png')
+    canvas.save('3-dispatches-no-overhead.png')
 
   
 

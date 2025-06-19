@@ -12,6 +12,7 @@ from typing import Callable
 from typing import TypeVar, Generic
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
+import re
 
 T = TypeVar("T")
 
@@ -160,11 +161,35 @@ def graphEmAll(shape: tuple, graphs):
 
 
     # label: Callable[[T], str] = lambda y="no label": "_no label"
+def deriveMoreData(dfs, dispatchNos, caseNos):
+    def extractMNKFromName(name):
+        mnk=re.split('x',re.split('_',name)[-2])
+        return {"M":int(mnk[0]),"N":int(mnk[1]),"K":(mnk[2])}
+    for d in dispatchNos:
+        for c in caseNos:
+            ranked = rankBy(dfs, (d, c), "Kernel Time", True)
+            name = ranked[["Kernel Name"]].iloc(1)["Kernel Name"]
+            print(f'name is {name}')
+            mnk=extractMNKFromName(name)
+            flops = 2*mnk["m"]*mnk["n"]*mnk["k"]
+            ranked["rankAsStr"] = ranked.apply(lambda y: f'{y["rank"]}', axis=1)
+            ranked["Hardware Loop Time Estimate"] = ranked.apply(lambda y: y["Kernel Time Estimate"]/y["Microkernel Count"], axis=1)
+            ranked["Config Overhead"] = ranked.apply(lambda y: y["UnrollAndJam Outer Loops"] * y["Microkernel Count"], axis=1)
+            ranked["FLOP per Cycle"] = ranked.apply(lambda y: flops/y['Kernel Time'])
+            dfs[(d, c)] = ranked
+    return dfs
 
+def loadDFsDispatchCaseNo(dir, dispatchNos, caseNos):
+    path = lambda x, y: f"{dir}/dispatch_{x}_case{y}_everything.csv"
+    dfs = {}
+    for d in dispatchNos:
+        for c in caseNos:
+            dfs[(d, c)] = pd.read_csv(path(d, c))
+    return dfs
 
 def shortcutToData(dir="./toGraph"):
     path = lambda x, y: f"{dir}/dispatch_{x}_case{y}_everything.csv"
-    dispatches = [1, 7, 8]
+    dispatches = [8,7,1]
     cases = [1, 2]
     dfs = {}
     for d in dispatches:
