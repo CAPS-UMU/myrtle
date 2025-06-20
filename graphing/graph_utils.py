@@ -162,20 +162,23 @@ def graphEmAll(shape: tuple, graphs):
 
     # label: Callable[[T], str] = lambda y="no label": "_no label"
 def deriveMoreData(dfs, dispatchNos, caseNos):
+    print("Adding the following derived data points:")
+    print("\tFlops, rankAsStr, Hardware Loop Time Estimate, Config Overhead, Flop Per Cycle")
     def extractMNKFromName(name):
         mnk=re.split('x',re.split('_',name)[-2])
-        return {"M":int(mnk[0]),"N":int(mnk[1]),"K":(mnk[2])}
+        return {"M":float(mnk[0]),"N":float(mnk[1]),"K":float(mnk[2])}
     for d in dispatchNos:
         for c in caseNos:
             ranked = rankBy(dfs, (d, c), "Kernel Time", True)
-            name = ranked[["Kernel Name"]].iloc(1)["Kernel Name"]
-            print(f'name is {name}')
-            mnk=extractMNKFromName(name)
-            flops = 2*mnk["m"]*mnk["n"]*mnk["k"]
+            # get the kernel name of the first row, and extract M, N, K dims
+            # WE ASSUME ALL ROWS CONTAIN THE SAME KERNEL NAME
+            mnk=extractMNKFromName(ranked.iloc(0)[0]["Kernel Name"])
+            flops = 2*mnk["M"]*mnk["N"]*mnk["K"]
+            ranked["Flops"] = flops
             ranked["rankAsStr"] = ranked.apply(lambda y: f'{y["rank"]}', axis=1)
             ranked["Hardware Loop Time Estimate"] = ranked.apply(lambda y: y["Kernel Time Estimate"]/y["Microkernel Count"], axis=1)
             ranked["Config Overhead"] = ranked.apply(lambda y: y["UnrollAndJam Outer Loops"] * y["Microkernel Count"], axis=1)
-            ranked["FLOP per Cycle"] = ranked.apply(lambda y: flops/y['Kernel Time'])
+            ranked["FLOP Per Cycle"] = ranked.apply(lambda y: y["Flops"] / y["Kernel Time"], axis=1)
             dfs[(d, c)] = ranked
     return dfs
 
