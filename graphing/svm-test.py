@@ -196,8 +196,8 @@ def learnOverheadTest(dfs, dispNo, dispTitle):
     ranked = rankBy(dfs, (dispNo, 1), "Kernel Time", True)
     ranked["rankAsStr"] = ranked.apply(lambda y: f'{y["rank"]}', axis=1)
     ranked["Hardware Loop Time Estimate"] = ranked.apply(lambda y: y["Kernel Time Estimate"]/y["Microkernel Count"], axis=1)
-    feature_names = ["Hardware Loop Time Estimate","UnrollAndJam Outer Loops","Microkernel Count"]
-    #feature_names = ["Kernel Time Estimate","UnrollAndJam Outer Loops"]
+    #feature_names = ["Hardware Loop Time Estimate","UnrollAndJam Outer Loops","Microkernel Count"]
+    feature_names = ["Kernel Time Estimate","UnrollAndJam Outer Loops"]
     target_name = "Kernel Time"
     train = ranked[feature_names]
   

@@ -13,9 +13,18 @@ from typing import TypeVar, Generic
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 import re
+from sklearn.svm import SVR
+import sklearn
 
 T = TypeVar("T")
 
+#svm, predName
+
+@dataclass  # p(x), label='Linear Fit', color='red')
+class MySVM:
+    svm : sklearn.svm._classes.SVR = field(default_factory=SVR(kernel="linear", gamma=0.5, C=1.0))
+    predName: str = "no prediction"
+    featureNames : list[str] = field(default_factory=list)
 
 @dataclass  # p(x), label='Linear Fit', color='red')
 class Curve:
@@ -173,14 +182,56 @@ def deriveMoreData(dfs, dispatchNos, caseNos):
             # get the kernel name of the first row, and extract M, N, K dims
             # WE ASSUME ALL ROWS CONTAIN THE SAME KERNEL NAME
             mnk=extractMNKFromName(ranked.iloc(0)[0]["Kernel Name"])
-            flops = 2*mnk["M"]*mnk["N"]*mnk["K"]
+            flops = 2*mnk["M"]*mnk["N"]*mnk["K"]#+(mnk["M"]*mnk["N"])
             ranked["Flops"] = flops
             ranked["rankAsStr"] = ranked.apply(lambda y: f'{y["rank"]}', axis=1)
             ranked["Hardware Loop Time Estimate"] = ranked.apply(lambda y: y["Kernel Time Estimate"]/y["Microkernel Count"], axis=1)
-            ranked["Config Overhead"] = ranked.apply(lambda y: y["UnrollAndJam Outer Loops"] * y["Microkernel Count"], axis=1)
+            ranked["SSR Setup Count"] = ranked.apply(lambda y: y["UnrollAndJam Outer Loops"] * y["Microkernel Count"], axis=1)
+            # ranked ["SSR Setup Constant"] = 50
+            # ranked["Kernel Time Estimate W Overhead"] = 
             ranked["FLOP Per Cycle"] = ranked.apply(lambda y: y["Flops"] / y["Kernel Time"], axis=1)
             dfs[(d, c)] = ranked
     return dfs
+
+def trimToTopX(dfs, dispatchNos, caseNos,rankName,x):
+    print("Trimming data for each dispatch to best {x} in {rankName}")
+    for d in dispatchNos:
+        for c in caseNos:
+            dfs[(d, c)]=  dfs[(d, c)].loc[dfs[(d, c)]['rank'] <= x]
+            #dfs[(d, c)] = ranked
+    return dfs
+
+def addSVMPrediction(dfs, dispatchNos, caseNos,svm):
+    print(f'Adding data points using an SVM: {svm.predName}')
+    print("\t",end='')
+    print(svm.svm)
+    print("\twith coefficients\n\t",end='')
+    print(svm.svm.coef_)
+    print("\tand features\n\t",end='')
+    print(svm.featureNames)
+
+    for dispatchNo in dispatchNos:
+        for caseNo in caseNos:
+            dfs[(dispatchNo,caseNo)][svm.predName] = dfs[(dispatchNo,caseNo)].apply(lambda y: svm.svm.predict([y[svm.featureNames]])[0], axis=1)
+
+    #ranked["Predicted Kernel Time"] = ranked.apply(lambda y: svm.predict([y[feature_names]])[0], axis=1)
+    # def extractMNKFromName(name):
+    #     mnk=re.split('x',re.split('_',name)[-2])
+    #     return {"M":float(mnk[0]),"N":float(mnk[1]),"K":float(mnk[2])}
+    # for d in dispatchNos:
+    #     for c in caseNos:
+    #         ranked = rankBy(dfs, (d, c), "Kernel Time", True)
+    #         # get the kernel name of the first row, and extract M, N, K dims
+    #         # WE ASSUME ALL ROWS CONTAIN THE SAME KERNEL NAME
+    #         mnk=extractMNKFromName(ranked.iloc(0)[0]["Kernel Name"])
+    #         flops = 2*mnk["M"]*mnk["N"]*mnk["K"]#+(mnk["M"]*mnk["N"])
+    #         ranked["Flops"] = flops
+    #         ranked["rankAsStr"] = ranked.apply(lambda y: f'{y["rank"]}', axis=1)
+    #         ranked["Hardware Loop Time Estimate"] = ranked.apply(lambda y: y["Kernel Time Estimate"]/y["Microkernel Count"], axis=1)
+    #         ranked["Config Overhead"] = ranked.apply(lambda y: y["UnrollAndJam Outer Loops"] * y["Microkernel Count"], axis=1)
+    #         ranked["FLOP Per Cycle"] = ranked.apply(lambda y: y["Flops"] / y["Kernel Time"], axis=1)
+    #         dfs[(d, c)] = ranked
+    # return dfs
 
 def loadDFsDispatchCaseNo(dir, dispatchNos, caseNos):
     path = lambda x, y: f"{dir}/dispatch_{x}_case{y}_everything.csv"
