@@ -16,3 +16,10 @@ where
   - `"svrcyc"` - SVR (support vector machine) cycle count predicted tile selection
 
 - `<output-tiles.json>` full path to where myrtle should store its output
+
+### Example runs
+
+```
+python3 myrtle.py "main\$async_dispatch_7_matmul_transpose_b_1x600x400_f64" svrcyc test_output.json
+```
+

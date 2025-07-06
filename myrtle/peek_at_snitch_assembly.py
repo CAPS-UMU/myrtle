@@ -57,7 +57,7 @@ from xdsl.dialects.riscv_cf import ConditionalBranchOperation
 from xdsl.dialects.riscv_func import FuncOp
 from xdsl.dialects.riscv_snitch import FrepOuter
 from xdsl.passes import ModulePass
-from utils import InputMatrix, HardwareLoop, EnclosingSCFLoop
+from myrtle.utils import InputMatrix, HardwareLoop, EnclosingSCFLoop
 
 
 def createMatmulTransposeB(m=0, outputVectorEltCount=40, inputVectorEltCount=100):

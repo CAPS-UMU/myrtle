@@ -1,5 +1,5 @@
-from utils import roundUpToNearestMultipleOf, InputMatrix, TileSizes
-from peek_at_snitch_assembly import peek_at_lowered_matvec_tiling
+from myrtle.utils import roundUpToNearestMultipleOf, InputMatrix, TileSizes
+from myrtle.peek_at_snitch_assembly import peek_at_lowered_matvec_tiling
 
 
 def getLogicalSizeAfterPadding(mat: InputMatrix, sizes: TileSizes):

@@ -19,7 +19,7 @@ from sklearn.svm import SVC, SVR
 
 def tileSelection(csvFile):
     df = pd.read_csv(csvFile)
-    file = open("/home/emily/Quidditch/myrtle/dispatch-8-svr.pickle", 'rb')
+    file = open("myrtle/dispatch-8-svr.pickle", 'rb')
     svr=pickle.load(file)
     # cut in half based on L1 usage?
     # ranked = rankBy(dfs, (dispNo, 1), "Kernel Time", True)
