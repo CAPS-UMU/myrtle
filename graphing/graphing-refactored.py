@@ -12,7 +12,7 @@ from sklearn.inspection import DecisionBoundaryDisplay
 from sklearn.svm import SVC, SVR
 
 # example run: python graphing-refactored.py "/home/hoppip/myrtle/estimated_cycles_no_overhead"
-# example run: python graphing-refactored.py /home/emily/myrtle/estimated_cycles_overhead
+# example run: python graphing-refactored.py /home/emily/myrtle/estimated_cycles_no_overhead
 def main():
     args = sys.argv[1:]
     if len(args) != 1:

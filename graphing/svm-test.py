@@ -6,6 +6,7 @@ from sklearn.svm import SVC, SVR
 from graph_utils import shortcutToData, rankBy, Graph2D, Keys2D, CustomMarker, graphEmAll
 import pandas as pd
 from PIL import Image
+import pickle
 
 def ex():
     cancer = load_breast_cancer()
@@ -156,9 +157,16 @@ def learnCostTest(dfs, dispNo, dispTitle):
    
     # Build the model
     svm = SVR(kernel="linear", gamma=0.5, C=1.0) # maybe try poly or rbf?
+
     # Train the model
     svm.fit(X, y)
     print(svm._decision_function)
+
+    file = open("dispatch-8-svr.pickle", 'wb')
+    # dump information to that file
+    pickle.dump(svm, file)
+    # close the file
+    file.close()
 
     ranked["Predicted Kernel Time"] = ranked.apply(lambda y: svm.predict([y[["Microkernel Count","Regular Loads","Reused Streaming Loads","Space Needed in L1","Row Dim","Reduction Dim"]]])[0], axis=1)
     ranked = ranked.sort_values("Predicted Kernel Time", ascending=True)
@@ -305,8 +313,8 @@ def main():
 
     dfs = shortcutToData("../estimated_cycles_no_overhead")
 
-    #svm_disp_8_prediction_graphs(titles,dfs)
-    svm_find_overhead_constant(titles,dfs)
+    svm_disp_8_prediction_graphs(titles,dfs)
+    #svm_find_overhead_constant(titles,dfs)
     
 
 if __name__ == "__main__":
