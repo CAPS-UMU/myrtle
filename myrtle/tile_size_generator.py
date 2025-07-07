@@ -69,8 +69,8 @@ class TileSizeGenerator:
         # all possible values for n and k
         little_n_options = self.rowDimOptions()
         little_k_options = self.reductionDimOptions()
-        print(f'n options are {list(little_n_options)}')
-        print(f'k options are {list(little_k_options)}')
+        # print(f'n options are {list(little_n_options)}')
+        # print(f'k options are {list(little_k_options)}')
         # filter for n's and k's that divide evenly into N and K
         little_n_no_pad = list(filter(lambda x: self.dividesIntoN(x), little_n_options))
         if len(little_n_no_pad) <= 1: # prime N dimension, or not divisible by 8
@@ -85,15 +85,15 @@ class TileSizeGenerator:
         # have k dim options for double buffering
         k_options = list(
         filter(lambda x: x <= (self.me.k // 2) + 1, k_options))
-        print(f'now n options are {list(n_options)}')
-        print(f'now k options are {list(k_options)}')
+        # print(f'now n options are {list(n_options)}')
+        # print(f'now k options are {list(k_options)}')
         options_as_pairs = list(product(n_options, k_options))
         annotated_options = list(map(lambda tup: self.annotateOption(tup), options_as_pairs))
         # filter by size
         valid_options = list(
             filter(lambda tup: self.smallEnough(tup[0][0], tup[0][1]), annotated_options)
         )
-        print(valid_options)
+        # print(valid_options)
         return valid_options
         # filter by size
         # sizeInfo = list(map(lambda tup: jen.annotateOption(tup), valid_options))

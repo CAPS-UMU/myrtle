@@ -5,6 +5,7 @@ import re
 import pickle
 import pandas as pd
 from sklearn.svm import SVC, SVR
+import os
 
 
 # def rankBy(dfs, id, by, lowIsGood):
@@ -19,7 +20,8 @@ from sklearn.svm import SVC, SVR
 
 def tileSelection(csvFile):
     df = pd.read_csv(csvFile)
-    file = open("myrtle/dispatch-8-svr.pickle", 'rb')
+    myLoc=os.path.abspath(__file__)[:-(len("myrtle.py"))]   
+    file = open(f'{myLoc}/myrtle/dispatch-8-svr.pickle', 'rb')
     svr=pickle.load(file)
     df["Predicted Kernel Time"] = df.apply(lambda y: svr.predict([y[["Microkernel Count","Regular Loads","Reused Streaming Loads","Space Needed in L1","Row Dim","Reduction Dim"]]])[0], axis=1)
     ranked = df.sort_values("Predicted Kernel Time", ascending=True)
