@@ -27,58 +27,73 @@ class TileSizeGenerator:
         print(f"I am {self.me}")
         self.validOptions()
 
-    def rowDimOptions(self,c="n"):
+    def rowDimOptions(self):
         hardware_loop_body_options = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
         byEight = list(map(lambda x: 8 * x, hardware_loop_body_options))
         max = self.me.n
         min = byEight[0]
-        exhaustive = list(range(min, max, 8))
-        if c == "p":
-            print("rowDimOptions")
-            print(f"\tMinimum: 3*8 = {min} \n\tMaximum: N = {max}\n", end="")
-            print(f"\t{len(byEight)} sensible options: ")
-            print(f"\t{byEight}")
-            print(f"\t{len(exhaustive)} total options: ")
-            print(f"\t{exhaustive}")
-            print("\tReturning Exhaustive.")
+        exhaustive = list(range(min, max+1, 8))
         return exhaustive
 
-    def reductionDimOptions(self,c="n"):
+    def reductionDimOptions(self):
         max = self.me.k
         min = 8
-        sensible = list(range(min, (self.me.k // 2) + 1))
-        exhaustive = list(range(min, self.me.k + 1))
+        exhaustive = list(range(min, max + 1))
         if (self.me.k % 2) != 0:
-            print(f"WARNING: M = {self.me.k} is NOT divisible by 2!")
-        if c == "p":
-            print("reductionDimOptions")
-            print(f"\tMinimum: {min} \n\tMaximum: M = {max}\n", end="")
-            print(f"\t{len(sensible)} sensible options: ")
-            print(f"\t{sensible}")
-            print(f"\t{len(exhaustive)} total options: ")
-            print(f"\t{exhaustive}")
-            print("\tReturning Exhaustive.")
+            print(f"WARNING: K = {self.me.k} is NOT divisible by 2!")
+        return exhaustive
+
+    def paddedNDimOptions(self):
+        hardware_loop_body_options = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+        byEight = list(map(lambda x: 8 * x, hardware_loop_body_options))
+        max = roundUpToNearestMultipleOf(self.me.n, 8) # "pad" to nearest multiple of 8
+        min = byEight[0]
+        exhaustive = list(range(min, max+1, 8))  
+        return exhaustive
+
+    def paddedKDimOptions(self):
+        step = 1
+        if self.me.k < 40:
+            return [self.me.k]
+        else: # we want about 40 tile sizes to pick from
+            step = self.me.k // 40
+        max = self.me.k
+        min = 8
+        exhaustive = list(range(min, max + 1,step))
+        if (self.me.k % 2) != 0:
+            print(f"WARNING: K = {self.me.k} is NOT divisible by 2!")
+      
         return exhaustive
 
     def validOptions(self):
         # all possible values for n and k
         little_n_options = self.rowDimOptions()
         little_k_options = self.reductionDimOptions()
+        print(f'n options are {list(little_n_options)}')
+        print(f'k options are {list(little_k_options)}')
         # filter for n's and k's that divide evenly into N and K
         little_n_no_pad = list(filter(lambda x: self.dividesIntoN(x), little_n_options))
-        if self.me.n not in little_n_no_pad:
-            little_n_no_pad.append(self.me.n)
+        if len(little_n_no_pad) <= 1: # prime N dimension, or not divisible by 8
+            n_options = self.paddedNDimOptions()
+        else:
+            n_options = little_n_no_pad
         little_k_no_pad = list(filter(lambda x: self.dividesIntoK(x), little_k_options))
-        if self.me.k not in little_k_no_pad:
-            little_k_no_pad.append(self.me.k)
-        k_dim_halve_options_for_double_buffering = list(
-        filter(lambda x: x <= (self.me.k // 2) + 1, little_k_no_pad))
-        options_as_pairs = list(product(little_n_no_pad, k_dim_halve_options_for_double_buffering))
+        if len(little_k_no_pad) == 1: # prime K dimension
+            k_options = self.paddedKDimOptions()
+        else:
+            k_options = little_k_no_pad
+        # have k dim options for double buffering
+        k_options = list(
+        filter(lambda x: x <= (self.me.k // 2) + 1, k_options))
+        print(f'now n options are {list(n_options)}')
+        print(f'now k options are {list(k_options)}')
+        options_as_pairs = list(product(n_options, k_options))
         annotated_options = list(map(lambda tup: self.annotateOption(tup), options_as_pairs))
         # filter by size
         valid_options = list(
             filter(lambda tup: self.smallEnough(tup[0][0], tup[0][1]), annotated_options)
         )
+        print(valid_options)
         return valid_options
         # filter by size
         # sizeInfo = list(map(lambda tup: jen.annotateOption(tup), valid_options))
@@ -116,6 +131,11 @@ class TileSizeGenerator:
     def spaceRemaining(self, row_dim, reduction_dim):
         l1MemoryBytes = 100000
         outputMatVec = roundUpToNearestMultipleOf(self.me.n, row_dim) * 8
+        # if we padded the row dimension, 
+        # we allocate an extra (unused) buffer of size n
+        remainder = self.me.n % row_dim
+        if (remainder != 0):
+            outputMatVec = outputMatVec + self.me.n*8
         outputFusedAdd = self.me.n * 8
         inputFusedAdd = self.me.n * 8
         remaining = (
