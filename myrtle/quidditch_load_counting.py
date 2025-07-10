@@ -105,8 +105,6 @@ def getLoadCountingAnn(mat: InputMatrix, sizes: TileSizes):
     return(regular_loads,total_streaming_loads,other_streaming_loads,start_reuse_streaming_loads,reused_streaming_loads,outer_loop_iters, hLoop.body_size, hLoop.loop_repeats, logicalCount,microkernel_tile.n ,microkernel_tile.k)
 
 def main():
-    yodel()
-    yodel()
     input = InputMatrix(n=1200, k=400)
     tiles = TileSizes(n=56, k=100)
     print()

@@ -242,50 +242,5 @@ class TileSizeGenerator:
         args = sys.argv[1:]
 
 
-     #sizeInfo = list(map(lambda tup: jen.annotateOption(tup), valid_options))
-        # add load counting information
-        # sizeAndLoadInfo = jen.exportOptionsToCSV(dispatchName, caseNo, sizeInfo)
-        # extras = jen.addMoreColsForConvenience(sizeAndLoadInfo)
-        # return(extras)
-
-
-    # if len(args) != 6:
-    #   print("USAGE: python3 tile_size_generator.py <N> <K> <tilesRequested.csv> <dispatchName> <CaseNo> <oracle-output-dir>")
-    #   print(
-    #         "\twhere N, K, refer to dimensions in a\n\tmatrix-vector transpose with type `<MxK>, <NxK> -> <MxN>` where `M = 1`"
-    #   )
-    #   print(
-    #         "\tNote: when <tilesRequested.csv> is set to ORACLE_MODE, \n\t      the tile generator will automatically generate a set of valid tile sizes, \n\t      placing them in <oracle-output-dir>."
-    #   )
-    #   exit(1)
-    # if args[2] == "ORACLE_MODE":
-    #     print("we're in oracle mode!!")
-    #     dispatchName = args[3]
-    #     caseNo = int(args[4])
-    #     outputDir = args[5]
-    #     jen = TileSizeGenerator(int(args[0]),int(args[1]))
-    #     # sizeInfo = list(map(lambda tup: jen.annotateOption(tup), tups))
-    #     # sizeAndLoadInfo = jen.exportOptionsToCSV(dispatchName, caseNo, sizeInfo)
-    #     # extras = addMoreColsForConvenience(sizeAndLoadInfo)
-    #     jen.myfunc()
-    #     print(f'wrote outputs to directory {outputDir}')
-    #     exit(0)
-    # jen = TileSizeGenerator(int(args[0]),int(args[1]))
-    # firstCSV=pd.read_csv(args[2])
-    # dispatchName = args[3]
-    # caseNo = int(args[4])
-    # justRuntimeInfo=firstCSV[["JSON Name","Kernel Name","Kernel Time","Total Time"]]
-    # firstCSV["tuples"]=firstCSV.apply(lambda x: tupleIze(x["Row Dim"], x["Reduction Dim"]), axis=1)
-    # tups = firstCSV["tuples"].tolist()
-    # sizeInfo = list(map(lambda tup: jen.annotateOption(tup), tups))
-    # sizeAndLoadInfo = jen.exportOptionsToCSV(dispatchName, caseNo, sizeInfo)
-    # extras = addMoreColsForConvenience(sizeAndLoadInfo)
-    # merged = pd.merge(justRuntimeInfo,extras,on="JSON Name",how="outer")
-    # print(merged)
-    # merged.to_csv(f"search_spaces_out/{dispatchName}_case{caseNo}_everything.csv",index=False)
-
-    qlc.yodel()
-
-
 if __name__ == "__main__":
     main()

@@ -69,7 +69,7 @@ def tileSelection(csvFile, mode):
 # arg 2 is tile selection mode
 # arg 3 is file to write tile scheme to
 def main():
-    print("yodelayheehoooooo")
+    print("myrtle: ",end='')
     dispatchName = sys.argv[1]
     print (dispatchName)
     dispatchRegex=re.compile(r'main\$async_dispatch_\d+_matmul_transpose_b_(\d+)x(\d+)x(\d+)_f64')
@@ -78,13 +78,17 @@ def main():
     # generate options
     jen = tsg.TileSizeGenerator(int(N),int(K),dispatchName)
     options = jen.validOptions()
+    print("myrtle : ",end='')
     jen.exportOptionsToCSV(f'{M}x{N}x{K}wm-n-k', 1, options)
     m,n,k,dualBuffer = tileSelection(f'{M}x{N}x{K}wm-n-k_case1_searchSpace.csv',sys.argv[2])   
     if sys.argv[2] == "sflt":
+        print("myrtle : ",end='')
         print("We used simple filtering to select tiles.")
     if sys.argv[2] == "scyc":
+        print("myrtle : ",end='')
         print("We used a simple cycle estimation to select tiles.") 
     if sys.argv[2] == "svrcyc":
+        print("myrtle : ",end='')
         print("We used an SVR to select tiles.")   
     # default values
     with open(sys.argv[3], 'r') as file:
