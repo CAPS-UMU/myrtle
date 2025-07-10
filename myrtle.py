@@ -31,7 +31,9 @@ def get_simple_cycle_estimate(timeEstimateFuncs, row_dim, col_dim, outerLoopIter
        return timeEstimateFuncs[row_dim/outerLoopIters](col_dim)*microCount #+ outerLoopIters*100
 
 def tileSelection(csvFile, mode):
+    print("HELLO CSV file!",end = '')
     df = pd.read_csv(csvFile)
+    print(df)
     myLoc=os.path.abspath(__file__)[:-(len("myrtle.py"))]  
     if mode == "svrcyc":
         file = open(f'{myLoc}/myrtle/dispatch-8-svr.pickle', 'rb')
@@ -39,6 +41,7 @@ def tileSelection(csvFile, mode):
         df["Predicted Kernel Time"] = df.apply(lambda y: svr.predict([y[["Microkernel Count","Regular Loads","Reused Streaming Loads","Space Needed in L1","Row Dim","Reduction Dim"]]])[0], axis=1)
         ranked = df.sort_values("Predicted Kernel Time", ascending=True)
         df = ranked
+        print(f'ranked is {df}')
     if mode == "scyc":
         linearApproxFilePath = f'{myLoc}/myrtle/linesOfBestFit.pickle'
         file = open(linearApproxFilePath, 'rb')
@@ -72,6 +75,8 @@ def main():
     print("myrtle: ",end='')
     dispatchName = sys.argv[1]
     print (dispatchName)
+    for e in sys.argv:
+        print(f'arg is {e}.')
     dispatchRegex=re.compile(r'main\$async_dispatch_\d+_matmul_transpose_b_(\d+)x(\d+)x(\d+)_f64')
     M,N,K = dispatchRegex.search(dispatchName).groups()
     # query myrtle!
