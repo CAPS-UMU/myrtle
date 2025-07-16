@@ -1,5 +1,5 @@
-from myrtle.utils import roundUpToNearestMultipleOf, InputMatrix, TileSizes
-from myrtle.peek_at_snitch_assembly import peek_at_lowered_matvec_tiling
+from myrtle.utils import roundUpToNearestMultipleOf, InputMatrix, TileSizes, HardwareLoop, unrollAndJamFactor, EnclosingSCFLoop, unrollAndJamOuterLoops
+#from myrtle.peek_at_snitch_assembly import peek_at_lowered_matvec_tiling
 
 
 def getLogicalSizeAfterPadding(mat: InputMatrix, sizes: TileSizes):
@@ -71,6 +71,47 @@ def LoadCountingAnnColumnNames():
     return columns
 
 
+
+# @dataclass
+# class HardwareLoop:
+#     """Class for keeping track of hardware loop characteristics"""
+#     name: str = "frepOuter"#FrepOuter.name
+#     loop_repeats: int = 1 # number of times loop executes
+#     body_size: int = 1    # number of instructions in body of the loop
+# #unrollAndJamFactor
+
+# @dataclass
+# class EnclosingSCFLoop:
+#     """Class for keeping track of a potential loop surrounding the hardware"""
+#     name: str = "an enclosing loop"
+#     iters : int = 1   # number of times the enclosing loop executes
+#     exists : bool = False # whether the hardware loop is in fact enclosed by another loop
+
+def simulate_peek_at_lowered_matvec_tiling(matvec: InputMatrix):
+    # for potential_factor in range(1, self.pipeline_depth * 2):
+    expectedFMADDs = matvec.n * matvec.k
+    # create linalg, then lower to assembly
+    #linalg_mod, asm_mod, m, n, k = createMatmulTransposeB(1, matvec.n, matvec.k)
+    m = 1
+    if m == 0:
+        m = 1
+    k = matvec.k
+    n = matvec.n // 8
+    if (n) * 8 != matvec.n:
+        raise Exception("Sorry, only row dimensions divisible by 8 allowed!")
+    
+    # look for a hardware loop
+    hLoop=HardwareLoop(loop_repeats=k,body_size=unrollAndJamFactor(n))
+    # look for an enclosing loop
+    oLoopIters = unrollAndJamOuterLoops(n)
+    oLoop=EnclosingSCFLoop(iters=oLoopIters,exists=not(oLoopIters==1))
+    res = expectedFMADDs == (
+        (hLoop.body_size * hLoop.loop_repeats) * oLoop.iters * 8
+    )
+    if not oLoop.exists:
+        res = expectedFMADDs == (n * k * 8)
+    return (res, hLoop, oLoop)
+
 # matrix-vector transpose with type `<MxK>, <NxK> -> <MxN>` where `M = 1`
 def getLoadCountingAnn(mat: InputMatrix, sizes: TileSizes):
     logicalInput = getLogicalSizeAfterPadding(mat, sizes)
@@ -83,7 +124,7 @@ def getLoadCountingAnn(mat: InputMatrix, sizes: TileSizes):
     # reality check
     if left != right:
         raise Exception(f'after getMicroKernelCount: {left} should = {right}')
-    res, hLoop, oLoop = peek_at_lowered_matvec_tiling(cluster_tile)
+    res, hLoop, oLoop = simulate_peek_at_lowered_matvec_tiling(cluster_tile)
     if not res:
         raise Exception("Lowering to snitch hardware loop failed!")
     # outer_loop_iters is equivalent to the number of micro-kernel runs needed to process one core-sized tile

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from xdsl.dialects.riscv_snitch import FrepOuter
+#from xdsl.dialects.riscv_snitch import FrepOuter
 
 def roundUpToNearestMultipleOf(num, row_dim):
   remainder = num % row_dim
@@ -26,7 +26,7 @@ class TileSizes:
 @dataclass
 class HardwareLoop:
     """Class for keeping track of hardware loop characteristics"""
-    name: str = FrepOuter.name
+    name: str = "frepOuter"#FrepOuter.name
     loop_repeats: int = 1 # number of times loop executes
     body_size: int = 1    # number of instructions in body of the loop
 
@@ -48,4 +48,7 @@ def unrollAndJamFactor(rowDim):
 
 def unrollAndJamOuterLoops(rowDim):
     # print(f'outer loops is {rowDim} / {unrollAndJamFactor(rowDim)} which is {rowDim / unrollAndJamFactor(rowDim)}')
-    return rowDim / unrollAndJamFactor(rowDim)
+    if unrollAndJamFactor(rowDim) != 1:
+        return int(rowDim / unrollAndJamFactor(rowDim))
+    else:
+        return 1

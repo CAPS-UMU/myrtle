@@ -238,7 +238,7 @@ class TileSizeGenerator:
         )
         return df
 
-    def main():
+def main():
         args = sys.argv[1:]
 
 
