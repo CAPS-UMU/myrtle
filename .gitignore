@@ -1,1 +1,3 @@
 **/__pycache__
+myrtle.egg-info/*
+uv.lock
