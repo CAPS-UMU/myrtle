@@ -1,6 +1,6 @@
 import sys
 import json
-import myrtle.tile_size_generator as tsg
+import tile_gen.tile_size_generator as tsg
 import re
 import pickle
 import pandas as pd
@@ -34,14 +34,14 @@ def tileSelection(csvFile, mode):
     df = pd.read_csv(csvFile)
     myLoc=os.path.abspath(__file__)[:-(len("myrtle.py"))]  
     if mode == "svrcyc":
-        file = open(f'{myLoc}/myrtle/dispatch-8-svr.pickle', 'rb')
+        file = open(f'{myLoc}/tile_sel/dispatch-8-svr.pickle', 'rb')
         svr=pickle.load(file)
         df["Predicted Kernel Time"] = df.apply(lambda y: svr.predict([y[["Microkernel Count","Regular Loads","Reused Streaming Loads","Space Needed in L1","Row Dim","Reduction Dim"]]])[0], axis=1)
         ranked = df.sort_values("Predicted Kernel Time", ascending=True)
         df = ranked
     else: 
         if mode == "scyc":
-            linearApproxFilePath = f'{myLoc}/myrtle/linesOfBestFit.pickle'
+            linearApproxFilePath = f'{myLoc}/tile_sel/linesOfBestFit.pickle'
             file = open(linearApproxFilePath, 'rb')
             curves = pickle.load(file)
             lines = {}

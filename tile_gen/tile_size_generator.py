@@ -2,8 +2,8 @@ from dataclasses import dataclass, field
 import pandas as pd
 import sys
 from itertools import product
-import myrtle.quidditch_load_counting as qlc
-from myrtle.utils import InputMatrix, TileSizes, roundUpToNearestMultipleOf
+import tile_SA.quidditch_load_counting as qlc
+from tile_SA.utils import InputMatrix, TileSizes, roundUpToNearestMultipleOf
 # @dataclass
 # class InputMatrix:
 #     """Class for keeping track of matrix dimensions in"""
