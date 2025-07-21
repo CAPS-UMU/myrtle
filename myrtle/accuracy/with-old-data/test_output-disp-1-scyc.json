@@ -1,0 +1,1 @@
+{"main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64": {"loop-order": [[2, 0], [0, 0], [1, 0]], "tile-sizes": [[1], [80], [50]], "dual-buffer": true}}

@@ -60,7 +60,8 @@ def tileSelection(csvFile, mode):
             # minimize regular loads
             final_ranking = df_sorted.sort_values("Regular Loads", ascending=False)
             df = final_ranking
-    print(f'df is {df}')
+    csvFileRanked = csvFile[:-(len(".csv"))]
+    df.to_csv(f"{csvFileRanked}_myrtle_{mode}_ranking.csv",index=False)
     m = 1 #TODO: expand tiling to matmul!!
     n = int(df.iloc[0]["Row Dim"])
     k = int(df.iloc[0]["Reduction Dim"])
@@ -73,18 +74,20 @@ def tileSelection(csvFile, mode):
 def main():
     # print("myrtle: ",end='')
     dispatchName = sys.argv[1]
-    # print (dispatchName)
-    # for e in sys.argv:
-    #     print(f'arg is {e}.')
+
     dispatchRegex=re.compile(r'main\$async_dispatch_\d+_matmul_transpose_b_(\d+)x(\d+)x(\d+)_f64')
     M,N,K = dispatchRegex.search(dispatchName).groups()
     # query myrtle!
-    # generate options
-    jen = tsg.TileSizeGenerator(int(N),int(K),dispatchName)
-    options = jen.validOptions()
-    print("myrtle : ",end='')
-    jen.exportOptionsToCSV(f'{M}x{N}x{K}wm-n-k', 1, options)
-    m,n,k,dualBuffer = tileSelection(f'{M}x{N}x{K}wm-n-k_case1_searchSpace.csv',sys.argv[2])   
+    searchSpaceCSVName=f'{M}x{N}x{K}wm-n-k_case1_searchSpace.csv'
+    if len(sys.argv) == 5: # skip search space gen
+        searchSpaceCSVName=sys.argv[4]
+    else:
+        # generate options
+        jen = tsg.TileSizeGenerator(int(N),int(K),dispatchName)
+        options = jen.validOptions()
+        print("myrtle : ",end='')
+        jen.exportOptionsToCSV(f'{M}x{N}x{K}wm-n-k', 1, options)
+    m,n,k,dualBuffer = tileSelection(searchSpaceCSVName,sys.argv[2])   
     if sys.argv[2] == "sflt":
         print("myrtle : ",end='')
         print("We used simple filtering to select tiles.")

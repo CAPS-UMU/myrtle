@@ -2,7 +2,7 @@ from mpl_toolkits.mplot3d.axes3d import Axes3D
 from mpl_toolkits.mplot3d import proj3d
 import sys
 import pandas as pd
-from graph_utils import graphEmAll, loadDFsDispatchCaseNo, deriveMoreData,addSVMPrediction,trimToTopX, Graph2D, Keys2D, CustomMarker, MySVM
+from graphing.graph_utils import graphEmAll, loadDFsDispatchCaseNo, deriveMoreData,addSVMPrediction,trimToTopX, Graph2D, Keys2D, CustomMarker, MySVM
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from itertools import product, islice
