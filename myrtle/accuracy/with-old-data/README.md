@@ -1,10 +1,16 @@
 # Accuracy with old Sensitivity Analysis Data
-We used script `accuracy-w-old-sensitvity-analysis.sh` to generate the data in this directory.
-We used script `../graphing/deliverableGraphs.py` to graph the data in this directory.
+With our `venv` activated, we generated the data in this directory using the following commands:
 
 ```
-python3 -m graphing.deliverableGraphs /home/hoppip/myrtle/myrtle/accuracy/with-old-data svrcyc
+cd myrtle/accuracy/with-old-data
+. accuracy-w-old-sensitivity-analysis.sh scyc
+. accuracy-w-old-sensitivity-analysis.sh svrcyc
+. accuracy-w-old-sensitivity-analysis.sh sflt
+```
 
+With our `venv` activated, we generated the graphs in this directory using the following commands:
 
+```
+. graphing-w-old-sensitivity-analysis.sh svrcyc
 ```
 

@@ -87,7 +87,7 @@ def actualTime(dfs, dispNo, caseNo, title, y1="Kernel Time",y2="Kernel Time Esti
     )
 
 def loadDFsDispatchCaseNo(path, dispatchNos, caseNos, inputSizes, mode):
-    predictedPath = lambda d,mode,case: f"{path}/dispatch_{d}_case{case}_everything_myrtle_{mode}_ranking.csv"
+    predictedPath = lambda d,mode,case: f"{path}/dispatch_{d}_case{case}_everything-myrtle-{mode}-ranking.csv"
     dfs = {}
     for d in dispatchNos:
         for c in caseNos:

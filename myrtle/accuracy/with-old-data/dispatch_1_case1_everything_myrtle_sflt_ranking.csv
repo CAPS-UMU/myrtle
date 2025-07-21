@@ -1,3 +1,0 @@
-JSON Name,Kernel Name,Kernel Time,Total Time,Row Dim,Reduction Dim,Space Needed in L1,Weight Matrix Tile Size,Space Remaining,Case,Regular Loads,Total Streaming Loads,Other Streaming Loads,Start Reuse Streaming Loads,Reused Streaming Loads,Outer Loop Iters,HW Loop Body,HW Loop Iters,Microkernel Count,Microkernel Row Dim,Microkernel Reduction Dim,Total Loads,Tile Shape
-0-80-50,main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64,109169,1188538,80,50,64400,4000,6800,1,9600,960000,480000,96000,384000,2,5,50,960,10,50,969600,tall
-0-40-100,main$async_dispatch_1_matmul_transpose_b_1x1200x400_f64,89658,1110948,40,100,64800,4000,6400,1,4800,960000,480000,96000,384000,1,5,100,960,5,100,964800,wide
