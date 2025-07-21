@@ -15,6 +15,8 @@ import matplotlib.patches as mpatches
 import re
 from sklearn.svm import SVR
 import sklearn
+sys.path.insert(0, '../myrtle')
+from utils import unrollAndJamFactor, unrollAndJamOuterLoops
 
 T = TypeVar("T")
 
@@ -151,7 +153,7 @@ def graphEmAll(shape: tuple, graphs):
     fig = plt.figure()
     #fig.set_size_inches(4, 2)
     #fig.set_size_inches(1098/72.0,476/72.0) # 15.25 x 6.61
-    fig.set_size_inches(8,6.5)
+    fig.set_size_inches(8,10)
     for i in range(0, len(graphs)):
         ax = fig.add_subplot(shape[0], shape[1], i + 1)
         # moreGeneralGraph(ax, graphs[i])
@@ -168,8 +170,7 @@ def graphEmAll(shape: tuple, graphs):
     # plt.savefig(f"{g.image}.png", bbox_inches='tight')
     # plt.show()
 
-
-    # label: Callable[[T], str] = lambda y="no label": "_no label"
+# legacy function to keep graphing_refactore.py working (for now)
 def deriveMoreData(dfs, dispatchNos, caseNos):
     print("Adding the following derived data points:")
     print("\tFlops, rankAsStr, Hardware Loop Time Estimate, Config Overhead, Flop Per Cycle")
@@ -186,6 +187,32 @@ def deriveMoreData(dfs, dispatchNos, caseNos):
             ranked["Flops"] = flops
             ranked["rankAsStr"] = ranked.apply(lambda y: f'{y["rank"]}', axis=1)
             ranked["Hardware Loop Time Estimate"] = ranked.apply(lambda y: y["Kernel Time Estimate"]/y["Microkernel Count"], axis=1)
+            ranked["SSR Setup Count"] = ranked.apply(lambda y: y["UnrollAndJam Outer Loops"] * y["Microkernel Count"], axis=1)
+            # ranked ["SSR Setup Constant"] = 50
+            # ranked["Kernel Time Estimate W Overhead"] = 
+            ranked["FLOP Per Cycle"] = ranked.apply(lambda y: y["Flops"] / y["Kernel Time"], axis=1)
+            dfs[(d, c)] = ranked
+    return dfs
+
+def deriveMoreData2(dfs, dispatchNos, caseNos,mode):
+    print("Adding the following derived data points:")
+    print("\tFlops, rankAsStr, Hardware Loop Time Estimate, Config Overhead, Flop Per Cycle")
+    def extractMNKFromName(name):
+        mnk=re.split('x',re.split('_',name)[-2])
+        return {"M":float(mnk[0]),"N":float(mnk[1]),"K":float(mnk[2])}
+    for d in dispatchNos:
+        for c in caseNos:
+            ranked = rankBy(dfs, (d, c), "Kernel Time", True)
+            # get the kernel name of the first row, and extract M, N, K dims
+            # WE ASSUME ALL ROWS CONTAIN THE SAME KERNEL NAME
+            mnk=extractMNKFromName(ranked.iloc(0)[0]["Kernel Name"])
+            flops = 2*mnk["M"]*mnk["N"]*mnk["K"]#+(mnk["M"]*mnk["N"])
+            ranked["Flops"] = flops
+            ranked["rankAsStr"] = ranked.apply(lambda y: f'{y["rank"]}', axis=1)
+            ranked["UnrollAndJam Factor"] = ranked.apply(lambda y: unrollAndJamFactor(y["Microkernel Row Dim"]) , axis=1)
+            ranked["UnrollAndJam Outer Loops"] = ranked.apply(lambda y: unrollAndJamOuterLoops(y["Microkernel Row Dim"]) , axis=1)
+            if mode == "scyc":
+                ranked["Hardware Loop Time Estimate"] = ranked.apply(lambda y: y["Kernel Time Estimate"]/y["Microkernel Count"], axis=1)
             ranked["SSR Setup Count"] = ranked.apply(lambda y: y["UnrollAndJam Outer Loops"] * y["Microkernel Count"], axis=1)
             # ranked ["SSR Setup Constant"] = 50
             # ranked["Kernel Time Estimate W Overhead"] = 

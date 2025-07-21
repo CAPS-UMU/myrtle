@@ -1,0 +1,4 @@
+JSON Name,Row Dim,Reduction Dim,Space Needed in L1,Weight Matrix Tile Size,Space Remaining,Case,Regular Loads,Total Streaming Loads,Other Streaming Loads,Start Reuse Streaming Loads,Reused Streaming Loads,Outer Loop Iters,HW Loop Body,HW Loop Iters,Microkernel Count,Microkernel Row Dim,Microkernel Reduction Dim
+0-200-23,200,23,73784,4600,16616,1,2800,128800,64400,12880,51520,5,5,23,112,25,23
+0-80-23,80,23,29624,1840,60776,1,2800,128800,64400,12880,51520,2,5,23,280,10,23
+0-40-23,40,23,14904,920,75496,1,2800,128800,64400,12880,51520,1,5,23,560,5,23
