@@ -12,127 +12,6 @@ from sklearn.inspection import DecisionBoundaryDisplay
 from sklearn.svm import SVC, SVR
 
 predictedKernelTime="Predicted Kernel Time"
-#
-# # feature_file_df['RESULT'] = RESULT_df['RESULT'].to_numpy()
-#    predictedPath = lambda m,n,k,mode,case: f"{mode}/{m}x{n}x{k}wm-n-k_case{case}_searchSpace_selection_{mode}.csv"
-#     actualPath = lambda m,n,k: f"{m}x{n}x{k}wm-n-k-timed"
-
-def actualTimeDispatchCase(dfs, dispatchNos, caseNos, titles,y1="Kernel Time",y2="Kernel Time Estimate",keys=Keys2D(
-            x="rank",
-            x_label="Rank",
-            x_unit="fastest to slowest",
-            y="Kernel Time",
-            y_label="Kernel Time",
-            y_unit="cycles",
-        ),imgTitle="Actual vs Predicted Time",imgName='ActualTime-3-dispatches.png'):
-    graphs = []
-    for dispNo in dispatchNos:
-        for caseNo in caseNos:
-            title = titles[dispNo]    
-            lftGraph = actualTime(dfs, dispNo, caseNo, title,y1,y2,keys)
-            graphs.append(lftGraph)
-            graphEmAll((1, 1), [lftGraph])
-    combineDispatchesWithContext(graphs,imgTitle,imgName)
- 
-
-def actualTime(dfs, dispNo, caseNo, title, y1="Kernel Time",y2="Kernel Time Estimate",keys=Keys2D(
-            x="rank",
-            x_label="Rank",
-            x_unit="fastest to slowest",
-            y="Kernel Time",
-            y_label="Kernel Time",
-            y_unit="cycles",
-        )):
-    # tableData = dfs[(dispNo,caseNo)][["rankAsStr","Microkernel Row Dim","Kernel Time","UnrollAndJam Outer Loops","Microkernel Count","Row Dim","Reduction Dim"]]
-    # colLabels = ["rank","n'","Kernel Time","CC Outer Loops","Micro Runs","n","k"]
-    tableData = dfs[(dispNo,caseNo)][["rankAsStr","Row Dim","Reduction Dim","Microkernel Row Dim",]]
-    colLabels = ["rank","n","k","n'"]
-    defW = (1/(len(colLabels)*3)) # default width
-    tableColWidths = [defW,defW,defW*1.5,defW*1.5,defW*1.25,defW*0.5,defW*0.5]#[defW]*len(colLabels)
-    return Graph2D(
-        imagePath=f'graphing/out/actualTime-dispatch-{dispNo}-case-{1}',
-        keys=keys,
-        title=title,
-        scatterSets=[
-            (
-                dfs[(dispNo,caseNo)],
-                CustomMarker(
-                    y=y1,
-                    label= lambda y: f'    {y["JSON Name"]}', 
-                    marker=lambda x: f'${x["rank"]}$',
-                    size=lambda y=0: (mpl.rcParams["lines.markersize"] ** 2)*2,
-                    stroke=lambda x: 'Black',
-                    fill=lambda x: 'Black'
-                ),
-            ),
-            # (
-            #     dfs[(dispNo,caseNo)],
-            #     CustomMarker(
-            #         y=y2,
-            #         label= lambda y: f'    {y["JSON Name"]}',                   
-            #         marker=lambda x: f'${x["rank"]}$',
-            #         size=lambda y=0: (mpl.rcParams["lines.markersize"] ** 2)*2,
-            #         stroke=lambda x: "Purple",
-            #         fill=lambda x: "Purple",
-            #     ),
-            # )
-        ],
-        legend = False,
-        table = True,
-        table_pos="right", # Bbox or [xmin, ymin, width, height]
-        table_bb=(1.01,0,1,1), 
-        table_col_widths = tableColWidths,
-        table_col_labels=colLabels,
-        table_row_labels=[],
-        table_data=tableData
-    )
-
-# def loadDFsDispatchCaseNo(predicted, actual, dispatchNos, caseNos, inputSizes, mode):
-#     predictedPath = lambda m,n,k,mode,case: f"{predicted}/{mode}/{m}x{n}x{k}wm-n-k_case{case}_searchSpace_selection_{mode}.csv"
-#     actualPath = lambda m,n,k: f"{actual}/{m}x{n}x{k}wm-n-k-timed.csv"
-#     dfs = {}
-#     for d in dispatchNos:
-#         for c in caseNos:
-#             m,n,k = inputSizes[d]
-#             pred = pd.read_csv(predictedPath(m,n,k,mode,c))
-#             act = pd.read_csv(actualPath(m,n,k))
-#            # mergedCSV = pd.merge(firstCSV, secondCSV,on=sys.argv[3],how="inner")
-#             pred = pd.merge(pred, act[["JSON Name","Kernel Time"]],on="JSON Name",how="inner")
-#             pred = pd.merge(pred, act[["JSON Name","Kernel Name"]],on="JSON Name",how="inner")
-#             # pred['Kernel Time'] = act['Kernel Time'].to_numpy()
-#             # pred['Kernel Name'] = act['Kernel Name'].to_numpy()
-#             # pred['Kernel Time'] = act['Kernel Time'].to_numpy()
-#             # pred['Kernel Name'] = act['Kernel Name'].to_numpy()
-#             #Kernel Name
-#             dfs[(d, c)] = pred
-#     return dfs
-
-
-def loadDFsDispatchCaseNo(path, dispatchNos, caseNos, inputSizes, mode):
-    myPath = lambda d,mode,case: f"{path}/dispatch_{d}_case{case}_everything-myrtle-{mode}-ranking.csv"
-    dfs = {}
-    for d in dispatchNos:
-        for c in caseNos:
-            m,n,k = inputSizes[d]
-            print(f'reading from {myPath(d,mode,c)}')
-            pred = pd.read_csv(myPath(d,mode,c))
-            if mode == "svrcyc":
-                # print(pred["JSON Name"])
-                # print(pred[pred.columns[len(pred.columns)-1]])
-                # print(pred["Predicted Kernel Time"])
-                predictedKernelTime=pred.columns[len(pred.columns)-1]
-            dfs[(d, c)] = pred
-    return dfs
-
-# example run: python graphing-refactored.py "/home/hoppip/myrtle/estimated_cycles_no_overhead"
-# example run: python graphing-refactored.py /home/emily/myrtle/estimated_cycles_overhead
-#/home/hoppip/myrtle/accuracy
-#python3 deliverableGraphs.py /home/hoppip/myrtle/accuracy/w-old-data/
-
-# svrcyc/1x161x600wm-n-k_case1_searchSpace_selection_svrcyc.csv
-# 1x400x161wm-n-k-timed.csv
-# /home/hoppip/myrtle/accuracy
-# /home/hoppip/myrtle/sensitivity-analysis/holistic-data
 
 # python3 predictVsActual.py /home/hoppip/myrtle/accuracy /home/hoppip/myrtle/sensitivity-analysis/holistic-data
 def main():
@@ -152,26 +31,26 @@ def main():
     }
     caseNos = [1] # We only graph case 1; no padding anywhere.
     dispatchOrder = [1,7,8] # All dispatches will be graphed in the order 1, 7, 8
-
     title = lambda d, m, n, k: f"Dispatch {d}\nmatvec: <{m}x{k}>, <{n}x{k}> -> <{m}x{n}>"
     titles = {}
     for d in dispatchOrder:
         m,n,k = dispatcheSizes[d]
         titles[d] = title(d,m,n,k)
     print(titles)
-   # print(dfs)
-
     mode = args[1]
     #load dispatch data
     dfs = loadDFsDispatchCaseNo(args[0], dispatchOrder, caseNos, dispatcheSizes, mode)
     # derive more data about each dispatch
     deriveMoreData2(dfs,dispatchOrder,caseNos,mode)
+
+    # finally stary graphing
     tup=dfs,dispatchOrder,caseNos,titles
     # generate graphs of actual dispatch times
     graphActualTime('graphing/out/ActualTime-3-dispatches-rank-x-axis.png',"rank","Rank","fastest to slowest",tup)
     graphActualTime('graphing/out/ActualTime-3-dispatches-L1-usage-x-axis.png',"Space Needed in L1","L1 Usage","bytes",tup)
     graphActualTime('graphing/out/ActualTime-3-dispatches-micro-runs-x-axis.png',"Microkernel Count","Microkernel Runs","microkernel count",tup)
     graphActualTime('graphing/out/ActualTime-3-dispatches-regular-loads-axis.png',"Regular Loads","Regular Loads","from scratchpad to register",tup)
+    
     # generate graph of actual vs predicted dispatch times
     graphActualVsPredictedTime(mode,f'graphing/out/ActualVsPredTime-3-dispatches-{mode}.png',tup)
     
@@ -201,15 +80,102 @@ def graphActualVsPredictedTime(mode,path,tup):
         )
     y2 = "stage"
     if mode == "sflt":
-        print("punt")
+        evilFilterHack = True
+        actualTimeDispatchCase(dfs,dispatchOrder,caseNos,titles,"Kernel Time","",keys,"",path,evilFilterHack)
         return
     if mode == "scyc":
         y2 = "Kernel Time Estimate"
     if mode == "svrcyc":
         y2 = predictedKernelTime   
     actualVsPredictedTimeDispatchCase(dfs, dispatchOrder, caseNos, titles,y1=keys.y,y2=y2,keys=keys,imgTitle="",imgName=path)
-    #actualTimeDispatchCase(dfs,dispatchOrder,caseNos,titles,"Kernel Time","",keysActual,"",path)
+    
 
+
+def actualTimeDispatchCase(dfs, dispatchNos, caseNos, titles,y1="Kernel Time",y2="Kernel Time Estimate",keys=Keys2D(
+            x="rank",
+            x_label="Rank",
+            x_unit="fastest to slowest",
+            y="Kernel Time",
+            y_label="Kernel Time",
+            y_unit="cycles",
+        ),imgTitle="Actual vs Predicted Time",imgName='ActualTime-3-dispatches.png',evilFilterHack=False):
+    graphs = []
+    for dispNo in dispatchNos:
+        for caseNo in caseNos:
+            title = titles[dispNo]    
+            lftGraph = actualTime(dfs, dispNo, caseNo, title,y1,y2,keys,evilFilterHack)
+            graphs.append(lftGraph)
+            graphEmAll((1, 1), [lftGraph])
+    combineDispatchesWithContext(graphs,imgTitle,imgName)
+ 
+
+def actualTime(dfs, dispNo, caseNo, title, y1="Kernel Time",y2="Kernel Time Estimate",keys=Keys2D(
+            x="rank",
+            x_label="Rank",
+            x_unit="fastest to slowest",
+            y="Kernel Time",
+            y_label="Kernel Time",
+            y_unit="cycles",
+        ),evilFilterHack=False):
+    stroke = lambda x: 'Black'
+    if evilFilterHack:
+        colors = ['Pink','Red','Blue','Purple']
+        colors = ['Lavender','Thistle','Plum','Purple']
+        colors = ['#c8acde','#b28bd0','#9c6ac3','#8649b6']
+        colors = ['#98c1f2','#6fa8ec','#468fe7','Purple']
+        stroke = lambda x: colors[x["stage"]]
+    # tableData = dfs[(dispNo,caseNo)][["rankAsStr","Microkernel Row Dim","Kernel Time","UnrollAndJam Outer Loops","Microkernel Count","Row Dim","Reduction Dim"]]
+    # colLabels = ["rank","n'","Kernel Time","CC Outer Loops","Micro Runs","n","k"]
+    tableData = dfs[(dispNo,caseNo)][["rankAsStr","Row Dim","Reduction Dim","Microkernel Row Dim",]]
+    if evilFilterHack:
+        df = dfs[(dispNo,caseNo)]
+        tableData = df[df["rank"] < 5][["rankAsStr","Row Dim","Reduction Dim","Microkernel Row Dim",]]
+
+    colLabels = ["rank","n","k","n'"]
+    defW = (1/(len(colLabels)*3)) # default width
+    tableColWidths = [defW,defW,defW*1.5,defW*1.5,defW*1.25,defW*0.5,defW*0.5]#[defW]*len(colLabels)
+    return Graph2D(
+        imagePath=f'graphing/out/actualTime-dispatch-{dispNo}-case-{1}',
+        keys=keys,
+        title=title,
+        scatterSets=[
+            (
+                dfs[(dispNo,caseNo)],
+                CustomMarker(
+                    y=y1,
+                    label= lambda y: f'    {y["JSON Name"]}', 
+                    marker=lambda x: f'${x["rank"]}$',
+                    size=lambda y=0: (mpl.rcParams["lines.markersize"] ** 2)*2,
+                    stroke=stroke,
+                    fill=lambda x: 'Black'
+                ),
+            ),
+        ],
+        legend = False,
+        table = True,
+        table_pos="right", # Bbox or [xmin, ymin, width, height]
+        table_bb=(1.01,0,1,1), 
+        table_col_widths = tableColWidths,
+        table_col_labels=colLabels,
+        table_row_labels=[],
+        table_data=tableData
+    )
+
+def loadDFsDispatchCaseNo(path, dispatchNos, caseNos, inputSizes, mode):
+    myPath = lambda d,mode,case: f"{path}/dispatch_{d}_case{case}_everything-myrtle-{mode}-ranking.csv"
+    dfs = {}
+    for d in dispatchNos:
+        for c in caseNos:
+            m,n,k = inputSizes[d]
+            print(f'reading from {myPath(d,mode,c)}')
+            pred = pd.read_csv(myPath(d,mode,c))
+            if mode == "svrcyc":
+                # print(pred["JSON Name"])
+                # print(pred[pred.columns[len(pred.columns)-1]])
+                # print(pred["Predicted Kernel Time"])
+                predictedKernelTime=pred.columns[len(pred.columns)-1]
+            dfs[(d, c)] = pred
+    return dfs
 
 def combineDispatchesWithContext(graphs,img_title,img_name):
     graphImages = []

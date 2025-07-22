@@ -74,7 +74,7 @@ def tileSelection(csvFile, mode):
             #print(stages[["JSON Name","stage"]])
             
             # minimize regular loads
-            final_ranking = df_sorted.sort_values("Regular Loads", ascending=False)
+            final_ranking = df_sorted.sort_values("Regular Loads", ascending=True)
             df = final_ranking
             # mark which tiling schemes survived final filter
             mask = stages["JSON Name"].isin(final_ranking.iloc[0])
