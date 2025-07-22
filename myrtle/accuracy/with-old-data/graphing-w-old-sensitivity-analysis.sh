@@ -1,4 +1,4 @@
-echo "Generating myrtle rankings for dispatches 1, 7, and 8 using mode $1..."
+echo "Generating accuracy graphs for dispatches 1, 7, and 8 using mode $1..."
 mode="$1"
 user="hoppip"
 user="emily"

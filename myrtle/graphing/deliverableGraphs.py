@@ -11,6 +11,7 @@ import numpy as np
 from sklearn.inspection import DecisionBoundaryDisplay
 from sklearn.svm import SVC, SVR
 
+predictedKernelTime="Predicted Kernel Time"
 #
 # # feature_file_df['RESULT'] = RESULT_df['RESULT'].to_numpy()
 #    predictedPath = lambda m,n,k,mode,case: f"{mode}/{m}x{n}x{k}wm-n-k_case{case}_searchSpace_selection_{mode}.csv"
@@ -49,7 +50,7 @@ def actualTime(dfs, dispNo, caseNo, title, y1="Kernel Time",y2="Kernel Time Esti
     defW = (1/(len(colLabels)*3)) # default width
     tableColWidths = [defW,defW,defW*1.5,defW*1.5,defW*1.25,defW*0.5,defW*0.5]#[defW]*len(colLabels)
     return Graph2D(
-        imagePath=f'graphing/out/dispatch-{dispNo}-case-{1}',
+        imagePath=f'graphing/out/actualTime-dispatch-{dispNo}-case-{1}',
         keys=keys,
         title=title,
         scatterSets=[
@@ -78,7 +79,7 @@ def actualTime(dfs, dispNo, caseNo, title, y1="Kernel Time",y2="Kernel Time Esti
         ],
         legend = False,
         table = True,
-        table_pos="right",
+        table_pos="right", # Bbox or [xmin, ymin, width, height]
         table_bb=(1.01,0,1,1), 
         table_col_widths = tableColWidths,
         table_col_labels=colLabels,
@@ -86,14 +87,40 @@ def actualTime(dfs, dispNo, caseNo, title, y1="Kernel Time",y2="Kernel Time Esti
         table_data=tableData
     )
 
+# def loadDFsDispatchCaseNo(predicted, actual, dispatchNos, caseNos, inputSizes, mode):
+#     predictedPath = lambda m,n,k,mode,case: f"{predicted}/{mode}/{m}x{n}x{k}wm-n-k_case{case}_searchSpace_selection_{mode}.csv"
+#     actualPath = lambda m,n,k: f"{actual}/{m}x{n}x{k}wm-n-k-timed.csv"
+#     dfs = {}
+#     for d in dispatchNos:
+#         for c in caseNos:
+#             m,n,k = inputSizes[d]
+#             pred = pd.read_csv(predictedPath(m,n,k,mode,c))
+#             act = pd.read_csv(actualPath(m,n,k))
+#            # mergedCSV = pd.merge(firstCSV, secondCSV,on=sys.argv[3],how="inner")
+#             pred = pd.merge(pred, act[["JSON Name","Kernel Time"]],on="JSON Name",how="inner")
+#             pred = pd.merge(pred, act[["JSON Name","Kernel Name"]],on="JSON Name",how="inner")
+#             # pred['Kernel Time'] = act['Kernel Time'].to_numpy()
+#             # pred['Kernel Name'] = act['Kernel Name'].to_numpy()
+#             # pred['Kernel Time'] = act['Kernel Time'].to_numpy()
+#             # pred['Kernel Name'] = act['Kernel Name'].to_numpy()
+#             #Kernel Name
+#             dfs[(d, c)] = pred
+#     return dfs
+
+
 def loadDFsDispatchCaseNo(path, dispatchNos, caseNos, inputSizes, mode):
-    predictedPath = lambda d,mode,case: f"{path}/dispatch_{d}_case{case}_everything-myrtle-{mode}-ranking.csv"
+    myPath = lambda d,mode,case: f"{path}/dispatch_{d}_case{case}_everything-myrtle-{mode}-ranking.csv"
     dfs = {}
     for d in dispatchNos:
         for c in caseNos:
             m,n,k = inputSizes[d]
-            print(f'reading from {predictedPath(d,mode,c)}')
-            pred = pd.read_csv(predictedPath(d,mode,c))
+            print(f'reading from {myPath(d,mode,c)}')
+            pred = pd.read_csv(myPath(d,mode,c))
+            if mode == "svrcyc":
+                # print(pred["JSON Name"])
+                # print(pred[pred.columns[len(pred.columns)-1]])
+                # print(pred["Predicted Kernel Time"])
+                predictedKernelTime=pred.columns[len(pred.columns)-1]
             dfs[(d, c)] = pred
     return dfs
 
@@ -139,7 +166,32 @@ def main():
     dfs = loadDFsDispatchCaseNo(args[0], dispatchOrder, caseNos, dispatcheSizes, mode)
     # derive more data about each dispatch
     deriveMoreData2(dfs,dispatchOrder,caseNos,mode)
+    tup=dfs,dispatchOrder,caseNos,titles
+    # generate graphs of actual dispatch times
+    graphActualTime('graphing/out/ActualTime-3-dispatches-rank-x-axis.png',"rank","Rank","fastest to slowest",tup)
+    graphActualTime('graphing/out/ActualTime-3-dispatches-L1-usage-x-axis.png',"Space Needed in L1","L1 Usage","bytes",tup)
+    graphActualTime('graphing/out/ActualTime-3-dispatches-micro-runs-x-axis.png',"Microkernel Count","Microkernel Runs","microkernel count",tup)
+    graphActualTime('graphing/out/ActualTime-3-dispatches-regular-loads-axis.png',"Regular Loads","Regular Loads","from scratchpad to register",tup)
+    # generate graph of actual vs predicted dispatch times
+    graphActualVsPredictedTime(mode,f'graphing/out/ActualVsPredTime-3-dispatches-{mode}.png',tup)
+    
+    print("HASTA LUEGO")
+
+def graphActualTime(path,x,x_label,x_unit,tup):
+    dfs,dispatchOrder,caseNos,titles=tup
     keysActual = Keys2D(
+            x=x,
+            x_label=x_label,
+            x_unit=x_unit,
+            y="Kernel Time",
+            y_label="Kernel Time",
+            y_unit="cycles",
+        )
+    actualTimeDispatchCase(dfs,dispatchOrder,caseNos,titles,"Kernel Time","",keysActual,"",path)
+
+def graphActualVsPredictedTime(mode,path,tup):
+    dfs,dispatchOrder,caseNos,titles=tup
+    keys = Keys2D(
             x="rank",
             x_label="Rank",
             x_unit="fastest to slowest",
@@ -147,49 +199,16 @@ def main():
             y_label="Kernel Time",
             y_unit="cycles",
         )
-    actualTimeDispatchCase(dfs,dispatchOrder,caseNos,titles,"Kernel Time","Predicted Kernel Time",keysActual,"Estimate with Microkernel Time * Microkernel Runs",'graphing/out/ActualTime-3-dispatches-rank-x-axis.png')
-    keysActual = Keys2D(
-            x="Space Needed in L1",
-            x_label="L1 Usage",
-            x_unit="bytes",
-            y="Kernel Time",
-            y_label="Kernel Time",
-            y_unit="cycles",
-        )
-    actualTimeDispatchCase(dfs,dispatchOrder,caseNos,titles,"Kernel Time","Predicted Kernel Time",keysActual,"Estimate with Microkernel Time * Microkernel Runs",'graphing/out/ActualTime-3-dispatches-L1-usage-x-axis.png')
-    keysActual = Keys2D(
-            x="Row Dim",
-            x_label="Row Dim",
-            x_unit="elements",
-            y="Kernel Time",
-            y_label="Kernel Time",
-            y_unit="cycles",
-        )
-    actualTimeDispatchCase(dfs,dispatchOrder,caseNos,titles,"Kernel Time","Predicted Kernel Time",keysActual,"Estimate with Microkernel Time * Microkernel Runs",'graphing/out/ActualTime-3-dispatches-row-dim-x-axis.png')
-    keysActual = Keys2D(
-            x="Reduction Dim",
-            x_label="Reduction Dim",
-            x_unit="elements",
-            y="Kernel Time",
-            y_label="Kernel Time",
-            y_unit="cycles",
-        )
-    actualTimeDispatchCase(dfs,dispatchOrder,caseNos,titles,"Kernel Time","Predicted Kernel Time",keysActual,"Estimate with Microkernel Time * Microkernel Runs",'graphing/out/ActualTime-3-dispatches-reduction-dim-x-axis.png')
-    
-    keysActual = Keys2D(
-            x="Microkernel Count",
-            x_label="Microkernel Runs",
-            x_unit="microkernel count",
-            y="Kernel Time",
-            y_label="Kernel Time",
-            y_unit="cycles",
-        )
-    actualTimeDispatchCase(dfs,dispatchOrder,caseNos,titles,"Kernel Time","Predicted Kernel Time",keysActual,"Estimate with Microkernel Time * Microkernel Runs",'graphing/out/ActualTime-3-dispatches-micro-runs-x-axis.png')
- 
-    # graph TOP TEN data points
-    # dfs = trimToTopX(dfs, dispatchOrder, caseNos, "rank", 10) # destructive!!
-    # lookForTrendsDispatchCase(dfs,dispatchOrder,caseNos,titles,keysFLOPs,"hoodle","LFT-dispatches-kernel-time-x-axis-top-10.png")
-    print("HASTA LUEGO")
+    y2 = "stage"
+    if mode == "sflt":
+        print("punt")
+        return
+    if mode == "scyc":
+        y2 = "Kernel Time Estimate"
+    if mode == "svrcyc":
+        y2 = predictedKernelTime   
+    actualVsPredictedTimeDispatchCase(dfs, dispatchOrder, caseNos, titles,y1=keys.y,y2=y2,keys=keys,imgTitle="",imgName=path)
+    #actualTimeDispatchCase(dfs,dispatchOrder,caseNos,titles,"Kernel Time","",keysActual,"",path)
 
 
 def combineDispatchesWithContext(graphs,img_title,img_name):
@@ -224,7 +243,7 @@ def combineDispatchesWithContext(graphs,img_title,img_name):
     g1.close()
     g2.close()
 
-def actualVsPredictedTimeDispatchCase(dfs, dispatchNos, caseNos, titles,y1="Kernel Time",y2="Kernel Time Estimate",keys=Keys2D(
+def actualVsPredictedTimeDispatchCase(dfs, dispatchNos, caseNos, titles,y1="actualColName",y2="predColName",keys=Keys2D(
             x="rank",
             x_label="Rank",
             x_unit="fastest to slowest",
@@ -242,7 +261,7 @@ def actualVsPredictedTimeDispatchCase(dfs, dispatchNos, caseNos, titles,y1="Kern
     combineDispatchesWithContext(graphs,imgTitle,imgName)
     
 
-def actualVsPredictedTime(dfs, dispNo, caseNo, title, y1="Kernel Time",y2="Kernel Time Estimate",keys=Keys2D(
+def actualVsPredictedTime(dfs, dispNo, caseNo, title, y1="actualColName",y2="predColName",keys=Keys2D(
             x="rank",
             x_label="Rank",
             x_unit="fastest to slowest",
@@ -255,7 +274,7 @@ def actualVsPredictedTime(dfs, dispNo, caseNo, title, y1="Kernel Time",y2="Kerne
     defW = (1/(len(colLabels)*3)) # default width
     tableColWidths = [defW,defW,defW*1.5,defW*1.5,defW*1.25,defW*0.5,defW*0.5]#[defW]*len(colLabels)
     return Graph2D(
-        imagePath=f'graphing/out/dispatch-{dispNo}-case-{1}',
+        imagePath=f'graphing/out/AcutualVsEst-dispatch-{dispNo}-case-{1}',
         keys=keys,
         title=title,
         scatterSets=[
@@ -285,7 +304,7 @@ def actualVsPredictedTime(dfs, dispNo, caseNo, title, y1="Kernel Time",y2="Kerne
         legend = False,
         table = True,
         table_pos="right",
-        table_bb=(1.01,0,1,1), 
+        table_bb=(1.01,0,1,1), # Bbox or [xmin, ymin, width, height]
         table_col_widths = tableColWidths,
         table_col_labels=colLabels,
         table_row_labels=[],
