@@ -12,7 +12,48 @@ from sklearn.inspection import DecisionBoundaryDisplay
 from sklearn.svm import SVC, SVR
 
 predictedKernelTime="Predicted Kernel Time"
-
+# from inside myrtle/myrtle, run python3 -m graphing.deliverableGraphs
+def segfault_debugging(mod):
+    print("ARRR, MATEY!")
+    disp8Path = "/home/emily/myrtle/myrtle/segfault_debugging/1x600x600wm-n-k-timed-debug-myrtle-svrcyc-ranking.csv"
+    disp7Path = "/home/emily/myrtle/myrtle/segfault_debugging/1x600x400wm-n-k-timed-debug-myrtle-svrcyc-ranking.csv"
+    dispatcheSizes = {
+        #0:(1,400,161),
+        1:(1,1200,400),
+        7:(1,600,400),
+        8:(1,600,600),
+       # 9:(1,161,600),
+    }
+    caseNos = [1] # We only graph case 1; no padding anywhere.
+    dispatchOrder = [7,8] # All dispatches will be graphed in the order 7, 8
+    title = lambda d, m, n, k: f"Dispatch {d}\nmatvec: <{m}x{k}>, <{n}x{k}> -> <{m}x{n}>"
+    titles = {}
+    for d in dispatchOrder:
+        m,n,k = dispatcheSizes[d]
+        titles[d] = title(d,m,n,k)
+    mode = mod
+    #load dispatch data
+    myPath = lambda d, m, c: disp7Path if d == 7 else disp8Path
+    dfs = {}
+    for d in dispatchOrder:
+        for c in caseNos:
+            m,n,k = dispatcheSizes[d]
+            print(f'reading from {myPath(d,mode,c)}')
+            pred = pd.read_csv(myPath(d,mode,c))
+            if mode == "svrcyc":
+                # print(pred["JSON Name"])
+                # print(pred[pred.columns[len(pred.columns)-1]])
+                # print(pred["Predicted Kernel Time"])
+                print(pred)
+                print(f'svrcyc case: pred.columns[len(pred.columns)-1] is {pred.columns[len(pred.columns)-1]}')
+                predictedKernelTime=pred.columns[len(pred.columns)-1]
+            dfs[(d, c)] = pred
+    # derive more data about each dispatch
+    deriveMoreData2(dfs,dispatchOrder,caseNos,mode)
+    tup=dfs,dispatchOrder,caseNos,titles
+    graphActualVsPredictedTime(mode,f'graphing/out/ActualVsPredTime-2-dispatches-DEBUG-{mode}.png',tup)
+    print("YOHOHO")
+    
 # python3 predictVsActual.py /home/hoppip/myrtle/accuracy /home/hoppip/myrtle/sensitivity-analysis/holistic-data
 def main():
     args = sys.argv[1:]
@@ -21,6 +62,9 @@ def main():
       print("\twhere <predicted-actual> is the directory containing csv files")
       print("\tand <predictionMode> is either \"svrcyc\", \"ssyc\", or \"sflt\"")
       exit(1)
+    if args[0] == "SEGFAULT_DEBUGGING":
+        segfault_debugging(args[1])
+        return
     print("HOLA")
     dispatcheSizes = {
         #0:(1,400,161),
@@ -235,8 +279,11 @@ def actualVsPredictedTime(dfs, dispNo, caseNo, title, y1="actualColName",y2="pre
             y_label="Kernel Time",
             y_unit="cycles",
         )):
-    tableData = dfs[(dispNo,caseNo)][["rankAsStr","Microkernel Row Dim","UnrollAndJam Factor","UnrollAndJam Outer Loops","Microkernel Count","Row Dim","Reduction Dim"]]
-    colLabels = ["rank","n'","U&J Factor","CC Outer Loops","Micro Runs","n","k"]
+    # tableData = dfs[(dispNo,caseNo)][["rankAsStr","Microkernel Row Dim","UnrollAndJam Factor","UnrollAndJam Outer Loops","Microkernel Count","Row Dim","Reduction Dim"]]
+    # colLabels = ["rank","n'","U&J Factor","CC Outer Loops","Micro Runs","n","k"]
+    tableData = dfs[(dispNo,caseNo)][["rankAsStr","Row Dim","Reduction Dim","Kernel Time"]]
+    colLabels = ["rank","n","k", "Kernel Time"]
+    
     defW = (1/(len(colLabels)*3)) # default width
     tableColWidths = [defW,defW,defW*1.5,defW*1.5,defW*1.25,defW*0.5,defW*0.5]#[defW]*len(colLabels)
     return Graph2D(
