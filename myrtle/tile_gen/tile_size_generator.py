@@ -29,6 +29,14 @@ class TileSizeGenerator:
     def myfunc(self):
         print(f"I am {self.me}")
         self.validOptions()
+    
+    def mDimOptions(self):
+        max = self.me.m
+        min = 8
+        exhaustive = list(range(min, max + 1))
+        if (self.me.k % 2) != 0:
+            print(f"WARNING: K = {self.me.k} is NOT divisible by 2!")
+        return exhaustive
 
     def rowDimOptions(self):
         hardware_loop_body_options = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
@@ -65,16 +73,34 @@ class TileSizeGenerator:
         exhaustive = list(range(min, max + 1,step))
         if (self.me.k % 2) != 0:
             print(f"WARNING: K = {self.me.k} is NOT divisible by 2!")
-      
+        return exhaustive
+    
+    def paddedMDimOptions(self):
+        step = 1
+        if self.me.m < 40:
+            return [self.me.m]
+        else: # we want about 40 tile sizes to pick from
+            step = self.me.m // 40
+        max = self.me.m
+        min = 8
+        exhaustive = list(range(min, max + 1,step))
+        if (self.me.k % 2) != 0:
+            print(f"WARNING: M = {self.me.m} is NOT divisible by 2!")
         return exhaustive
 
     def validOptions(self):
-        # all possible values for n and k
+        # all possible values for m, n, and k
+        little_m_options=self.mDimOptions()
         little_n_options = self.rowDimOptions()
         little_k_options = self.reductionDimOptions()
-        # print(f'n options are {list(little_n_options)}')
-        # print(f'k options are {list(little_k_options)}')
-        # filter for n's and k's that divide evenly into N and K
+        # filter for m's, n's and k's that divide evenly into M, N and K respectively
+        little_m_no_pad = list(filter(lambda x: self.dividesIntoM(x), little_m_options))
+        m_options = little_m_no_pad
+        little_n_no_pad = list(filter(lambda x: self.dividesIntoN(x), little_n_options))
+        if len(little_m_no_pad) <= 1: # prime N dimension, or not divisible by 8
+            m_options = self.paddedMDimOptions()
+        else:
+            m_options = little_m_no_pad
         little_n_no_pad = list(filter(lambda x: self.dividesIntoN(x), little_n_options))
         if len(little_n_no_pad) <= 1: # prime N dimension, or not divisible by 8
             n_options = self.paddedNDimOptions()
@@ -95,48 +121,65 @@ class TileSizeGenerator:
         # halve k dim options for double buffering
         k_options = list(
         filter(lambda x: x <= (self.me.k // 2) + 1, k_options))
-        # print(f'now n options are {list(n_options)}')
-        # print(f'now k options are {list(k_options)}')
-        m_options=[0]
-        options_as_pairs = list(product(m_options,n_options, k_options))
-        annotated_options = list(map(lambda tup: self.annotateOption(tup), options_as_pairs))
-        # filter by size
+        options_as_triples = list(product(m_options,n_options, k_options))
+        #print(f"{options_as_triples}")
+        annotated_options = list(map(lambda tup: self.annotateOption(tup), options_as_triples))
+        #print(annotated_options)
+        # filter out tiling schemes that do not fit in L1
         valid_options = list(
             filter(lambda tup: self.smallEnough(tup[0][0], tup[0][1],tup[0][2]), annotated_options)
         )
-        # print(valid_options)
+        print(f'abaout to return valid options: {valid_options}')
         return valid_options
 
     def weightMatTileSize(self, row_dim, reduction_dim):
         return row_dim * reduction_dim
 
     def spaceForTiles(self, m_dim, row_dim, reduction_dim):
+        # ignore output matrix tiles
         # space in element count
-        inputVectorTile = 1 * reduction_dim
+        inputMatTile = m_dim * reduction_dim
         weightMatTiles = 2 * self.weightMatTileSize(row_dim, reduction_dim)
-        space = inputVectorTile + weightMatTiles
+        space = inputMatTile + weightMatTiles
         # space in  bytes
         spaceInBytes = space * 8  # number of elements * 8 bytes per element
-        # print(f'0-{48}-{100}:\ninputVectorTile elts: {inputVectorTile} * 8 = {inputVectorTile*8}. \nweightMatTiles elts: {weightMatTiles} * 8 = {weightMatTiles*8}.\ntotal in bytes: {spaceInBytes}.')
+        if((m_dim == 20) and (row_dim == 40) and (reduction_dim == 10)):
+            print(f'for input matrix, allocate {m_dim}x{reduction_dim} = {m_dim * reduction_dim} elements')
+            print(f'for weight matrix, allocate {row_dim}x{reduction_dim} ={self.weightMatTileSize(row_dim, reduction_dim)} elements')
+            print(f'for double buffering, allocate again {self.weightMatTileSize(row_dim, reduction_dim)} elements')
+            # print(f'so total is {space} elements = {spaceInBytes} bytes')
         return spaceInBytes
 
     def spaceRemaining(self, m_dim, row_dim, reduction_dim):
         l1MemoryBytes = 100000
-        outputMatVec = roundUpToNearestMultipleOf(self.me.n, row_dim) * 8
+        outputMatMul_m = roundUpToNearestMultipleOf(self.me.m, m_dim)
+        outputMatMul_n = roundUpToNearestMultipleOf(self.me.n, row_dim)
+        outputMatMul = outputMatMul_m * outputMatMul_n * 8
         # if we padded the row dimension, 
-        # we allocate an extra (unused) buffer of size n
+        # we allocate an extra (unused) buffer of size m*n
         remainder = self.me.n % row_dim
         if (remainder != 0):
-            outputMatVec = outputMatVec + self.me.n*8
-        outputFusedAdd = self.me.n * 8
-        inputFusedAdd = self.me.n * 8
+            outputMatMul = outputMatMul + outputMatMul_m*self.me.n*8
+        # what happens to allocation if we pad the M dimension???
+        remainder = self.me.m % m_dim
+        if (remainder != 0):
+            raise Exception(f"we do not support padding m-dimension yet!")
+        outputElemAdd = outputMatMul
+        inputElemAdd = self.me.n * 8
         remaining = (
             l1MemoryBytes
-            - outputMatVec
-            - outputFusedAdd
-            - inputFusedAdd
+            - outputMatMul
+            - outputElemAdd
+            - inputElemAdd
             - self.spaceForTiles(m_dim, row_dim, reduction_dim)
         )
+        if((m_dim == 20) and (row_dim == 40) and (reduction_dim == 10)):
+            # print(f'm_dim is {m_dim}')
+            print(f'output of matmul has size {outputMatMul_m}x{outputMatMul_n} = {outputMatMul_m * outputMatMul_n}={outputMatMul}')
+            print(f'output of matmul has size {outputMatMul_m}x{outputMatMul_n} = {outputMatMul_m * outputMatMul_n}={outputElemAdd}')
+            print(f'bias has size {inputElemAdd/8}')
+            print(f"so remaining is {remaining}")
+            print()
         return remaining
 
     def smallEnough(self,m_dim, row_dim, red_dim):
@@ -167,6 +210,7 @@ class TileSizeGenerator:
         input = InputMatrix(m=self.me.m,n=self.me.n, k=self.me.k)
         tiles = TileSizes(m=ann[0][0],n=ann[0][1], k=ann[0][2])
         flat = self.convertAnnotationToFlatTuple(ann)
+        # print(f'FLAT IS {flat}')
         loadInfo = (caseNo,) + qlc.getLoadCountingAnn(input, tiles)
         concatted = flat + loadInfo
         return concatted

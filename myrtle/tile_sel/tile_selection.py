@@ -17,6 +17,7 @@ def get_simple_cycle_estimate(timeEstimateFuncs, row_dim, col_dim, outerLoopIter
        return timeEstimateFuncs[row_dim/outerLoopIters](col_dim)*microCount #+ outerLoopIters*100
 
 def tileSelection(csvFile, mode):
+    print(f'tile selection: about to read in file {csvFile}')
     df = pd.read_csv(csvFile)
     csvFileRanked = csvFile[:-(len(".csv"))]
    # myLoc=os.path.abspath(__file__)[:-(len("myrtle.py"))]  
@@ -40,6 +41,7 @@ def tileSelection(csvFile, mode):
             df = ranked
             df.to_csv(f"{csvFileRanked}-myrtle-{mode}-ranking.csv",index=False)
         else:
+            print(f'the df id {df}')
             # minimize microkernel runs
             df_sorted = df.sort_values("Microkernel Count", ascending=True)
             stages=df_sorted
@@ -49,7 +51,7 @@ def tileSelection(csvFile, mode):
             # mark which tiling schemes survived filter
             mask = stages["JSON Name"].isin(df_sorted["JSON Name"])
             stages.loc[mask, 'stage']=1
-            #print(stages[["JSON Name","stage"]])
+            print(stages[["JSON Name","stage"]])
             
             # maximise L1 usage
             df_sorted = df_sorted.sort_values("Space Needed in L1", ascending=False)
@@ -57,11 +59,12 @@ def tileSelection(csvFile, mode):
             # mark which tiling schemes survived filter
             mask = stages["JSON Name"].isin(df_sorted["JSON Name"])
             stages.loc[mask, 'stage']=2
-            #print(stages[["JSON Name","stage"]])
+            print(stages[["JSON Name","stage"]])
             
             # minimize regular loads
             final_ranking = df_sorted.sort_values("Regular Loads", ascending=True)
             df = final_ranking
+            print(f'final_ranking is {final_ranking}')
             # mark which tiling schemes survived final filter
             mask = stages["JSON Name"].isin(final_ranking.iloc[0])
             stages.loc[mask, "stage"]=3

@@ -30,6 +30,7 @@ def main():
         jen = tsg.TileSizeGenerator(int(M),int(N),int(K),dispatchName)
         options = jen.validOptions()
         print("myrtle : ",end='')
+        print(f'OPTIONS ARE {options}')
         jen.exportOptionsToCSV(f'{M}x{N}x{K}wm-n-k', 1, options)
     m,n,k,dualBuffer = tss.tileSelection(searchSpaceCSVName,sys.argv[2])   
     if sys.argv[2] == "sflt":
