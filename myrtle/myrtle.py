@@ -27,7 +27,7 @@ def main():
         searchSpaceCSVName=sys.argv[4]
     else:
         # generate options
-        jen = tsg.TileSizeGenerator(int(N),int(K),dispatchName)
+        jen = tsg.TileSizeGenerator(int(M),int(N),int(K),dispatchName)
         options = jen.validOptions()
         print("myrtle : ",end='')
         jen.exportOptionsToCSV(f'{M}x{N}x{K}wm-n-k', 1, options)

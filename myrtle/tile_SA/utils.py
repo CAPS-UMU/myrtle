@@ -11,14 +11,15 @@ def roundUpToNearestMultipleOf(num, row_dim):
 @dataclass
 class InputMatrix:
     """Class for keeping track of matrix dimensions in"""
-    """matrix-vector transpose with type `<MxK>, <NxK> -> <MxN>` where `M = 1` (otherwise matmul)"""
+    """matmul transpose with type `<MxK>, <NxK> -> <MxN>`"""
+    m: int = 1
     n: int = 1200
     k: int = 400
 
 @dataclass
 class TileSizes:
-    """Class for keeping track of matrix-vector transpose tiling in each dimension;"""
-    """matrix-vector transpose with type `<MxK>, <NxK> -> <MxN>` where `M = 1` (otherwise matmul)"""
+    """Class for keeping track of matmul transpose tiling in each dimension;"""
+    """matmul transpose with type `<MxK>, <NxK> -> <MxN>`"""
     m: int = 1
     n : int = 40
     k : int = 100
@@ -32,7 +33,7 @@ class HardwareLoop:
 
 @dataclass
 class EnclosingSCFLoop:
-    """Class for keeping track of a potential loop surrounding the hardware"""
+    """Class for keeping track of a potential loop surrounding the hardware loop"""
     name: str = "an enclosing loop"
     iters : int = 1   # number of times the enclosing loop executes
     exists : bool = False # whether the hardware loop is in fact enclosed by another loop

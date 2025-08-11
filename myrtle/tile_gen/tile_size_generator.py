@@ -13,9 +13,12 @@ from tile_SA.utils import InputMatrix, TileSizes, roundUpToNearestMultipleOf
 
 
 class TileSizeGenerator:
-    def __init__(self, outputVectorEltCount, inputVectorEltCount, dispatchName=""):
-        self.me = InputMatrix(n=outputVectorEltCount, k=inputVectorEltCount)
+    def __init__(self, M_dim, outputVectorEltCount, inputVectorEltCount, dispatchName=""):
+        self.me = InputMatrix(m=M_dim,n=outputVectorEltCount, k=inputVectorEltCount)
         self.dispatchName = dispatchName
+    
+    def dividesIntoM(self, num):
+        return self.me.m % num == 0
 
     def dividesIntoN(self, num):
         return self.me.n % num == 0
@@ -94,38 +97,20 @@ class TileSizeGenerator:
         filter(lambda x: x <= (self.me.k // 2) + 1, k_options))
         # print(f'now n options are {list(n_options)}')
         # print(f'now k options are {list(k_options)}')
-        options_as_pairs = list(product(n_options, k_options))
+        m_options=[0]
+        options_as_pairs = list(product(m_options,n_options, k_options))
         annotated_options = list(map(lambda tup: self.annotateOption(tup), options_as_pairs))
         # filter by size
         valid_options = list(
-            filter(lambda tup: self.smallEnough(tup[0][0], tup[0][1]), annotated_options)
+            filter(lambda tup: self.smallEnough(tup[0][0], tup[0][1],tup[0][2]), annotated_options)
         )
         # print(valid_options)
         return valid_options
-        # filter by size
-        # sizeInfo = list(map(lambda tup: jen.annotateOption(tup), valid_options))
-        # # add load counting information
-        # sizeAndLoadInfo = jen.exportOptionsToCSV(dispatchName, caseNo, sizeInfo)
-        # extras = jen.addMoreColsForConvenience(sizeAndLoadInfo)
-        # return(extras)
-       # return list(product(little_n_no_pad, little_k_no_pad))
-        #return list(product(little_n_no_pad, k_dim_halve_options_for_double_buffering))
-
-        # print("litlle n no padding: [", end="")
-        # for i in little_n_no_pad:
-        #     print(i, end=", ")
-        # print("]")
-        # print("little k no padding:[", end="")
-        # for i in little_k_no_pad:
-        #     print(i, end=", ")
-        # print("]")
-        # # return (little_n_no_pad,little_k_no_pad)
-        # return list(product(little_n_no_pad, little_k_no_pad))
 
     def weightMatTileSize(self, row_dim, reduction_dim):
         return row_dim * reduction_dim
 
-    def spaceForTiles(self, row_dim, reduction_dim):
+    def spaceForTiles(self, m_dim, row_dim, reduction_dim):
         # space in element count
         inputVectorTile = 1 * reduction_dim
         weightMatTiles = 2 * self.weightMatTileSize(row_dim, reduction_dim)
@@ -135,7 +120,7 @@ class TileSizeGenerator:
         # print(f'0-{48}-{100}:\ninputVectorTile elts: {inputVectorTile} * 8 = {inputVectorTile*8}. \nweightMatTiles elts: {weightMatTiles} * 8 = {weightMatTiles*8}.\ntotal in bytes: {spaceInBytes}.')
         return spaceInBytes
 
-    def spaceRemaining(self, row_dim, reduction_dim):
+    def spaceRemaining(self, m_dim, row_dim, reduction_dim):
         l1MemoryBytes = 100000
         outputMatVec = roundUpToNearestMultipleOf(self.me.n, row_dim) * 8
         # if we padded the row dimension, 
@@ -150,12 +135,12 @@ class TileSizeGenerator:
             - outputMatVec
             - outputFusedAdd
             - inputFusedAdd
-            - self.spaceForTiles(row_dim, reduction_dim)
+            - self.spaceForTiles(m_dim, row_dim, reduction_dim)
         )
         return remaining
 
-    def smallEnough(self,row_dim, red_dim):
-        return self.spaceRemaining(row_dim, red_dim) > 0
+    def smallEnough(self,m_dim, row_dim, red_dim):
+        return self.spaceRemaining(m_dim, row_dim, red_dim) > 0
 
     # annotate a (row_dim, reduction_dim) pair with
     # total L1 space used for tiles
@@ -165,12 +150,12 @@ class TileSizeGenerator:
     def annotateOption(self, tup):
         return (
             tup,
-            self.spaceForTiles(tup[0], tup[1]),
-            self.weightMatTileSize(tup[0], tup[1]),
-            self.spaceRemaining(tup[0], tup[1]),
+            self.spaceForTiles(tup[0], tup[1], tup[2]),
+            self.weightMatTileSize(tup[1], tup[2]),
+            self.spaceRemaining(tup[0], tup[1], tup[2]),
         )
 
-    # annotate a (row_dim, reduction_dim) pair with
+    # annotate a (m_dim, row_dim, reduction_dim) triple with
     # quidditch load counting information
     # flatten tuple
     # matrix-vector transpose with type `<MxK>, <NxK> -> <MxN>` where `M = 1` (otherwise matmul)
@@ -178,10 +163,9 @@ class TileSizeGenerator:
     #         outputVectorEltCount = N (AKA "row_dim")
     #         inputVectorEltCount = K (AKA "reduction dim")
     #
-    # ex. python3 tile_size_gen.py "dispatch_1" 1200 400
     def flattenThenAnnotateMore(self, ann, caseNo: int):
-        input = InputMatrix(n=self.me.n, k=self.me.k)
-        tiles = TileSizes(n=ann[0][0], k=ann[0][1])
+        input = InputMatrix(m=self.me.m,n=self.me.n, k=self.me.k)
+        tiles = TileSizes(m=ann[0][0],n=ann[0][1], k=ann[0][2])
         flat = self.convertAnnotationToFlatTuple(ann)
         loadInfo = (caseNo,) + qlc.getLoadCountingAnn(input, tiles)
         concatted = flat + loadInfo
@@ -190,9 +174,9 @@ class TileSizeGenerator:
     # helper for converting to CSV
     def convertAnnotationToFlatTuple(self, elt):
         return (
-            f"{0}-{elt[0][0]}-{elt[0][1]}",
-            elt[0][0],
+            f"{elt[0][0]}-{elt[0][1]}-{elt[0][2]}",
             elt[0][1],
+            elt[0][2],
             elt[1],
             elt[2],
             elt[3],
@@ -226,23 +210,8 @@ class TileSizeGenerator:
         )
         return df
 
-    def tupleIze(a, b):
-        return (a, b)
-
-    def get_tile_shape(row_dim, col_dim):
-        if row_dim > col_dim:
-            shape = "tall"
-        if row_dim < col_dim:
-            shape = "wide"
-        if row_dim == col_dim:
-            shape = "square"
-        return shape
-
     def addMoreColsForConvenience(df):
         df["Total Loads"] = df["Regular Loads"] + df["Total Streaming Loads"]
-        df["Tile Shape"] = df.apply(
-            lambda x: get_tile_shape(x["Row Dim"], x["Reduction Dim"]), axis=1
-        )
         return df
 
 def main():
