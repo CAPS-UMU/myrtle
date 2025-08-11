@@ -90,10 +90,14 @@ def main():
     # finally stary graphing
     tup=dfs,dispatchOrder,caseNos,titles
     # generate graphs of actual dispatch times
-    graphActualTime('graphing/out/ActualTime-3-dispatches-rank-x-axis.png',"rank","Rank","fastest to slowest",tup)
-    graphActualTime('graphing/out/ActualTime-3-dispatches-L1-usage-x-axis.png',"Space Needed in L1","L1 Usage","bytes",tup)
-    graphActualTime('graphing/out/ActualTime-3-dispatches-micro-runs-x-axis.png',"Microkernel Count","Microkernel Runs","microkernel count",tup)
-    graphActualTime('graphing/out/ActualTime-3-dispatches-regular-loads-axis.png',"Regular Loads","Regular Loads","from scratchpad to register",tup)
+    # graphActualTime('graphing/out/ActualTime-3-dispatches-rank-x-axis.png',"rank","Rank","fastest to slowest",tup)
+    # graphActualTime('graphing/out/ActualTime-3-dispatches-L1-usage-x-axis.png',"Space Needed in L1","L1 Usage","bytes",tup)
+    # graphActualTime('graphing/out/ActualTime-3-dispatches-micro-runs-x-axis.png',"Microkernel Count","Microkernel Runs","microkernel count",tup)
+    # graphActualTime('graphing/out/ActualTime-3-dispatches-regular-loads-axis.png',"Regular Loads","Regular Loads","from scratchpad to register",tup)
+    graphActualTime('graphing/out/ActualTotalTime-3-dispatches-rank-x-axis.png',"rank","Rank","fastest to slowest",tup)
+    graphActualTime('graphing/out/ActualTotalTime-3-dispatches-L1-usage-x-axis.png',"Space Needed in L1","L1 Usage","bytes",tup)
+    graphActualTime('graphing/out/ActualTotalTime-3-dispatches-micro-runs-x-axis.png',"Microkernel Count","Microkernel Runs","microkernel count",tup)
+    graphActualTime('graphing/out/ActualTotalTime-3-dispatches-regular-loads-axis.png',"Regular Loads","Regular Loads","from scratchpad to register",tup)
     
     # generate graph of actual vs predicted dispatch times
     graphActualVsPredictedTime(mode,f'graphing/out/ActualVsPredTime-3-dispatches-{mode}.png',tup)
@@ -106,11 +110,12 @@ def graphActualTime(path,x,x_label,x_unit,tup):
             x=x,
             x_label=x_label,
             x_unit=x_unit,
-            y="Kernel Time",
-            y_label="Kernel Time",
+            y="Total Time", #y="Kernel Time",
+            y_label="Total Time", #y_label="Kernel Time",
             y_unit="cycles",
         )
-    actualTimeDispatchCase(dfs,dispatchOrder,caseNos,titles,"Kernel Time","",keysActual,"",path)
+    # actualTimeDispatchCase(dfs,dispatchOrder,caseNos,titles,"Kernel Time","",keysActual,"",path)
+    actualTimeDispatchCase(dfs,dispatchOrder,caseNos,titles,"Total Time","",keysActual,"",path)
 
 def graphActualVsPredictedTime(mode,path,tup):
     dfs,dispatchOrder,caseNos,titles=tup
@@ -167,6 +172,7 @@ def actualTime(dfs, dispNo, caseNo, title, y1="Kernel Time",y2="Kernel Time Esti
         colors = ['Lavender','Thistle','Plum','Purple']
         colors = ['#c8acde','#b28bd0','#9c6ac3','#8649b6']
         colors = ['#98c1f2','#6fa8ec','#468fe7','Purple']
+        colors = ['#c0c8d1','#98c1f2','#468fe7','Purple']
         stroke = lambda x: colors[x["stage"]]
     # tableData = dfs[(dispNo,caseNo)][["rankAsStr","Microkernel Row Dim","Kernel Time","UnrollAndJam Outer Loops","Microkernel Count","Row Dim","Reduction Dim"]]
     # colLabels = ["rank","n'","Kernel Time","CC Outer Loops","Micro Runs","n","k"]

@@ -78,11 +78,18 @@ class TileSizeGenerator:
         else:
             n_options = little_n_no_pad
         little_k_no_pad = list(filter(lambda x: self.dividesIntoK(x), little_k_options))
+        # if len(little_k_no_pad) < 5: # prime K dimension, or unfriendly K dim
+        #     print(f'k_options without padding: {little_k_no_pad}')
+        #     no_pad = set(little_k_no_pad)
+        #     pad = set(self.paddedKDimOptions())
+        #     print(f'k_options without padding as SET: {no_pad}')
+        #     print(f'k_options with padding as SET: {list(pad)}')
+        #     k_options = list(no_pad.union(pad))
         if len(little_k_no_pad) == 1: # prime K dimension
             k_options = self.paddedKDimOptions()
         else:
             k_options = little_k_no_pad
-        # have k dim options for double buffering
+        # halve k dim options for double buffering
         k_options = list(
         filter(lambda x: x <= (self.me.k // 2) + 1, k_options))
         # print(f'now n options are {list(n_options)}')

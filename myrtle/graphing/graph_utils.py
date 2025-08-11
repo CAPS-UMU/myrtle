@@ -54,7 +54,7 @@ class Keys2D:
 
 @dataclass
 class CustomMarker:
-    """Class for storing functions from row data to marker style"""
+    """Class for storing functions that map row data to marker style"""
     y : str = '',
     marker: Callable[[T], mpl.markers.MarkerStyle] = lambda x="o": "o"
     label: Callable[[T], str] = lambda y="no label": "_no label"
@@ -152,7 +152,7 @@ def graphEmAll(shape: tuple, graphs):
     if shape[0] * shape[1] != len(graphs):
         raise Exception("area of shape and graph count must be equal!")
     fig = plt.figure()
-    #fig.set_size_inches(4, 2)
+    #fig.set_size_inches(4, 2) # for the deliverable graphs
     #fig.set_size_inches(1098/72.0,476/72.0) # 15.25 x 6.61
     fig.set_size_inches(8,10)
     for i in range(0, len(graphs)):

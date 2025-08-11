@@ -79,8 +79,8 @@ def tileSelection(csvFile, mode):
             # mark which tiling schemes survived final filter
             mask = stages["JSON Name"].isin(final_ranking.iloc[0])
             stages.loc[mask, "stage"]=3
-            print(stages[["JSON Name","stage"]])
-            print(f'writing out to file starting with {csvFileRanked}')
+            #print(stages[["JSON Name","stage"]])
+            print(f'Myrtle: writing out to file starting with {csvFileRanked}')
             stages.to_csv(f"{csvFileRanked}-myrtle-{mode}-ranking.csv",index=False)
     m = 1 #TODO: expand tiling to matmul!!
     n = int(df.iloc[0]["Row Dim"])
@@ -91,6 +91,11 @@ def tileSelection(csvFile, mode):
 # arg 1 is dispatchName as a string
 # arg 2 is tile selection mode
 # arg 3 is file to write tile scheme to
+# for Example,
+# nohup bash startNoHangUpRun.sh "1x400x161wm-n-k_case1_searchSpace.csv"
+# #  "1x400x161wm-n-k" genJsons no no no 
+# #"main\$async_dispatch_0_matmul_transpose_b_1x400x161_f64" skip > myJobOutputD0.out &
+# python3 myrtle/myrtle.py "main\$async_dispatch_0_matmul_transpose_b_1x400x161_f64" sflt
 def main():
     # print("myrtle: ",end='')
     dispatchName = sys.argv[1]

@@ -11,6 +11,6 @@ cd myrtle/accuracy/with-old-data
 With our `venv` activated, we generated the graphs in this directory using the following commands:
 
 ```
-. graphing-w-old-sensitivity-analysis.sh svrcyc
+. graphing-w-old-sensitivity-analysis.sh sflt
 ```
 
