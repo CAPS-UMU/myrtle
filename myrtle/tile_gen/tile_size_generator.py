@@ -222,7 +222,7 @@ class TileSizeGenerator:
             index=False,
         )
         print(
-            f"Saved CSV to ./{dispatchName}_case{caseNo}_searchSpace.csv"
+            f"TSG: wrote search space to ./{dispatchName}_case{caseNo}_searchSpace.csv"
         )
         return df
 
