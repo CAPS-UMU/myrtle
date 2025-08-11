@@ -25,17 +25,13 @@ class TileSizeGenerator:
 
     def dividesIntoK(self, num):
         return self.me.k % num == 0
-
-    def myfunc(self):
-        print(f"I am {self.me}")
-        self.validOptions()
     
     def mDimOptions(self):
         max = self.me.m
         min = 8
         exhaustive = list(range(min, max + 1))
         if (self.me.k % 2) != 0:
-            print(f"WARNING: K = {self.me.k} is NOT divisible by 2!")
+            print(f"WARNING: M = {self.me.m} is NOT divisible by 2!")
         return exhaustive
 
     def rowDimOptions(self):
@@ -43,7 +39,7 @@ class TileSizeGenerator:
         byEight = list(map(lambda x: 8 * x, hardware_loop_body_options))
         max = self.me.n
         min = byEight[0]
-        exhaustive = list(range(min, max+1, 8))
+        exhaustive = list(range(min, max + 1, 8))
         return exhaustive
 
     def reductionDimOptions(self):
@@ -107,13 +103,6 @@ class TileSizeGenerator:
         else:
             n_options = little_n_no_pad
         little_k_no_pad = list(filter(lambda x: self.dividesIntoK(x), little_k_options))
-        # if len(little_k_no_pad) < 5: # prime K dimension, or unfriendly K dim
-        #     print(f'k_options without padding: {little_k_no_pad}')
-        #     no_pad = set(little_k_no_pad)
-        #     pad = set(self.paddedKDimOptions())
-        #     print(f'k_options without padding as SET: {no_pad}')
-        #     print(f'k_options with padding as SET: {list(pad)}')
-        #     k_options = list(no_pad.union(pad))
         if len(little_k_no_pad) == 1: # prime K dimension
             k_options = self.paddedKDimOptions()
         else:
@@ -122,32 +111,24 @@ class TileSizeGenerator:
         k_options = list(
         filter(lambda x: x <= (self.me.k // 2) + 1, k_options))
         options_as_triples = list(product(m_options,n_options, k_options))
-        #print(f"{options_as_triples}")
         annotated_options = list(map(lambda tup: self.annotateOption(tup), options_as_triples))
-        #print(annotated_options)
         # filter out tiling schemes that do not fit in L1
         valid_options = list(
             filter(lambda tup: self.smallEnough(tup[0][0], tup[0][1],tup[0][2]), annotated_options)
         )
-        print(f'abaout to return valid options: {valid_options}')
         return valid_options
 
     def weightMatTileSize(self, row_dim, reduction_dim):
         return row_dim * reduction_dim
 
     def spaceForTiles(self, m_dim, row_dim, reduction_dim):
-        # ignore output matrix tiles
+        # ignore output matrix tiles (for now, entire output always in L1)
         # space in element count
         inputMatTile = m_dim * reduction_dim
         weightMatTiles = 2 * self.weightMatTileSize(row_dim, reduction_dim)
         space = inputMatTile + weightMatTiles
         # space in  bytes
         spaceInBytes = space * 8  # number of elements * 8 bytes per element
-        if((m_dim == 20) and (row_dim == 40) and (reduction_dim == 10)):
-            print(f'for input matrix, allocate {m_dim}x{reduction_dim} = {m_dim * reduction_dim} elements')
-            print(f'for weight matrix, allocate {row_dim}x{reduction_dim} ={self.weightMatTileSize(row_dim, reduction_dim)} elements')
-            print(f'for double buffering, allocate again {self.weightMatTileSize(row_dim, reduction_dim)} elements')
-            # print(f'so total is {space} elements = {spaceInBytes} bytes')
         return spaceInBytes
 
     def spaceRemaining(self, m_dim, row_dim, reduction_dim):
@@ -173,13 +154,6 @@ class TileSizeGenerator:
             - inputElemAdd
             - self.spaceForTiles(m_dim, row_dim, reduction_dim)
         )
-        if((m_dim == 20) and (row_dim == 40) and (reduction_dim == 10)):
-            # print(f'm_dim is {m_dim}')
-            print(f'output of matmul has size {outputMatMul_m}x{outputMatMul_n} = {outputMatMul_m * outputMatMul_n}={outputMatMul}')
-            print(f'output of matmul has size {outputMatMul_m}x{outputMatMul_n} = {outputMatMul_m * outputMatMul_n}={outputElemAdd}')
-            print(f'bias has size {inputElemAdd/8}')
-            print(f"so remaining is {remaining}")
-            print()
         return remaining
 
     def smallEnough(self,m_dim, row_dim, red_dim):
@@ -210,7 +184,6 @@ class TileSizeGenerator:
         input = InputMatrix(m=self.me.m,n=self.me.n, k=self.me.k)
         tiles = TileSizes(m=ann[0][0],n=ann[0][1], k=ann[0][2])
         flat = self.convertAnnotationToFlatTuple(ann)
-        # print(f'FLAT IS {flat}')
         loadInfo = (caseNo,) + qlc.getLoadCountingAnn(input, tiles)
         concatted = flat + loadInfo
         return concatted
