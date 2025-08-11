@@ -175,6 +175,7 @@ class TileSizeGenerator:
     def convertAnnotationToFlatTuple(self, elt):
         return (
             f"{elt[0][0]}-{elt[0][1]}-{elt[0][2]}",
+            elt[0][0],
             elt[0][1],
             elt[0][2],
             elt[1],
@@ -186,6 +187,7 @@ class TileSizeGenerator:
     def annotationColumnNames(self):
         columns = [
             "JSON Name",
+            "m Dim",
             "Row Dim",
             "Reduction Dim",
             "Space Needed in L1",
