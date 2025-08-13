@@ -14,14 +14,14 @@ topX="$2"
 cd "../myrtle"
 
 # generate mode-agnostic graphs first
-# fp="$dir/1x400x161wm-n-k-padding-k-graphing.csv" # dispatch 0
-# python3 -m graphing.reef $fp $outputDir $mode
-# fp="$dir/1x1200x400wm-n-k-graphing.csv"          # dispatch 1
-# python3 -m graphing.reef $fp $outputDir $mode
-# fp="$dir/1x600x400wm-n-k-graphing.csv"           # dispatch 7
-# python3 -m graphing.reef $fp $outputDir $mode
-# fp="$dir/1x600x600wm-n-k-graphing.csv"           # dispatch 8
-# python3 -m graphing.reef $fp $outputDir $mode
+fp="$dir/1x400x161wm-n-k-padding-k-graphing.csv" # dispatch 0
+python3 -m graphing.kernelAndTotalTime $fp $outputDir $mode
+fp="$dir/1x1200x400wm-n-k-graphing.csv"          # dispatch 1
+python3 -m graphing.kernelAndTotalTime $fp $outputDir $mode
+fp="$dir/1x600x400wm-n-k-graphing.csv"           # dispatch 7
+python3 -m graphing.kernelAndTotalTime $fp $outputDir $mode
+fp="$dir/1x600x600wm-n-k-graphing.csv"           # dispatch 8
+python3 -m graphing.kernelAndTotalTime $fp $outputDir $mode
 
 # generate myrtle rankings given search space
 rm -f "test_output-disp-0-$mode.json" 2> /dev/null
@@ -44,23 +44,24 @@ python3 myrtle.py "main\$async_dispatch_8_matmul_transpose_b_1x600x600_f64" $mod
 # generate graph actual vs predicted for Dispatch Time
 fp="$dir/1x400x161wm-n-k-padding-k-graphing.csv" # dispatch 0
 fp2="$dir/1x400x161wm-n-k-padding-k-graphing-myrtle-$mode-ranking.csv"
-python3 -m graphing.sponge $fp $fp2 $outputDir $mode $topX
-python3 -m graphing.seaweed $fp $fp2 $outputDir $mode $topX
+python3 -m graphing.actualVsPredicted $fp $fp2 $outputDir $mode $topX
+python3 -m graphing.xVsYs $fp $fp2 $outputDir $mode $topX
 
 fp="$dir/1x1200x400wm-n-k-graphing.csv"          # dispatch 1
 fp2="$dir/1x1200x400wm-n-k-graphing-myrtle-$mode-ranking.csv" 
-python3 -m graphing.sponge $fp $fp2 $outputDir $mode $topX
-python3 -m graphing.seaweed $fp $fp2 $outputDir $mode $topX
+python3 -m graphing.actualVsPredicted $fp $fp2 $outputDir $mode $topX
+python3 -m graphing.xVsYs $fp $fp2 $outputDir $mode $topX
 
 fp="$dir/1x600x400wm-n-k-graphing.csv"           # dispatch 7
 fp2="$dir/1x600x400wm-n-k-graphing-myrtle-$mode-ranking.csv" 
-python3 -m graphing.sponge $fp $fp2 $outputDir $mode $topX
-python3 -m graphing.seaweed $fp $fp2 $outputDir $mode $topX
+python3 -m graphing.actualVsPredicted $fp $fp2 $outputDir $mode $topX
+python3 -m graphing.xVsYs $fp $fp2 $outputDir $mode $topX
 
 fp="$dir/1x600x600wm-n-k-graphing.csv"           # dispatch 8
 fp2="$dir/1x600x600wm-n-k-graphing-myrtle-$mode-ranking.csv"  
-python3 -m graphing.sponge $fp $fp2 $outputDir $mode $topX
-python3 -m graphing.seaweed $fp $fp2 $outputDir $mode $topX
+python3 -m graphing.actualVsPredicted $fp $fp2 $outputDir $mode $topX
+python3 -m graphing.xVsYs $fp $fp2 $outputDir $mode $topX
+
 # clean up generated myrtle ranking CSVs
 cd $here
 rm -f "test_output-disp-0-$mode.json" 
