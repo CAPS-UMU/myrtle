@@ -2,10 +2,10 @@ from dataclasses import dataclass, field
 import pandas as pd
 import sys
 from itertools import product
-import tile_SA.quidditch_load_counting as qlc
-from tile_SA.utils import InputMatrix, TileSizes, roundUpToNearestMultipleOf
+import tile_SA.tile_static_analysis as tsa
+from tile_SA.utils import MatmulInputs, TileSizes, roundUpToNearestMultipleOf
 # @dataclass
-# class InputMatrix:
+# class MatmulInputs:
 #     """Class for keeping track of matrix dimensions in"""
 #     """matrix-vector transpose with type `<MxK>, <NxK> -> <MxN>` where `M = 1` (otherwise matmul)"""
 #     n: int = 1200
@@ -14,8 +14,7 @@ from tile_SA.utils import InputMatrix, TileSizes, roundUpToNearestMultipleOf
 
 class TileSizeGenerator:
     def __init__(self, M_dim, outputVectorEltCount, inputVectorEltCount, dispatchName=""):
-        self.me = InputMatrix(m=M_dim,n=outputVectorEltCount, k=inputVectorEltCount)
-        self.dispatchName = dispatchName
+        self.me = MatmulInputs(m=M_dim,n=outputVectorEltCount, k=inputVectorEltCount)
     
     def dividesIntoM(self, num):
         return self.me.m % num == 0
@@ -180,12 +179,14 @@ class TileSizeGenerator:
     #         outputVectorEltCount = N (AKA "row_dim")
     #         inputVectorEltCount = K (AKA "reduction dim")
     #
-    def flattenThenAnnotateMore(self, ann, caseNo: int):
-        input = InputMatrix(m=self.me.m,n=self.me.n, k=self.me.k)
+    def flattenThenAnnotateMore(self, ann):
+        input = MatmulInputs(m=self.me.m,n=self.me.n, k=self.me.k)
         tiles = TileSizes(m=ann[0][0],n=ann[0][1], k=ann[0][2])
         flat = self.convertAnnotationToFlatTuple(ann)
-        loadInfo = (caseNo,) + qlc.getLoadCountingAnn(input, tiles)
-        concatted = flat + loadInfo
+        loweringInfo = tsa.getLoweringInfoAnnotation(input, tiles)
+        # print("\t",end='')
+        # print(f"TSS: sa annotation is: {loweringInfo}")
+        concatted = flat + loweringInfo
         return concatted
 
     # helper for converting to CSV
@@ -214,23 +215,22 @@ class TileSizeGenerator:
         return columns
 
     # export annotated options to CSV
-    def exportOptionsToCSV(self, dispatchName, caseNo, options):
-        flat = list(map(lambda tup: self.flattenThenAnnotateMore(tup, caseNo), options))
-        cols = (
-            self.annotationColumnNames() + ["Case"]
-        ) + qlc.LoadCountingAnnColumnNames()
+    def exportOptionsToCSV(self, dispatchName, options):
+        flat = list(map(lambda tup: self.flattenThenAnnotateMore(tup), options))
+        cols =self.annotationColumnNames()+ [] + tsa.getLoweringInfoColumnNames()
+        # saAnnotationCols = tsa.getLoweringInfoColumnNames()
+        # print("\t",end='')
+        # print(f"TSS: sa columns are : {saAnnotationCols}")
         df = pd.DataFrame(flat, columns=cols)
         df.to_csv(
-            f"./{dispatchName}_case{caseNo}_searchSpace.csv",
+            f"./{dispatchName}_searchSpace.csv",
             index=False,
         )
+        print("\t",end='')
         print(
-            f"TSG: wrote search space to ./{dispatchName}_case{caseNo}_searchSpace.csv"
+            
+            f"TSG: wrote search space to ./{dispatchName}_searchSpace.csv"
         )
-        return df
-
-    def addMoreColsForConvenience(df):
-        df["Total Loads"] = df["Regular Loads"] + df["Total Streaming Loads"]
         return df
 
 def main():

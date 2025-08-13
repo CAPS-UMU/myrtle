@@ -9,8 +9,8 @@ def roundUpToNearestMultipleOf(num, row_dim):
     return num
 
 @dataclass
-class InputMatrix:
-    """Class for keeping track of matrix dimensions in"""
+class MatmulInputs:
+    """Class for keeping track of input dimensions of a"""
     """matmul transpose with type `<MxK>, <NxK> -> <MxN>`"""
     m: int = 1
     n: int = 1200
@@ -18,7 +18,7 @@ class InputMatrix:
 
 @dataclass
 class TileSizes:
-    """Class for keeping track of matmul transpose tiling in each dimension;"""
+    """Class for keeping track of tiling in each dimension for a"""
     """matmul transpose with type `<MxK>, <NxK> -> <MxN>`"""
     m: int = 1
     n : int = 40
@@ -28,15 +28,19 @@ class TileSizes:
 class HardwareLoop:
     """Class for keeping track of hardware loop characteristics"""
     name: str = "frepOuter"#FrepOuter.name
-    loop_repeats: int = 1 # number of times loop executes
-    body_size: int = 1    # number of instructions in body of the loop
+    loop_iters: int = 1 # number of times loop executes
+    body_size: int = 1  # number of instructions in body of the loop
+    # right now, we assume all the instructions inside the body are the SAME
+    # we assume each instruction takes 2 operands: a, b, -> c
+    # we assume operands a and b using SSRs, and c does not
+
 
 @dataclass
 class EnclosingSCFLoop:
     """Class for keeping track of a potential loop surrounding the hardware loop"""
     name: str = "an enclosing loop"
-    iters : int = 1   # number of times the enclosing loop executes
-    exists : bool = False # whether the hardware loop is in fact enclosed by another loop
+    iters : int = 1   # number of times the enclosing loop executes; 
+                      # if iters == 1, enclosing loop DNE.
 
 def unrollAndJamFactor(rowDim):
     options = [7,6,5,4,3,2]

@@ -22,25 +22,25 @@ def main():
     dispatchRegex=re.compile(r'main\$async_dispatch_\d+_matmul_transpose_b_(\d+)x(\d+)x(\d+)_f64')
     M,N,K = dispatchRegex.search(dispatchName).groups()
     # query myrtle!
-    searchSpaceCSVName=f'{M}x{N}x{K}wm-n-k_case1_searchSpace.csv'
+    searchSpaceCSVName=f'{M}x{N}x{K}wm-n-k_searchSpace.csv'
     if len(sys.argv) == 5: # skip search space gen
         searchSpaceCSVName=sys.argv[4]
     else:
         # generate options
         jen = tsg.TileSizeGenerator(int(M),int(N),int(K),dispatchName)
         options = jen.validOptions()
-        print("myrtle : ",end='')
-        print(f'OPTIONS ARE {options}')
-        jen.exportOptionsToCSV(f'{M}x{N}x{K}wm-n-k', 1, options)
+       # print("myrtle : ",end='')
+        #print(f'OPTIONS ARE {options}')
+        jen.exportOptionsToCSV(f'{M}x{N}x{K}wm-n-k', options)
     m,n,k,dualBuffer = tss.tileSelection(searchSpaceCSVName,sys.argv[2])   
     if sys.argv[2] == "sflt":
-        print("myrtle : ",end='')
+        print("myrtle: ",end='')
         print("We used simple filtering to select tiles.")
     if sys.argv[2] == "scyc":
-        print("myrtle : ",end='')
+        print("myrtle: ",end='')
         print("We used a simple cycle estimation to select tiles.") 
     if sys.argv[2] == "svrcyc":
-        print("myrtle : ",end='')
+        print("myrtle: ",end='')
         print("We used an SVR to select tiles.")   
     # default values
     with open(sys.argv[3], 'r') as file:

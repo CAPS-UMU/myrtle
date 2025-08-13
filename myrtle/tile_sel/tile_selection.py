@@ -17,9 +17,10 @@ def get_simple_cycle_estimate(timeEstimateFuncs, row_dim, col_dim, outerLoopIter
        return timeEstimateFuncs[row_dim/outerLoopIters](col_dim)*microCount #+ outerLoopIters*100
 
 def tileSelection(csvFile, mode):
-    print(f'tile selection: about to read in file {csvFile}')
+    print("\t",end='')
+    print(f'TSS: about to read in file {csvFile}')
     df = pd.read_csv(csvFile)
-    csvFileRanked = csvFile[:-(len(".csv"))]
+    basename = csvFile[:-(len(".csv"))]
    # myLoc=os.path.abspath(__file__)[:-(len("myrtle.py"))]  
     if mode == "svrcyc":
         file = open('dispatch-8-svr.pickle', 'rb')
@@ -27,7 +28,7 @@ def tileSelection(csvFile, mode):
         df["Predicted Kernel Time"] = df.apply(lambda y: svr.predict([y[["Microkernel Count","Regular Loads","Reused Streaming Loads","Space Needed in L1","Row Dim","Reduction Dim"]]])[0], axis=1)
         ranked = df.sort_values("Predicted Kernel Time", ascending=True)
         df = ranked
-        df.to_csv(f"{csvFileRanked}-myrtle-{mode}-ranking.csv",index=False)
+        df.to_csv(f"{basename}-myrtle-{mode}-ranking.csv",index=False)
     else: 
         if mode == "scyc":
             linearApproxFilePath = 'linesOfBestFit.pickle'
@@ -39,11 +40,12 @@ def tileSelection(csvFile, mode):
             df["Kernel Time Estimate"] = df.apply(lambda x: get_simple_cycle_estimate(lines,x["Microkernel Row Dim"], x["Microkernel Reduction Dim"],x["Outer Loop Iters"],x["Microkernel Count"]), axis=1)
             ranked = df.sort_values("Kernel Time Estimate", ascending=True)
             df = ranked
-            df.to_csv(f"{csvFileRanked}-myrtle-{mode}-ranking.csv",index=False)
+            df.to_csv(f"{basename}-myrtle-{mode}-ranking.csv",index=False)
         else:
-            print(f'the df id {df}')
+            #print(f'the df id {df}')
             # minimize microkernel runs
             df_sorted = df.sort_values("Microkernel Count", ascending=True)
+            # df_sorted = df.sort_values("SSR Config Count", ascending=True)
             stages=df_sorted
             stages["stage"]=0
             #sprint(stages[["JSON Name","stage"]])
@@ -51,7 +53,7 @@ def tileSelection(csvFile, mode):
             # mark which tiling schemes survived filter
             mask = stages["JSON Name"].isin(df_sorted["JSON Name"])
             stages.loc[mask, 'stage']=1
-            print(stages[["JSON Name","stage"]])
+            #print(stages[["JSON Name","stage"]])
             
             # maximise L1 usage
             df_sorted = df_sorted.sort_values("Space Needed in L1", ascending=False)
@@ -59,18 +61,20 @@ def tileSelection(csvFile, mode):
             # mark which tiling schemes survived filter
             mask = stages["JSON Name"].isin(df_sorted["JSON Name"])
             stages.loc[mask, 'stage']=2
-            print(stages[["JSON Name","stage"]])
+            #print(stages[["JSON Name","stage"]])
             
             # minimize regular loads
             final_ranking = df_sorted.sort_values("Regular Loads", ascending=True)
             df = final_ranking
-            print(f'final_ranking is {final_ranking}')
+           # print(f'final_ranking is {final_ranking}')
             # mark which tiling schemes survived final filter
             mask = stages["JSON Name"].isin(final_ranking.iloc[0])
             stages.loc[mask, "stage"]=3
             #print(stages[["JSON Name","stage"]])
-            print(f'myrtle: TSS: wrote ranking to file {csvFileRanked}')
-            stages.to_csv(f"{csvFileRanked}-myrtle-{mode}-ranking.csv",index=False)
+            print("\t",end='')
+            csvFileRanked = f"{basename}-myrtle-{mode}-ranking.csv"
+            print(f'TSS: wrote ranking to file {csvFileRanked}')
+            stages.to_csv(f"{basename}-myrtle-{mode}-ranking.csv",index=False)
     m = 1 #TODO: expand tiling to matmul!!
     n = int(df.iloc[0]["Row Dim"])
     k = int(df.iloc[0]["Reduction Dim"])
