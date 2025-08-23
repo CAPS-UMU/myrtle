@@ -105,7 +105,7 @@ def graphXvsYs(df, x, ys, title, outputPath, table_bb_height):
             "rankAsStr",
             "Row Dim",
             "Reduction Dim",
-            "Microkernel Row Dim",
+            "Little N Prime",
         ]
     ]
     colLabels = ["rank", "n", "k", "n'"]

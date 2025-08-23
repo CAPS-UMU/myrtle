@@ -50,6 +50,22 @@ def main():
         y1 = ("Kernel Time_y", "Time", "cycles", pickColor)
         g = graphXvsYs(ranked, x, [y1], title, outputPath, 0.94)
         graphEmAll((1,1),[g], 8, 10)
+        # SSR Config Count vs time
+        outputPath = f"{args[2]}/d{d}-{M}-{N}-{K}-SSR-Config-Count"
+        def pickColor(x):
+            return 'Black'
+        x = ("SSR Config Count", "SSR Config Overhead", "count")
+        y1 = ("Kernel Time_y", "Time", "cycles", pickColor)
+        g = graphXvsYs(ranked, x, [y1], title, outputPath, 0.94)
+        graphEmAll((1,1),[g], 8, 10)
+        # Unroll and Jam Loops vs time
+        outputPath = f"{args[2]}/d{d}-{M}-{N}-{K}-SSR-UnrollAndJam-Loop-iters"
+        def pickColor(x):
+            return 'Black'
+        x = ("UnrollAndJam Loop Iters", "UnrollAndJam Loop Overhead", "iters")
+        y1 = ("Kernel Time_y", "Time", "cycles", pickColor)
+        g = graphXvsYs(ranked, x, [y1], title, outputPath, 0.94)
+        graphEmAll((1,1),[g], 8, 10)
     else:  # graph Actual vs Predicted Kernel Time
         print("We only graph flat filtered rankings.")
 
@@ -60,7 +76,7 @@ def graphXvsYs(df, x, ys, title, outputPath, table_bb_height):
             "rankAsStr",
             "Row Dim",
             "Reduction Dim",
-            "Microkernel Row Dim",
+            "SSR Config Count",
         ]
     ]
     colLabels = ["rank", "n", "k", "n'"]

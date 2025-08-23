@@ -13,8 +13,8 @@ from tile_SA.utils import MatmulInputs, TileSizes, roundUpToNearestMultipleOf
 
 
 class TileSizeGenerator:
-    def __init__(self, M_dim, outputVectorEltCount, inputVectorEltCount, dispatchName=""):
-        self.me = MatmulInputs(m=M_dim,n=outputVectorEltCount, k=inputVectorEltCount)
+    def __init__(self, M_dim, N_dim, K_dim, dispatchName=""):
+        self.me = MatmulInputs(m=M_dim,n=N_dim, k=K_dim)
     
     def dividesIntoM(self, num):
         return self.me.m % num == 0
@@ -27,13 +27,13 @@ class TileSizeGenerator:
     
     def mDimOptions(self):
         max = self.me.m
-        min = 8
+        min = 8 if self.me.m >= 8 else 1
         exhaustive = list(range(min, max + 1))
         if (self.me.k % 2) != 0:
             print(f"WARNING: M = {self.me.m} is NOT divisible by 2!")
         return exhaustive
 
-    def rowDimOptions(self):
+    def nDimOptions(self):
         hardware_loop_body_options = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
         byEight = list(map(lambda x: 8 * x, hardware_loop_body_options))
         max = self.me.n
@@ -41,9 +41,9 @@ class TileSizeGenerator:
         exhaustive = list(range(min, max + 1, 8))
         return exhaustive
 
-    def reductionDimOptions(self):
+    def kDimOptions(self):
         max = self.me.k
-        min = 8
+        min = 8 if self.me.k >= 8 else 1
         exhaustive = list(range(min, max + 1))
         if (self.me.k % 2) != 0:
             print(f"WARNING: K = {self.me.k} is NOT divisible by 2!")
@@ -58,63 +58,77 @@ class TileSizeGenerator:
         return exhaustive
 
     def paddedKDimOptions(self):
+        min = 8 if self.me.k >= 8 else 1
         step = 1
-        if self.me.k < 40:
-            return [self.me.k]
-        else: # we want about 40 tile sizes to pick from
-            step = self.me.k // 40
         max = self.me.k
-        min = 8
-        exhaustive = list(range(min, max + 1,step))
+        # we want about 40 tile sizes to pick from
+        if self.me.k > 40:
+            step = self.me.k // 40
+        exhaustive = list(range(min, max + 1,step)) # not actually exhaustive...
         if (self.me.k % 2) != 0:
             print(f"WARNING: K = {self.me.k} is NOT divisible by 2!")
         return exhaustive
     
     def paddedMDimOptions(self):
+        min = 8 if self.me.m >= 8 else 1
         step = 1
-        if self.me.m < 40:
-            return [self.me.m]
-        else: # we want about 40 tile sizes to pick from
-            step = self.me.m // 40
         max = self.me.m
-        min = 8
-        exhaustive = list(range(min, max + 1,step))
-        if (self.me.k % 2) != 0:
-            print(f"WARNING: M = {self.me.m} is NOT divisible by 2!")
+        if self.me.m > 40:
+            step = self.me.m // 40
+        # we want about 40 tile sizes to pick from
+        exhaustive = list(range(min, max + 1,step)) # not actually exhaustive...
         return exhaustive
 
     def validOptions(self):
         # all possible values for m, n, and k
-        little_m_options=self.mDimOptions()
-        little_n_options = self.rowDimOptions()
-        little_k_options = self.reductionDimOptions()
+        little_m_options = self.mDimOptions()
+        little_n_options = self.nDimOptions()
+        little_k_options = self.kDimOptions()
+        
         # filter for m's, n's and k's that divide evenly into M, N and K respectively
         little_m_no_pad = list(filter(lambda x: self.dividesIntoM(x), little_m_options))
         m_options = little_m_no_pad
         little_n_no_pad = list(filter(lambda x: self.dividesIntoN(x), little_n_options))
-        if len(little_m_no_pad) <= 1: # prime N dimension, or not divisible by 8
+        if len(little_m_no_pad) <= 2: # prime M dimension
             m_options = self.paddedMDimOptions()
+            #print("prime M dimension")
         else:
             m_options = little_m_no_pad
+        print(f'little m no pad is {little_m_no_pad}  but padded is {self.paddedMDimOptions()}',end="\n\n")
+        
         little_n_no_pad = list(filter(lambda x: self.dividesIntoN(x), little_n_options))
-        if len(little_n_no_pad) <= 1: # prime N dimension, or not divisible by 8
+        if len(little_n_no_pad) <= 2: # prime N dimension, or not divisible by 8
             n_options = self.paddedNDimOptions()
         else:
             n_options = little_n_no_pad
+        print(f'little n no pad is {little_n_no_pad} but padded is {self.paddedNDimOptions()}',end="\n\n")
+        
         little_k_no_pad = list(filter(lambda x: self.dividesIntoK(x), little_k_options))
-        if len(little_k_no_pad) == 1: # prime K dimension
+        # print(f'unpadded options are: {little_k_no_pad}')
+        # print(f'padded options are: {self.paddedKDimOptions()}')
+        if len(little_k_no_pad) <= 2: # prime K dimension
             k_options = self.paddedKDimOptions()
         else:
             k_options = little_k_no_pad
+        print(f'little k no pad is {little_k_no_pad} but padded is {self.paddedKDimOptions()}',end="\n\n")
         # halve k dim options for double buffering
         k_options = list(
         filter(lambda x: x <= (self.me.k // 2) + 1, k_options))
-        options_as_triples = list(product(m_options,n_options, k_options))
-        annotated_options = list(map(lambda tup: self.annotateOption(tup), options_as_triples))
+        options_as_triples = list(product(m_options, n_options, k_options))
+    
+        annotated_options = list(map(lambda tup: self.annotateOptionWL1Usage(tup), options_as_triples))
+        #print(annotated_options)
         # filter out tiling schemes that do not fit in L1
+        # valid_options = list(
+        #     filter(lambda tup: self.smallEnough(tup[0][0], tup[0][1],tup[0][2]), annotated_options)
+        # )
+       # print(tup)
         valid_options = list(
-            filter(lambda tup: self.smallEnough(tup[0][0], tup[0][1],tup[0][2]), annotated_options)
+            filter(lambda tup: tup[3] >= 0, annotated_options)
         )
+        print(valid_options)
+        if(len(valid_options)==0):
+            raise Exception("Cannot find a valid tiling scheme!")
         return valid_options
 
     def weightMatTileSize(self, row_dim, reduction_dim):
@@ -135,6 +149,10 @@ class TileSizeGenerator:
         outputMatMul_m = roundUpToNearestMultipleOf(self.me.m, m_dim)
         outputMatMul_n = roundUpToNearestMultipleOf(self.me.n, row_dim)
         outputMatMul = outputMatMul_m * outputMatMul_n * 8
+        print(f'output of matmul will be {outputMatMul_m} by {outputMatMul_n}')
+        print(f'input mat tile of {m_dim} x {reduction_dim}')
+        print(f'weight mat tile of size {row_dim}x{reduction_dim}')
+        print(f'weight mat tile of size {row_dim}x{reduction_dim}')
         # if we padded the row dimension, 
         # we allocate an extra (unused) buffer of size m*n
         remainder = self.me.n % row_dim
@@ -155,22 +173,81 @@ class TileSizeGenerator:
         )
         return remaining
 
-    def smallEnough(self,m_dim, row_dim, red_dim):
-        return self.spaceRemaining(m_dim, row_dim, red_dim) > 0
+    # def smallEnough(self,m_dim, row_dim, red_dim):
+    #     return self.spaceRemaining(m_dim, row_dim, red_dim) > 0
 
+    # matmul_transpose_b: A : MxK, B : NxK, C : MxN
+    # elementwise addition: C : MxN, D : N = E: MxN
+    def computeL1Usage(self, m, n, k, debug=False):
+        tileSpace = 0
+        weightMatTileSpace = 0
+        total = 0
+        tileA = m * k
+        tileB = n * k
+        tileB2 = n * k
+        entireC = roundUpToNearestMultipleOf(self.me.m,m) * roundUpToNearestMultipleOf(self.me.n, n)
+        entireCExtra = 0
+        if debug:
+            print('\n')
+            print(f'Tiling Scheme {m}-{n}-{k}:')
+            print(f'Allocate A tile: {m}x{k}')
+            print(f'Allocate B1 tile: {n}x{k}')
+            print(f'Allocate B2 tile: {n}x{k}')
+            print(f'Allocate C tile: {roundUpToNearestMultipleOf(self.me.m,m)}x{roundUpToNearestMultipleOf(self.me.n, n)}')
+        # # TWO PADDING CASES:
+        # 1) m  or n requires padding
+        remainder_m = self.me.m % m
+        if remainder_m != 0:
+            entireCExtra = self.me.m * self.me.n
+            if debug:
+                print('Allocate Extra C tile: (m-padding)')
+        remainder_n = self.me.n %n
+        if remainder_n != 0:
+        # then we allocate an extra unused buffer
+            entireCExtra = self.me.m * self.me.n
+            if debug:
+                print('Allocate Extra C tile: (n-padding)')
+        if debug:
+            if remainder_m or remainder_n:
+                print(f'Allocate Extra C tile: {self.me.m}x{self.me.n}')
+
+        # 3) k requires padding
+        # (no changes)
+        # FINALLY, include elementwise addition...
+        bias = roundUpToNearestMultipleOf(self.me.n, n)
+        E = self.me.m * roundUpToNearestMultipleOf(self.me.n, n)
+        if debug:
+            if remainder_n:
+                print(f'Allocate Bias Vector Tile: 1x{bias} (padded n)')
+                print(f'Allocate Addition Output tile: {self.me.m}x{self.me.n} (padded n)')
+            else:
+                print(f'Allocate Bias Vector Tile: 1x{bias}')
+                print(f'Allocate Addition Output tile: {self.me.m}x{self.me.n}')
+        total = tileA + tileB + tileB2 + entireC + entireCExtra + bias + E
+        if debug:
+            print(f'total = {tileA} + {tileB} + {tileB2} + {entireC} + {entireCExtra}+ {bias} + {E} = {total} elements or {total*8} bytes',end="\n\n")
+        weightMatTileSpace = tileB + tileB2
+        tileSpace = tileA + tileB + tileB2
+        totalUsage = total 
+        return tileSpace, weightMatTileSpace, totalUsage
+    
+    
     # annotate a (row_dim, reduction_dim) pair with
     # total L1 space used for tiles
     # weight matrix tile size
     # total spaced used in L1
     # space remaining, etc.
-    def annotateOption(self, tup):
-        return (
+    def annotateOptionWL1Usage(self, tup):
+        l1MemoryBytes = 100000
+        a, b, c = self.computeL1Usage(tup[0],tup[1],tup[2])
+        x= (
             tup,
-            self.spaceForTiles(tup[0], tup[1], tup[2]),
-            self.weightMatTileSize(tup[1], tup[2]),
-            self.spaceRemaining(tup[0], tup[1], tup[2]),
+            a*8,# self.spaceForTiles(tup[0], tup[1], tup[2]),
+            b*8,# self.weightMatTileSize(tup[1], tup[2]),
+            l1MemoryBytes - c*8 #self.spaceRemaining(tup[0], tup[1], tup[2]),
         )
-
+        return x
+    
     # annotate a (m_dim, row_dim, reduction_dim) triple with
     # quidditch load counting information
     # flatten tuple
@@ -186,7 +263,7 @@ class TileSizeGenerator:
         loweringInfo = tsa.getLoweringInfoAnnotation(input, tiles)
         # print("\t",end='')
         # print(f"TSS: sa annotation is: {loweringInfo}")
-        concatted = flat + loweringInfo
+        concatted = flat + (self.me.m,self.me.n,self.me.k) +loweringInfo
         return concatted
 
     # helper for converting to CSV
@@ -217,7 +294,7 @@ class TileSizeGenerator:
     # export annotated options to CSV
     def exportOptionsToCSV(self, dispatchName, options):
         flat = list(map(lambda tup: self.flattenThenAnnotateMore(tup), options))
-        cols =self.annotationColumnNames()+ [] + tsa.getLoweringInfoColumnNames()
+        cols =self.annotationColumnNames()+ ["M","N","K"] + tsa.getLoweringInfoColumnNames()
         # saAnnotationCols = tsa.getLoweringInfoColumnNames()
         # print("\t",end='')
         # print(f"TSS: sa columns are : {saAnnotationCols}")

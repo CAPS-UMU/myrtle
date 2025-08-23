@@ -53,7 +53,9 @@ def unrollAndJamFactor(rowDim):
 
 def unrollAndJamOuterLoops(rowDim):
     # print(f'outer loops is {rowDim} / {unrollAndJamFactor(rowDim)} which is {rowDim / unrollAndJamFactor(rowDim)}')
+    if rowDim == 1:
+        return 1
     if unrollAndJamFactor(rowDim) != 1:
         return int(rowDim / unrollAndJamFactor(rowDim))
     else:
-        return 1
+        return rowDim

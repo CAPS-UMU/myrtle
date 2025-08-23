@@ -138,14 +138,23 @@ def simulate_peek_at_lowered_matmul_tiling(cc_tile: MatmulInputs):
     k = cc_tile.k
     n = cc_tile.n
     # create the hardware loop
-    hLoop=HardwareLoop(loop_iters=k,body_size=unrollAndJamFactor(n))
+    hLoop=HardwareLoop(loop_iters=k,body_size=unrollAndJamFactor(cc_tile.n))
     # look for an enclosing loop
-    oLoop=EnclosingSCFLoop(iters=unrollAndJamOuterLoops(n))
+    oLoop=EnclosingSCFLoop(iters=unrollAndJamOuterLoops(cc_tile.n))
     # every matmul is really a loop of matvecs...
     ooLoop = EnclosingSCFLoop(iters=cc_tile.m)
     res = expectedFMADDs == (
         (hLoop.body_size * hLoop.loop_iters) * oLoop.iters*ooLoop.iters
     )
+    if not res:
+        print(f'{cc_tile}:expected FMADD is {expectedFMADDs} but got {(hLoop.body_size * hLoop.loop_iters) * oLoop.iters*ooLoop.iters} instead')
+        print("\t",end='')
+        print(hLoop)
+        print("\t",end='')
+        print(oLoop)
+        print("\t",end='')
+        print(ooLoop)
+
     return (res, hLoop, oLoop, ooLoop)
 
 # matrix-vector transpose with type `<MxK>, <NxK> -> <MxN>` where `M = 1`
