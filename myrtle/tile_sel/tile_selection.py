@@ -79,7 +79,7 @@ def tileSelection(csvFile, mode):
                 csvFileRanked = f"{basename}-myrtle-{mode}-ranking.csv"
                 print(f'TSS: wrote ranking to file {csvFileRanked}')
                 stages.to_csv(f"{basename}-myrtle-{mode}-ranking.csv",index=False)
-    m = 1 #TODO: expand tiling to matmul!!
+    m = int(df.iloc[0]["m Dim"])
     n = int(df.iloc[0]["Row Dim"])
     k = int(df.iloc[0]["Reduction Dim"])
     dualBuffer = True

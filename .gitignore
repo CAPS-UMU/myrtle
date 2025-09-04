@@ -6,3 +6,5 @@ out/*
 myrtle/graphing/out/*
 sensitivity-analysis/holistic-data/*_ranking.csv
 resized.png
+sensitivity-analysis/dispatch-data/graphs/*
+sensitivity-analysis/holistic-data/graphs/*

@@ -58,6 +58,14 @@ def main():
         y1 = ("Kernel Time_y", "Time", "cycles", pickColor)
         g = graphXvsYs(ranked, x, [y1], title, outputPath, 0.94)
         graphEmAll((1,1),[g], 8, 10)
+        # Regular Loads vs time
+        outputPath = f"{args[2]}/d{d}-{M}-{N}-{K}-Regular-Loads"
+        def pickColor(x):
+            return 'Black'
+        x = ("Regular Loads", "Regular Loads", "count")
+        y1 = ("Kernel Time_y", "Time", "cycles", pickColor)
+        g = graphXvsYs(ranked, x, [y1], title, outputPath, 0.94)
+        graphEmAll((1,1),[g], 8, 10)
         # Unroll and Jam Loops vs time
         outputPath = f"{args[2]}/d{d}-{M}-{N}-{K}-SSR-UnrollAndJam-Loop-iters"
         def pickColor(x):
@@ -74,12 +82,13 @@ def graphXvsYs(df, x, ys, title, outputPath, table_bb_height):
     tableData = df[
         [
             "rankAsStr",
+            "m",
             "Row Dim",
             "Reduction Dim",
-            "SSR Config Count",
+            "Little N Prime",
         ]
     ]
-    colLabels = ["rank", "n", "k", "n'"]
+    colLabels = ["rank", "m","n", "k", "n'"]
     defW = 1 / (len(colLabels) * 3)  # default width
     tableColWidths = [
         defW,
@@ -135,9 +144,10 @@ def patch_func_sflt(ax):
     colors = ['#c0c8d1','#98c1f2','#468fe7','Purple']
     # 1st filter
     width = (gWidth - 4 * pnt1GW) / 5 / 2
-    height = gHeight * 0.04
+    height = gHeight * 0.01#0.04
     left = gWidth + pnt1GW
     bottom = gHeight - height
+    raise Exception(f'gWidth is {gWidth}, gHeight is {gHeight}, patch height is {height}')
     rect = plt.Rectangle(
         (left, bottom),
         width,

@@ -103,12 +103,13 @@ def graphXvsYs(df, x, ys, title, outputPath, table_bb_height):
     tableData = df[
         [
             "rankAsStr",
+            "m",
             "Row Dim",
             "Reduction Dim",
             "Little N Prime",
         ]
     ]
-    colLabels = ["rank", "n", "k", "n'"]
+    colLabels = ["rank", "m","n", "k", "n'"]
     defW = 1 / (len(colLabels) * 3)  # default width
     tableColWidths = [
         defW,
@@ -164,9 +165,13 @@ def patch_func_sflt(ax):
     colors = ['#c0c8d1','#98c1f2','#468fe7','Purple']
     # 1st filter
     width = (gWidth - 4 * pnt1GW) / 5 / 2
-    height = gHeight * 0.04
+    height = gHeight * 0.01
     left = gWidth + pnt1GW
     bottom = gHeight - height
+    print(f'x limit: {ax.get_xlim()}')
+    print(f'f limit: {ax.get_ylim()}')
+    print(f'gWidth is {gWidth}, gHeight is {gHeight}, patch height is {height}')
+   
     rect = plt.Rectangle(
         (left, bottom),
         width,

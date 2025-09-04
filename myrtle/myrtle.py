@@ -25,13 +25,18 @@ def main():
     searchSpaceCSVName=f'{M}x{N}x{K}wm-n-k_searchSpace.csv'
     if len(sys.argv) == 5: # skip search space gen
         searchSpaceCSVName=sys.argv[4]
+        print("myrtle: ",end='')
+        print("Using search space passed in from command line.")
     else:
         # generate options
-        jen = tsg.TileSizeGenerator(int(M),int(N),int(K),dispatchName)
-        jen.computeL1Usage(8,24,8,debug=True)
-        options = jen.validOptions()
-        print("myrtle : ",end='')
-        print(f'OPTIONS ARE {options}')
+        jen = tsg.TileSizeGenerator(int(M),int(N),int(K),dispatchName, l1MemoryBytes = 100000)
+        # jen.computeL1Usage(8,24,8,debug=True)
+        # jen.computeL1Usage(20,120,10,debug=True)
+        # jen.computeL1Usage(20,40,10,debug=True)
+        # jen.computeL1Usage(8,24,8,debug=True)
+        # jen.computeL1Usage(56,56,28,debug=True)
+       # jen.computeLargestL1Tiles(debug=True)
+        options = jen.validOptions(debug=False)
         jen.exportOptionsToCSV(f'{M}x{N}x{K}wm-n-k', options)
     m,n,k,dualBuffer = tss.tileSelection(searchSpaceCSVName,sys.argv[2])   
     if sys.argv[2] == "sflt":
