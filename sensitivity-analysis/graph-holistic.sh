@@ -47,26 +47,26 @@ fp2="1x400x161wm-n-k_searchSpace_analyzed-myrtle-$mode-ranking.csv"
 python3 -m graphing.actualVsPredicted $fp $fp2 $outputDir $mode $topX
 python3 -m graphing.xVsYs $fp $fp2 $outputDir $mode $topX
 
-# fp="$dir/1x1200x400wm-n-k-graphing-logistics.csv"          # dispatch 1
-# fp2="$dir/1x1200x400wm-n-k-graphing-logistics-myrtle-$mode-ranking.csv" 
-# python3 -m graphing.actualVsPredicted $fp $fp2 $outputDir $mode $topX
-# python3 -m graphing.xVsYs $fp $fp2 $outputDir $mode $topX
+fp="$dir/1x1200x400wm-n-k-graphing-logistics.csv"          # dispatch 1
+fp2="1x1200x400wm-n-k_searchSpace_analyzed-myrtle-$mode-ranking.csv" 
+python3 -m graphing.actualVsPredicted $fp $fp2 $outputDir $mode $topX
+python3 -m graphing.xVsYs $fp $fp2 $outputDir $mode $topX
 
-# fp="$dir/1x600x400wm-n-k-graphing-logistics.csv"           # dispatch 7
-# fp2="$dir/1x600x400wm-n-k-graphing-logistics-myrtle-$mode-ranking.csv" 
-# python3 -m graphing.actualVsPredicted $fp $fp2 $outputDir $mode $topX
-# python3 -m graphing.xVsYs $fp $fp2 $outputDir $mode $topX
+fp="$dir/1x600x400wm-n-k-graphing-logistics.csv"           # dispatch 7
+fp2="1x600x400wm-n-k_searchSpace_analyzed-myrtle-$mode-ranking.csv" 
+python3 -m graphing.actualVsPredicted $fp $fp2 $outputDir $mode $topX
+python3 -m graphing.xVsYs $fp $fp2 $outputDir $mode $topX
 
-# fp="$dir/1x600x600wm-n-k-graphing-logistics.csv"           # dispatch 8
-# fp2="$dir/1x600x600wm-n-k-graphing-logistics-myrtle-$mode-ranking.csv"  
-# python3 -m graphing.actualVsPredicted $fp $fp2 $outputDir $mode $topX
-# python3 -m graphing.xVsYs $fp $fp2 $outputDir $mode $topX
+fp="$dir/1x600x600wm-n-k-graphing-logistics.csv"           # dispatch 8
+fp2="1x600x600wm-n-k_searchSpace_analyzed-myrtle-$mode-ranking.csv"  
+python3 -m graphing.actualVsPredicted $fp $fp2 $outputDir $mode $topX
+python3 -m graphing.xVsYs $fp $fp2 $outputDir $mode $topX
 
 # clean up generated myrtle ranking CSVs
 cd $here
-rm -f "test_output-disp-0-$mode.json" 
-rm -f "test_output-disp-1-$mode.json" 
-rm -f "test_output-disp-7-$mode.json" 
-rm -f "test_output-disp-8-$mode.json" 
+rm -f "../myrtle/test_output-disp-0-$mode.json" 
+rm -f "../myrtle/test_output-disp-1-$mode.json" 
+rm -f "../myrtle/test_output-disp-7-$mode.json" 
+rm -f "../myrtle/test_output-disp-8-$mode.json" 
 
 echo "graph-holistic.sh: Graphs saved in directory $outputDir"
