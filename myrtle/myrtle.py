@@ -1,6 +1,7 @@
 import sys
 import json
 import tile_gen.tile_size_generator as tsg
+import tile_sa.tile_static_analysis as tsa
 import tile_sel.tile_selection as tss
 import re
 import pickle
@@ -16,29 +17,28 @@ import os
 # for Example,
 # python3 myrtle/myrtle.py "main\$async_dispatch_0_matmul_transpose_b_1x400x200_f64" sflt "test_output-disp-0.json"
 def main():
-    # print("myrtle: ",end='')
     dispatchName = sys.argv[1]
-
     dispatchRegex=re.compile(r'main\$async_dispatch_\d+_matmul_transpose_b_(\d+)x(\d+)x(\d+)_f64')
     M,N,K = dispatchRegex.search(dispatchName).groups()
-    # query myrtle!
-    searchSpaceCSVName=f'{M}x{N}x{K}wm-n-k_searchSpace.csv'
-    if len(sys.argv) == 5: # skip search space gen
+    dispatchNickName = f'{M}x{N}x{K}wm-n-k'
+    # take search space from command line if provided    
+    if len(sys.argv) == 5: 
+        # skip search space generation
         searchSpaceCSVName=sys.argv[4]
         print("myrtle: ",end='')
         print("Using search space passed in from command line.")
+        options_as_df = pd.read_csv(searchSpaceCSVName)
     else:
         # generate options
-        jen = tsg.TileSizeGenerator(int(M),int(N),int(K),dispatchName, l1MemoryBytes = 100000)
-        # jen.computeL1Usage(8,24,8,debug=True)
-        # jen.computeL1Usage(20,120,10,debug=True)
-        # jen.computeL1Usage(20,40,10,debug=True)
-        # jen.computeL1Usage(8,24,8,debug=True)
-        # jen.computeL1Usage(56,56,28,debug=True)
-       # jen.computeLargestL1Tiles(debug=True)
+        jen = tsg.TileSizeGenerator(int(M),int(N),int(K),dispatchName,l1MemoryBytes = 100000)
         options = jen.validOptions(debug=False)
-        jen.exportOptionsToCSV(f'{M}x{N}x{K}wm-n-k', options)
-    m,n,k,dualBuffer = tss.tileSelection(searchSpaceCSVName,sys.argv[2])   
+        options_as_df = jen.convertOptionsToDF(dispatchNickName, options)
+        searchSpaceCSVName = jen.exportOptionsToCSV(dispatchNickName, options_as_df)
+    # analyze tiling options
+    analyzed = tsa.analyze_options(options_as_df)
+    analyzedSearchSpaceCSVName = tsa.exportAnalysisToCSV(dispatchNickName, analyzed)
+    # select best tiling scheme using mode        
+    m,n,k,dualBuffer = tss.tileSelection(analyzedSearchSpaceCSVName,sys.argv[2])   
     if sys.argv[2] == "sflt":
         print("myrtle: ",end='')
         print("We used simple filtering to select tiles.")
@@ -53,7 +53,7 @@ def main():
         data = json.load(file)
     node = {}    
     node["loop-order"] = [[2,0], [0,0], [1,0]]
-    # set node values and export to JSON
+    # set node values and export result to JSON
     node["tile-sizes"] = [[m], [n], [k]]
     node["dual-buffer"] = dualBuffer
     data[dispatchName]=node    

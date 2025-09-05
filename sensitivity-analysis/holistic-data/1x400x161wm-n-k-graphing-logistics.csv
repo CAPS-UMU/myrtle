@@ -1,0 +1,4 @@
+FakeNN JSON Name,M,N,K,m,n,k,JSON Name,Total Time,Regular Loads,Microkernel Row Dim,Microkernel Count,Microkernel Reduction Dim,Space Needed in L1,Case,Kernel Name,Other Streaming Loads,Space Remaining,Kernel Time,Reduction Dim,Total Streaming Loads,Reused Streaming Loads,Start Reuse Streaming Loads,HW Loop Body,Outer Loop Iters,Row Dim,HW Loop Iters,Weight Matrix Tile Size
+1x400x161w1-40-23,1,400,161,1,40,23,0-40-23,1939500,2800,5,560,23,14904,1,main$async_dispatch_0_matmul_transpose_b_1x400x161_f64,64400,75496,18193,23,128800,51520,12880,5,1,40,23,920
+1x400x161w1-80-23,1,400,161,1,80,23,0-80-23,1694086,2800,10,280,23,29624,1,main$async_dispatch_0_matmul_transpose_b_1x400x161_f64,64400,60776,18193,23,128800,51520,12880,5,2,80,23,1840
+1x400x161w1-200-23,1,400,161,1,200,23,0-200-23,1524805,2800,25,112,23,73784,1,main$async_dispatch_0_matmul_transpose_b_1x400x161_f64,64400,16616,18180,23,128800,51520,12880,5,5,200,23,4600

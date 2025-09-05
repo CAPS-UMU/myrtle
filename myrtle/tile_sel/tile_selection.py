@@ -80,9 +80,7 @@ def tileSelection(csvFile, mode):
             print(f'TSS: wrote ranking to file {csvFileRanked}')
             stages.to_csv(f"{basename}-myrtle-{mode}-ranking.csv",index=False)
 
-    #df["m"]=df.apply(lambda y: y["m Dim"], axis=1)
-    # support legacy search spaces
-    m = mDim = int(df.iloc[0]["m Dim"])
+    m = int(df.iloc[0]["m"])
     n = int(df.iloc[0]["Row Dim"])
     k = int(df.iloc[0]["Reduction Dim"])
     dualBuffer = True

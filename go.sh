@@ -1,4 +1,4 @@
-fp="test_output-disp-0.json"
+fp="test_output-disp-x.json"
 rm -f $fp
 touch $fp
 echo "{}" >> $fp

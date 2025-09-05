@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 import pandas as pd
 import sys
 from itertools import product
-import tile_sa.tile_static_analysis as tsa
 from tile_sa.utils import MatmulInputs, TileSizes, roundUpToNearestMultipleOf
 
 
@@ -345,10 +344,10 @@ class TileSizeGenerator:
         input = MatmulInputs(m=self.me.m,n=self.me.n, k=self.me.k)
         tiles = TileSizes(m=ann[0][0],n=ann[0][1], k=ann[0][2])
         flat = self.convertAnnotationToFlatTuple(ann)
-        loweringInfo = tsa.getLoweringInfoAnnotation(input, tiles)
+        # loweringInfo = tsa.getLoweringInfoAnnotation(input, tiles)
         # print("\t",end='')
         # print(f"TSS: sa annotation is: {loweringInfo}")
-        concatted = flat + (self.me.m,self.me.n,self.me.k) + loweringInfo
+        concatted = flat + (self.me.m,self.me.n,self.me.k) #+ loweringInfo
         return concatted
 
     # helper for converting to CSV
@@ -376,30 +375,37 @@ class TileSizeGenerator:
         ]
         return columns
 
-    # export annotated options to CSV
-    def exportOptionsToCSV(self, dispatchName, options):
+    def convertOptionsToDF(self, dispatchNickName, options):
         flat = list(map(lambda tup: self.flattenThenAnnotateMore(tup), options))
-        cols =self.annotationColumnNames()+ ["M","N","K"] + tsa.getLoweringInfoColumnNames()
+        cols =self.annotationColumnNames()+ ["M","N","K"]
         df = pd.DataFrame(flat, columns=cols)
+        # add logistical info to data frame
         df["FakeNN JSON Name"]=df.apply(lambda y: f'{y["M"]}x{y["N"]}x{y["K"]}w{y["m Dim"]}-{y["Row Dim"]}-{y["Reduction Dim"]}' ,axis=1)
         df["m"]=df.apply(lambda y: y["m Dim"], axis=1)
         df["n"]=df.apply(lambda y: y["Row Dim"], axis=1)
         df["k"]=df.apply(lambda y: y["Reduction Dim"], axis=1)        
-        preferred_front_order = ['FakeNN JSON Name','M','N','K','m','n','k']
+        preferred_front_order = ['FakeNN JSON Name','M','N','K','m','n','k','JSON Name']
         pfoSet = set(preferred_front_order)
         wofSet = set(set(df.columns).difference(pfoSet))
         preferred_order = preferred_front_order + list(wofSet)
         df = df[preferred_order]
+        return df
+
+
+    # export annotated options to CSV
+    def exportOptionsToCSV(self, dispatchNickName, df):
+        filename=f"./{dispatchNickName}_searchSpace.csv"
         df.to_csv(
-            f"./{dispatchName}_searchSpace.csv",
+            filename,
             index=False,
         )
         print("\t",end='')
         print(
             
-            f"TSG: wrote search space to ./{dispatchName}_searchSpace.csv"
+            f"TSG: wrote search space to {filename}"
         )
-        return df
+        return filename
+        
 
 def main():
         args = sys.argv[1:]
