@@ -42,44 +42,47 @@ def tileSelection(csvFile, mode):
             df = ranked
             df.to_csv(f"{basename}-myrtle-{mode}-ranking.csv",index=False)
         else:
-            
-            if(int(df["M"][0]) > 1):
-                matmul_sflt(df,basename,mode)
-            else:
-                print(f'the dfs m value is {df["M"][0]}')
-            # minimize microkernel runs
-            #df_sorted = df.sort_values("Microkernel Count", ascending=True)
+            # support legacy search spaces
+            try:
                 df_sorted = df.sort_values("SSR Config Count", ascending=True)
-                stages=df_sorted
-                stages["stage"]=0
-                #sprint(stages[["JSON Name","stage"]])
-                df_sorted = df_sorted.iloc[range(0, len(df_sorted)//3)]
-                # mark which tiling schemes survived filter
-                mask = stages["JSON Name"].isin(df_sorted["JSON Name"])
-                stages.loc[mask, 'stage']=1
-                #print(stages[["JSON Name","stage"]])
-                
-                # maximise L1 usage
-                df_sorted = df_sorted.sort_values("Space Needed in L1", ascending=False)
-                df_sorted = df_sorted.iloc[range(0, len(df_sorted)//2)]
-                # mark which tiling schemes survived filter
-                mask = stages["JSON Name"].isin(df_sorted["JSON Name"])
-                stages.loc[mask, 'stage']=2
-                #print(stages[["JSON Name","stage"]])
-                
-                # minimize regular loads
-                final_ranking = df_sorted.sort_values("Regular Loads", ascending=True)
-                df = final_ranking
-            # print(f'final_ranking is {final_ranking}')
-                # mark which tiling schemes survived final filter
-                mask = stages["JSON Name"].isin(final_ranking.iloc[0])
-                stages.loc[mask, "stage"]=3
-                #print(stages[["JSON Name","stage"]])
-                print("\t",end='')
-                csvFileRanked = f"{basename}-myrtle-{mode}-ranking.csv"
-                print(f'TSS: wrote ranking to file {csvFileRanked}')
-                stages.to_csv(f"{basename}-myrtle-{mode}-ranking.csv",index=False)
-    m = int(df.iloc[0]["m Dim"])
+            except KeyError as e:
+                df_sorted = df.sort_values("Microkernel Count", ascending=True)
+            except:
+                raise
+            # minimize microkernel runs
+            stages=df_sorted
+            stages["stage"]=0
+            #sprint(stages[["JSON Name","stage"]])
+            df_sorted = df_sorted.iloc[range(0, len(df_sorted)//3)]
+            # mark which tiling schemes survived filter
+            mask = stages["JSON Name"].isin(df_sorted["JSON Name"])
+            stages.loc[mask, 'stage']=1
+            #print(stages[["JSON Name","stage"]])
+            
+            # maximise L1 usage
+            df_sorted = df_sorted.sort_values("Space Needed in L1", ascending=False)
+            df_sorted = df_sorted.iloc[range(0, len(df_sorted)//2)]
+            # mark which tiling schemes survived filter
+            mask = stages["JSON Name"].isin(df_sorted["JSON Name"])
+            stages.loc[mask, 'stage']=2
+            #print(stages[["JSON Name","stage"]])
+            
+            # minimize regular loads
+            final_ranking = df_sorted.sort_values("Regular Loads", ascending=True)
+            df = final_ranking
+        # print(f'final_ranking is {final_ranking}')
+            # mark which tiling schemes survived final filter
+            mask = stages["JSON Name"].isin(final_ranking.iloc[0])
+            stages.loc[mask, "stage"]=3
+            #print(stages[["JSON Name","stage"]])
+            print("\t",end='')
+            csvFileRanked = f"{basename}-myrtle-{mode}-ranking.csv"
+            print(f'TSS: wrote ranking to file {csvFileRanked}')
+            stages.to_csv(f"{basename}-myrtle-{mode}-ranking.csv",index=False)
+
+    #df["m"]=df.apply(lambda y: y["m Dim"], axis=1)
+    # support legacy search spaces
+    m = mDim = int(df.iloc[0]["m Dim"])
     n = int(df.iloc[0]["Row Dim"])
     k = int(df.iloc[0]["Reduction Dim"])
     dualBuffer = True

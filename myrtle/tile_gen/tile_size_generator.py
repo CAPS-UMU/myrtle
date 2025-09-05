@@ -2,8 +2,8 @@ from dataclasses import dataclass, field
 import pandas as pd
 import sys
 from itertools import product
-import tile_SA.tile_static_analysis as tsa
-from tile_SA.utils import MatmulInputs, TileSizes, roundUpToNearestMultipleOf
+import tile_sa.tile_static_analysis as tsa
+from tile_sa.utils import MatmulInputs, TileSizes, roundUpToNearestMultipleOf
 
 
 class TileSizeGenerator:
@@ -348,7 +348,7 @@ class TileSizeGenerator:
         loweringInfo = tsa.getLoweringInfoAnnotation(input, tiles)
         # print("\t",end='')
         # print(f"TSS: sa annotation is: {loweringInfo}")
-        concatted = flat + (self.me.m,self.me.n,self.me.k) +loweringInfo
+        concatted = flat + (self.me.m,self.me.n,self.me.k) + loweringInfo
         return concatted
 
     # helper for converting to CSV
@@ -380,12 +380,16 @@ class TileSizeGenerator:
     def exportOptionsToCSV(self, dispatchName, options):
         flat = list(map(lambda tup: self.flattenThenAnnotateMore(tup), options))
         cols =self.annotationColumnNames()+ ["M","N","K"] + tsa.getLoweringInfoColumnNames()
-        # saAnnotationCols = tsa.getLoweringInfoColumnNames()
-        # print("\t",end='')
-        # print(f"TSS: sa columns are : {saAnnotationCols}")
         df = pd.DataFrame(flat, columns=cols)
-
-        #python3 convertSSToFakeNNInput.py 40x120x20wm-n-k_case1_searchSpace.csv
+        df["FakeNN JSON Name"]=df.apply(lambda y: f'{y["M"]}x{y["N"]}x{y["K"]}w{y["m Dim"]}-{y["Row Dim"]}-{y["Reduction Dim"]}' ,axis=1)
+        df["m"]=df.apply(lambda y: y["m Dim"], axis=1)
+        df["n"]=df.apply(lambda y: y["Row Dim"], axis=1)
+        df["k"]=df.apply(lambda y: y["Reduction Dim"], axis=1)        
+        preferred_front_order = ['FakeNN JSON Name','M','N','K','m','n','k']
+        pfoSet = set(preferred_front_order)
+        wofSet = set(set(df.columns).difference(pfoSet))
+        preferred_order = preferred_front_order + list(wofSet)
+        df = df[preferred_order]
         df.to_csv(
             f"./{dispatchName}_searchSpace.csv",
             index=False,

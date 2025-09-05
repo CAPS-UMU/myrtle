@@ -16,7 +16,7 @@ import re
 from sklearn.svm import SVR
 import sklearn
 sys.path.insert(0, '../myrtle')
-from tile_SA.utils import unrollAndJamFactor, unrollAndJamOuterLoops
+from tile_sa.utils import unrollAndJamFactor, unrollAndJamOuterLoops
 
 
 T = TypeVar("T")
