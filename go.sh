@@ -14,7 +14,7 @@ echo "{}" >> $fp
 # python3 myrtle/myrtle.py "main\$async_dispatch_0_matmul_transpose_b_40x120x20_f64" sflt $fp
 # python3 myrtle/myrtle.py "main\$async_dispatch_0_matmul_transpose_b_64x64x64_f64" sflt $fp
 # python3 myrtle/myrtle.py "main\$async_dispatch_0_matmul_transpose_b_70x70x70_f64" sflt $fp
-python3 myrtle/myrtle.py "main\$async_dispatch_9_matmul_transpose_b_1x161x600_f64" sflt $fp
+python3 myrtle/myrtle.py "main\$async_dispatch_9_matmul_transpose_b_1x400x161_f64" sflt $fp
 
 # python3 myrtle/myrtle.py "main\$async_dispatch_0_matmul_transpose_b_16x768x768_f64" sflt $fp
 

@@ -109,6 +109,7 @@ class TileSizeGenerator:
         options_as_triples = list(product(m_options, n_options, k_options))
         
         #options_as_triples =[(20,120,10),(20,40,10)]
+        #options_as_triples =[(1,40,100)]
         annotated_options = list(map(lambda tup: self.annotateOptionWL1Usage(tup), options_as_triples))
         #print(annotated_options)
         # filter out tiling schemes that do not fit in L1

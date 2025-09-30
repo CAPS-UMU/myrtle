@@ -20,11 +20,17 @@ def graphEmAll(shape: tuple, graphs, x_inch,y_inch):
         generalGraph(ax, graphs[i])
         plt.savefig(f"{graphs[i].imagePath}", bbox_inches='tight')
 
-def graphWPatch(graph, x_inch,y_inch, patch_func):
+def graphWPatch(graph, x_inch, y_inch, patch_func):
     fig = plt.figure()
     #fig.set_size_inches(4, 2) # for the deliverable graphs
     #fig.set_size_inches(1098/72.0,476/72.0) # 15.25 x 6.61
+    table_bb = graph.table_bb
+    table_bb_height = table_bb[3]
+    print(table_bb)
+    print(table_bb_height)
     fig.set_size_inches(x_inch,y_inch)
+    print(f'I think the table_bb_width in inches is {table_bb[2]*x_inch}')
+    print(f'I think the table_bb_height in inches is {table_bb_height*y_inch}')
     ax = fig.add_subplot(1,1, 1)
     ax = generalGraph(ax, graph)
     patch_func(ax)

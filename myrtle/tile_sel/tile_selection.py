@@ -5,6 +5,37 @@ import sklearn.svm
 from graphing.graph_utils import Curve
 import pathlib
 
+def labelThenTakeNSmallestX(df, x, n, df_record, label_name, label_val):
+    # sort from least to greatest X
+    df_sorted = df.sort_values(x, ascending=True)
+    # take best N
+    df_best_n = df_sorted.iloc[range(0, len(df_sorted)//n)]
+    # mark in record df which tiling schemes from df survived filter
+    mask = df_record["JSON Name"].isin(df_best_n["JSON Name"])
+    df_record.loc[mask, label_name]=label_val
+    return df_best_n
+
+def labelThenTakeNBiggestX(df, x, n, df_record, label_name, label_val):
+    # print("df is ")
+    # print(df[["JSON Name",x]])
+    # sort from greatest to least X
+    df_sorted = df.sort_values(x, ascending=False)
+    # print("df_sorted is ")
+    # print(df_sorted[["JSON Name",x]])
+    # take best N
+    df_best_n = df_sorted.iloc[range(0, len(df_sorted)//n)]
+    # print("df_best_n is")
+    # print(df_best_n[["JSON Name",x]])
+    # mark in record df which tiling schemes from df survived filter
+    mask = df_record["JSON Name"].isin(df_best_n["JSON Name"])
+    # print("mask is")
+    # print(mask)
+    # print(f"df_record.loc[mask, {label_name}] is ")
+    # print(df_record.loc[mask, label_name])
+    df_record.loc[mask, label_name]=label_val
+    return df_best_n
+
+
 def get_simple_cycle_estimate(timeEstimateFuncs, row_dim, col_dim, outerLoopIters, microCount): #, n, k):
     if outerLoopIters == 1:
        return timeEstimateFuncs[row_dim](col_dim) * microCount
@@ -42,82 +73,71 @@ def tileSelection(csvFile, mode):
             df = ranked
             df.to_csv(f"{basename}-myrtle-{mode}-ranking.csv",index=False)
         else:
-            # support legacy search spaces
-            try:
-                df_sorted = df.sort_values("SSR Config Count", ascending=True)
-            except KeyError as e:
-                df_sorted = df.sort_values("Microkernel Count", ascending=True)
-            except:
-                raise
-            # minimize microkernel runs
-            stages=df_sorted
+            stages=df
             stages["stage"]=0
-            #sprint(stages[["JSON Name","stage"]])
-            df_sorted = df_sorted.iloc[range(0, len(df_sorted)//3)]
-            # mark which tiling schemes survived filter
-            mask = stages["JSON Name"].isin(df_sorted["JSON Name"])
-            stages.loc[mask, 'stage']=1
-            #print(stages[["JSON Name","stage"]])
-            
-            # maximise L1 usage
-            df_sorted = df_sorted.sort_values("Space Needed in L1", ascending=False)
-            df_sorted = df_sorted.iloc[range(0, len(df_sorted)//2)]
-            # mark which tiling schemes survived filter
-            mask = stages["JSON Name"].isin(df_sorted["JSON Name"])
-            stages.loc[mask, 'stage']=2
-            #print(stages[["JSON Name","stage"]])
-            
-            # minimize regular loads
-            final_ranking = df_sorted.sort_values("Regular Loads", ascending=True)
-            df = final_ranking
-        # print(f'final_ranking is {final_ranking}')
-            # mark which tiling schemes survived final filter
-            mask = stages["JSON Name"].isin(final_ranking.iloc[0])
-            stages.loc[mask, "stage"]=3
-            #print(stages[["JSON Name","stage"]])
+            print(f'before filtering: {df}')
+            # minimize SSR configs performed
+            if len(df)//3 <= 1: # only filter more if we have at least 2 more options
+                print("\tTSS: ",end='')
+                print("fewer than 4 options, so just apply the first filter.")
+                filtered = labelThenTakeNSmallestX(df,"SSR Config Count", 1, stages, "stage", 1)
+            else:
+                filtered = labelThenTakeNSmallestX(df,"SSR Config Count", 3, stages, "stage", 1)           
+            print(f'after first filter: {filtered}')
+            filtered = labelThenTakeNBiggestX(filtered,"Space Needed in L1", 2, stages, "stage", 2) 
+            print(f'after second filter: {filtered}')
+            filtered = labelThenTakeNSmallestX(filtered,"Regular Loads", len(filtered), stages, "stage", 3)
             print("\t",end='')
             csvFileRanked = f"{basename}-myrtle-{mode}-ranking.csv"
             print(f'TSS: wrote ranking to file {csvFileRanked}')
             stages.to_csv(f"{basename}-myrtle-{mode}-ranking.csv",index=False)
+            # df_sorted = df.sort_values("SSR Config Count", ascending=True)
+    
+            # # minimize microkernel runs
+            
+            # #sprint(stages[["JSON Name","stage"]])
+            # df_sorted = df_sorted.iloc[range(0, len(df_sorted)//3)]
+            # # mark which tiling schemes survived filter
+            # mask = stages["JSON Name"].isin(df_sorted["JSON Name"])
+            # stages.loc[mask, 'stage']=1
+            #print(stages[["JSON Name","stage"]])
+            
+            # maximise L1 usage
+            # df_sorted = df_sorted.sort_values("Space Needed in L1", ascending=False)
+            # df_sorted = df_sorted.iloc[range(0, len(df_sorted)//2)]
+            # # mark which tiling schemes survived filter
+            # mask = stages["JSON Name"].isin(df_sorted["JSON Name"])
+            # print("stages.loc[mask, stage] is")
+            # print(stages.loc[mask, "stage"])
+            # stages.loc[mask, 'stage']=2
+            # print(f'len of df_sorted is {len(df_sorted)}')
+            # #print(stages[["JSON Name","stage"]])
+            
+        #     # minimize regular loads
+        #     final_ranking = df_sorted.sort_values("Regular Loads", ascending=True)
+        #     df = final_ranking
+        # # print(f'final_ranking is {final_ranking}')
+        #     # mark which tiling schemes survived final filter
+        #     mask = stages["JSON Name"].isin(final_ranking.iloc[0])
+        #     stages.loc[mask, "stage"]=3
+        #     #print(stages[["JSON Name","stage"]])
+        #     print("\t",end='')
+        #     csvFileRanked = f"{basename}-myrtle-{mode}-ranking.csv"
+        #     print(f'TSS: wrote ranking to file {csvFileRanked}')
+        #     stages.to_csv(f"{basename}-myrtle-{mode}-ranking.csv",index=False)
+            # df["stage"]=0
+            # stages=df
+            # # minimize the SSR Configurations performed
+            # filtered = labelThenTakeNSmallestX(df,"SSR Config Count", 3, stages, "stage", 1)
+            # # maximise L1 usage
+            # filtered = labelThenTakeNBiggestX(filtered,"Space Needed in L1", 2, stages, "stage", 2)            
+            # minimized regular loads performed
 
+    # TODO: return the ONLY row with stage 3, NOT the first row
     m = int(df.iloc[0]["m"])
     n = int(df.iloc[0]["Row Dim"])
     k = int(df.iloc[0]["Reduction Dim"])
     dualBuffer = True
     return (m,n,k,dualBuffer)
 
-def matmul_sflt(df,basename,mode):
-    df_sorted = df.sort_values("SSR Config Count", ascending=True)
-    stages=df_sorted
-    stages["stage"]=0
-    # stages=stages.sort_values("Kernel Time", ascending=True)
-    # print(stages[["JSON Name","SSR Config Count","Space Needed in L1","Kernel Time","Weight Matrix Tile Size"]])
-    # print(stages[["JSON Name","Total SSR Loads","A SSR Reuse Loads","Weight Matrix Tile Size"]])
-    
-    df_sorted = df_sorted.iloc[range(0, len(df_sorted)//3)]
-    # mark which tiling schemes survived filter
-    mask = stages["JSON Name"].isin(df_sorted["JSON Name"])
-    stages.loc[mask, 'stage']=1
-    #print(stages[["JSON Name","stage"]])
-    
-    # maximise L1 usage
-    df_sorted = df_sorted.sort_values("Space Needed in L1", ascending=False)
-    df_sorted = df_sorted.iloc[range(0, len(df_sorted)//2)]
-    # mark which tiling schemes survived filter
-    mask = stages["JSON Name"].isin(df_sorted["JSON Name"])
-    stages.loc[mask, 'stage']=2
-    #print(stages[["JSON Name","stage"]])
-    
-    # minimize regular loads
-    #final_ranking = df
-    final_ranking = df_sorted.sort_values("UnrollAndJam Loop Iters", ascending=True)
-    df = final_ranking
-# print(f'final_ranking is {final_ranking}')
-    # mark which tiling schemes survived final filter
-    mask = stages["JSON Name"].isin(final_ranking.iloc[0])
-    stages.loc[mask, "stage"]=3
-    #print(stages[["JSON Name","stage"]])
-    print("\t",end='')
-    csvFileRanked = f"{basename}-myrtle-{mode}-ranking.csv"
-    print(f'TSS: wrote ranking to file {csvFileRanked}')
-    stages.to_csv(f"{basename}-myrtle-{mode}-ranking.csv",index=False)
+

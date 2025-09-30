@@ -53,8 +53,14 @@ def main():
             return colors[x["stage"]]
         x = ("rank", "Rank", "fastest to slowest Dispatch Time")
         y1 = ("Kernel Time_y", "Time", "cycles", pickColor)
-        g = graphXvsYs(ranked, x, [y1], title, outputPath, 0.94)
-        graphWPatch(g, 8, 10, patch_func_sflt)
+        if False:
+            g = graphXvsYs(ranked, x, [y1], title, outputPath, 1)
+            def dummy(x):
+                return x
+            graphWPatch(g, 4, 2, dummy)
+        else:
+            g = graphXvsYs(ranked, x, [y1], title, outputPath, 0.94)
+            graphWPatch(g, 8, 10, patch_func_sflt)
     else:  # graph Actual vs Predicted Kernel Time
         suffix = f"rank-actual-predicted-{mode}"
         outputPath = f"{args[2]}/d{d}-{M}-{N}-{K}-{suffix}"
@@ -168,9 +174,9 @@ def patch_func_sflt(ax):
     height = gHeight * 0.01
     left = gWidth + pnt1GW
     bottom = gHeight - height
-    print(f'x limit: {ax.get_xlim()}')
-    print(f'f limit: {ax.get_ylim()}')
-    print(f'gWidth is {gWidth}, gHeight is {gHeight}, patch height is {height}')
+    # print(f'x limit: {ax.get_xlim()}')
+    # print(f'f limit: {ax.get_ylim()}')
+    # print(f'gWidth is {gWidth}, gHeight is {gHeight}, patch height is {height}')
    
     rect = plt.Rectangle(
         (left, bottom),
@@ -209,6 +215,63 @@ def patch_func_sflt(ax):
     )
     ax.add_patch(rect)
     ax.text(left + 1.25 * width, bottom + 0.3 * height, "Min. Regular Loads")
+
+def patch_func_disp_0(ax):
+    gWidth = ax.get_xlim()[1]
+    gHeight = ax.get_ylim()[1]
+    pnt1GW = 0.05 * gWidth
+    colors = ['#c0c8d1','#98c1f2','#468fe7','Purple']
+    # 1st filter
+    width = gWidth / 2 / 5 
+    height = gHeight * 0.0001
+    spacer = gWidth / 2 / 5
+    left = gWidth + spacer
+    bottom = gHeight
+    print(f'x limit: {ax.get_xlim()}')
+    print(f'f limit: {ax.get_ylim()}',end='\n\n')
+    print(f'gWidth is {gWidth}, gHeight is {gHeight}')
+    print(f'patch width is {width} and height is {height}')
+    rect = plt.Rectangle(
+        (left, bottom),
+        width,
+        height,
+        edgecolor=colors[1],
+        facecolor=colors[1],
+        alpha=1.0,
+        clip_on=False,
+    )
+    print(f'transform of rect is {rect.get_patch_transform()}')
+    ax.add_patch(rect)
+    ax.text(left + 0.4*width, bottom + 0.2 * height + height, "A")
+    
+    
+    # second filter
+    left = left + width + spacer
+    rect = plt.Rectangle(
+        (left, bottom),
+        width,
+        height,
+        edgecolor=colors[2],
+        facecolor=colors[2],
+        alpha=1.0,
+        clip_on=False,
+    )
+    ax.add_patch(rect)
+    ax.text(left + 0.4*width, bottom + 0.2 * height + height, "B")
+    
+    # final filter
+    left = left + width + spacer
+    rect = plt.Rectangle(
+        (left, bottom),
+        width,
+        height,
+        edgecolor=colors[3],
+        facecolor=colors[3],
+        alpha=1.0,
+        clip_on=False,
+    )
+    ax.add_patch(rect)
+    ax.text(left + 0.4*width, bottom + 0.2 * height + height, "C")
 
 
 if __name__ == "__main__":

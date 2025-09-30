@@ -11,3 +11,5 @@ sensitivity-analysis/dispatch-data/graphs/*
 sensitivity-analysis/holistic-data/graphs/*
 myrtle/*ranking.csv
 myrtle/*_analyzed.csv
+./*ranking.csv
+./*_analyzed.csv
