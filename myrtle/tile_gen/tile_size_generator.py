@@ -3,7 +3,7 @@ import pandas as pd
 import sys
 from itertools import product
 from tile_sa.utils import MatmulInputs, TileSizes, roundUpToNearestMultipleOf
-
+import pathlib
 
 class TileSizeGenerator:
     def __init__(self, M_dim, N_dim, K_dim, dispatchName="",l1MemoryBytes = 100000):
@@ -395,7 +395,7 @@ class TileSizeGenerator:
 
     # export annotated options to CSV
     def exportOptionsToCSV(self, dispatchNickName, df):
-        filename=f"./{dispatchNickName}_searchSpace.csv"
+        filename=f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_searchSpace.csv"
         df.to_csv(
             filename,
             index=False,

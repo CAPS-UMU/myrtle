@@ -1,5 +1,6 @@
 from tile_sa.utils import roundUpToNearestMultipleOf, MatmulInputs, TileSizes, HardwareLoop, unrollAndJamFactor, EnclosingSCFLoop, unrollAndJamOuterLoops
 import pandas as pd
+import pathlib
 #from myrtle.peek_at_snitch_assembly import peek_at_lowered_matvec_tiling
 
 # in CSV file, we should have
@@ -237,7 +238,7 @@ def analyze_option(tup):
     return tup + loweringInfo
 
 def exportAnalysisToCSV(dispatchNickName, df):
-    filename= f"./{dispatchNickName}_searchSpace_analyzed.csv"
+    filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_searchSpace_analyzed.csv"
     df.to_csv(
         filename,
         index=False,

@@ -13,3 +13,5 @@ myrtle/*ranking.csv
 myrtle/*_analyzed.csv
 ./*ranking.csv
 ./*_analyzed.csv
+myrtle/out/*.csv
+myrtle/out/*.json

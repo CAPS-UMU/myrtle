@@ -83,9 +83,7 @@ def tileSelection(csvFile, mode):
                 filtered = labelThenTakeNSmallestX(df,"SSR Config Count", 1, stages, "stage", 1)
             else:
                 filtered = labelThenTakeNSmallestX(df,"SSR Config Count", 3, stages, "stage", 1)           
-            print(f'after first filter: {filtered}')
             filtered = labelThenTakeNBiggestX(filtered,"Space Needed in L1", 2, stages, "stage", 2) 
-            print(f'after second filter: {filtered}')
             filtered = labelThenTakeNSmallestX(filtered,"Regular Loads", len(filtered), stages, "stage", 3)
             print("\t",end='')
             csvFileRanked = f"{basename}-myrtle-{mode}-ranking.csv"
