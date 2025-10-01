@@ -4,17 +4,45 @@ touch $fp
 echo "{}" >> $fp
 # clean="True"
 # Emily's script for running myrtle easily
-
+here=$(pwd)
 # python3 myrtle/myrtle.py "main\$async_dispatch_0_matmul_transpose_b_60x60x60_f64" sflt $fp
 # python3 myrtle/myrtle.py "main\$async_dispatch_0_matmul_transpose_b_56x56x56_f64" sflt $fp
 # python3 myrtle/myrtle.py "main\$async_dispatch_0_matmul_transpose_b_56x64x64_f64" sflt $fp
 # python3 myrtle/myrtle.py "main\$async_dispatch_0_matmul_transpose_b_64x56x64_f64" sflt $fp
 # python3 myrtle/myrtle.py "main\$async_dispatch_0_matmul_transpose_b_64x64x56_f64" sflt $fp
 # python3 myrtle/myrtle.py "main\$async_dispatch_0_matmul_transpose_b_120x40x20_f64" sflt $fp
-# python3 myrtle/myrtle.py "main\$async_dispatch_0_matmul_transpose_b_40x120x20_f64" sflt $fp
+python3 myrtle/myrtle.py "main\$async_dispatch_0_matmul_transpose_b_40x120x20_f64" sflt $fp
+
+timingCSV="/home/emily/myrtle/40x120x20wm-n-k-fakeNN-results.csv"
+genSpaceCSV="/home/emily/myrtle/myrtle/out/40x120x20wm-n-k_searchSpace_analyzed-myrtle-sflt-ranking.csv"
+outputFileName="$here/merged.csv"
+python merge_gen_space_w_timing.py $timingCSV $genSpaceCSV "FakeNN JSON Name" $outputFileName
+
+
+
+# directory in which to look for graphs
+dir="$here/myrtle/out"
+outputDir="$here/myrtle/out"
+mode="sflt"
+topX="-1"
+# Example run:
+# clear;bash graph-dispatch.sh "sflt" -1
+# 120x40x20
+cd "myrtle"
+# fp="$timingCSV" # custom dispatch's search space with time of each run
+# fp2="$genSpaceCSV"
+# fp="$outputFileName" # custom dispatch's search space with time of each run
+# fp2="$outputFileName"
+fp="$here/doctored.csv" # custom dispatch's search space with time of each run
+fp2="$here/doctored.csv"
+python3 -m graphing.actualVsPredicted $fp $fp2 $outputDir $mode $topX
+python3 -m graphing.xVsYs $fp $fp2 $outputDir $mode $topX
+
+cd $here
+
 # python3 myrtle/myrtle.py "main\$async_dispatch_0_matmul_transpose_b_64x64x64_f64" sflt $fp
 # python3 myrtle/myrtle.py "main\$async_dispatch_0_matmul_transpose_b_70x70x70_f64" sflt $fp
-python3 myrtle/myrtle.py "main\$async_dispatch_9_matmul_transpose_b_1x400x161_f64" sflt $fp
+#python3 myrtle/myrtle.py "main\$async_dispatch_9_matmul_transpose_b_1x400x161_f64" sflt $fp
 
 # python3 myrtle/myrtle.py "main\$async_dispatch_0_matmul_transpose_b_16x768x768_f64" sflt $fp
 

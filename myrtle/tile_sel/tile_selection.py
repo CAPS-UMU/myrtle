@@ -75,7 +75,6 @@ def tileSelection(csvFile, mode):
         else:
             stages=df
             stages["stage"]=0
-            print(f'before filtering: {df}')
             # minimize SSR configs performed
             if len(df)//3 <= 1: # only filter more if we have at least 2 more options
                 print("\tTSS: ",end='')

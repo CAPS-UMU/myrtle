@@ -9,6 +9,7 @@ class TileSizeGenerator:
     def __init__(self, M_dim, N_dim, K_dim, dispatchName="",l1MemoryBytes = 100000):
         self.me = MatmulInputs(m=M_dim,n=N_dim, k=K_dim)
         self.l1MemoryBytes = l1MemoryBytes
+        self.kernelName=dispatchName
     
     def dividesIntoM(self, num):
         return self.me.m % num == 0
@@ -127,134 +128,7 @@ class TileSizeGenerator:
             raise Exception("Cannot find a valid tiling scheme!")
         return valid_options
 
-    def weightMatTileSize(self, row_dim, reduction_dim):
-        return row_dim * reduction_dim
-
-    def spaceForTiles(self, m_dim, row_dim, reduction_dim):
-        # ignore output matrix tiles (for now, entire output always in L1)
-        # space in element count
-        inputMatTile = m_dim * reduction_dim
-        weightMatTiles = 2 * self.weightMatTileSize(row_dim, reduction_dim)
-        space = inputMatTile + weightMatTiles
-        # space in  bytes
-        spaceInBytes = space * 8  # number of elements * 8 bytes per element
-        return spaceInBytes
-
-    def spaceRemaining(self, m_dim, row_dim, reduction_dim):
-        self.l1MemoryBytes = 100000
-        outputMatMul_m = roundUpToNearestMultipleOf(self.me.m, m_dim)
-        outputMatMul_n = roundUpToNearestMultipleOf(self.me.n, row_dim)
-        outputMatMul = outputMatMul_m * outputMatMul_n * 8
-        print(f'output of matmul will be {outputMatMul_m} by {outputMatMul_n}')
-        print(f'input mat tile of {m_dim} x {reduction_dim}')
-        print(f'weight mat tile of size {row_dim}x{reduction_dim}')
-        print(f'weight mat tile of size {row_dim}x{reduction_dim}')
-        # if we padded the row dimension, 
-        # we allocate an extra (unused) buffer of size m*n
-        remainder = self.me.n % row_dim
-        if (remainder != 0):
-            outputMatMul = outputMatMul + outputMatMul_m*self.me.n*8
-        # what happens to allocation if we pad the M dimension???
-        remainder = self.me.m % m_dim
-        if (remainder != 0):
-            raise Exception(f"we do not support padding m-dimension yet!")
-        outputElemAdd = outputMatMul
-        inputElemAdd = self.me.n * 8
-        remaining = (
-            self.l1MemoryBytes
-            - outputMatMul
-            - outputElemAdd
-            - inputElemAdd
-            - self.spaceForTiles(m_dim, row_dim, reduction_dim)
-        )
-        return remaining
-
-    def computeLargestL1Tiles(self, debug=False):
-        def exhaustiveDescending(max):
-            min = 1 # (obviously)
-            step = 1 # we want to be exhaustive            
-            return list(reversed(list(range(min, max + 1, step))))
-        m  = exhaustiveDescending(self.me.m)
-        n = list(reversed(self.paddedNDimOptions()))
-        k = exhaustiveDescending(self.me.k)
-        print("HELP D\':")
-        def L1Usage(m,n,k,debug = False):
-            print()
-            print(f'L1 Usage for {m}-{n}-{k}:')
-            A_tile = m*k
-            B_tile = n*k
-            B2_tile = n*k
-            C_tile = m*n
-            bias_tile = n
-            E_tile = m*n
-            total = A_tile + B_tile + B2_tile + C_tile + bias_tile + E_tile
-            print(f'Allocate A tile: {m}x{k} = {A_tile} elts')
-            print(f'Allocate B1 tile: {n}x{k} = {B_tile} elts')
-            print(f'Allocate B2 tile: {n}x{k} = {B2_tile} elts')
-            print(f'Allocate C tile: {m}x{n} = {C_tile} elts')
-            print(f'Allocate Bias Vector Tile: 1x{n} = {bias_tile} elts')
-            print(f'Allocate Addition Output tile: {m}x{n} = {E_tile} elts')
-            print(f'Total = {A_tile} + {B_tile} + {B2_tile} + {C_tile} + {bias_tile} + {E_tile} = {total} elts = {total*8} bytes')
-            if total*8 > self.l1MemoryBytes:
-                print(f"which does NOT fit in L1 with {(total*8)-self.l1MemoryBytes} too many bytes!")
-            else:
-                print(f"which fits in L1 with {self.l1MemoryBytes-(total*8)} bytes to spare")
-            return total*8
-
-        def fixedL1Usage(M,N,K,debug=False):
-            if debug:
-                print()
-                print(f'FIXED L1 Usage for {M}-{N}-{K}:')
-            C_tile = M*N
-            E_tile = M*N
-            bias_tile = N
-            total = C_tile + E_tile + bias_tile
-            # (M*N)+(M*N)+N < 100000
-            if debug:
-                print(f'Total = {C_tile} + {bias_tile} + {E_tile} = {total} elts = {total*8} bytes')
-                if total*8 > self.l1MemoryBytes:
-                    print(f"which does NOT fit in L1 with {(total*8)-self.l1MemoryBytes} too many bytes!")
-                else:
-                    print(f"which fits in L1 with {self.l1MemoryBytes-(total*8)} bytes to spare")
-            return total*8
-        
-        M = exhaustiveDescending(self.l1MemoryBytes//8)
-        N = exhaustiveDescending(self.l1MemoryBytes//8)
-        K = exhaustiveDescending(self.l1MemoryBytes//8)
-
-        options_as_triples = product(M, N, K) 
-        usage = 0 
-        usage_name=""
-        dict = {"best":[]}
-        # for triple in options_as_triples:
-        #     print(triple)
-        
-        #     for (m , n, k) in triple:
-        #         (my_usage, fits) = fixedL1Usage(m,n,k)
-        #         if fits and my_usage > usage:
-        #             usage = my_usage
-        #             usage_name=f"{m}-{n}-{k}"
-        #             #dict["best"].append((f"{m}-{n}-{k}",my_usage))
-        # print(dict)
-
-        # options_l1_usage = list(map(lambda tup: fixedL1Usage(tup), options_as_triples))
-        # options_fit = list(filter(lambda tup: tup[1], options_l1_usage))
-        # print(options_fit)
-        fixedL1Usage(1,1,1,debug=True)
-        fixedL1Usage(m[0],1,1,debug=True)
-        fixedL1Usage(1,n[0],1,debug=True)
-        fixedL1Usage(1,1,k[0],debug=True)
-        # L1Usage(8,24,8,debug=True)
-        # print(exhaustiveDescending(self.me.n),end="\n\n")
-        # print(self.nDimOptions(),end="\n\n")
-        # print(self.paddedNDimOptions(),end="\n\n")
-        # print(n)
-        # print(f"max m (no padding) is {m[0]}")
-        # print(f"max n is {n[0]}")
-        # print(f"max k (no padding) is {k[0]}")
-
-    # def smallEnough(self,m_dim, row_dim, red_dim):
-    #     return self.spaceRemaining(m_dim, row_dim, red_dim) > 0
+  
 
     # matmul_transpose_b: A : MxK, B : NxK, C : MxN
     # elementwise addition: C : MxN, D : N = E: MxN
@@ -263,8 +137,14 @@ class TileSizeGenerator:
         weightMatTileSpace = 0
         total = 0
         tileA = m * k
+        doubleBuff_B = self.me.n > n
+        doubleBuff_A = (self.me.m > m) and (not doubleBuff_B)
+        if doubleBuff_A and doubleBuff_B:
+            raise Exception("Cannot double buffer both A and B operands")
+        # if B operand is NOT tiled at L1 level, A will get double buffered instead.
+        tileA2 = m * k if doubleBuff_A else 0
         tileB = n * k
-        tileB2 = n * k
+        tileB2 = n * k if doubleBuff_B else 0
         entireC = roundUpToNearestMultipleOf(self.me.m,m) * roundUpToNearestMultipleOf(self.me.n, n)
         entireCExtra = 0
         if debug:
@@ -272,8 +152,11 @@ class TileSizeGenerator:
             print(f'Linear Layer {self.me.m}-{self.me.n}-{self.me.k}:')
             print(f'Tiling Scheme {m}-{n}-{k}:')
             print(f'Allocate A tile: {m}x{k}')
+            if(doubleBuff_A):
+                print(f'Allocate A2 tile: {m}x{k}')
             print(f'Allocate B1 tile: {n}x{k}')
-            print(f'Allocate B2 tile: {n}x{k}')
+            if doubleBuff_B:
+                print(f'Allocate B2 tile: {n}x{k}')
             print(f'Allocate C tile: {roundUpToNearestMultipleOf(self.me.m,m)}x{roundUpToNearestMultipleOf(self.me.n, n)}')
         # # TWO PADDING CASES:
         # 1) m  or n requires padding
@@ -304,16 +187,16 @@ class TileSizeGenerator:
             else:
                 print(f'Allocate Bias Vector Tile: 1x{bias}')
                 print(f'Allocate Addition Output tile: {self.me.m}x{self.me.n}')
-        total = tileA + tileB + tileB2 + entireC + entireCExtra + bias + E
+        total = tileA + tileA2 + tileB + tileB2 + entireC + entireCExtra + bias + E
         if debug:
-            print(f'total = {tileA} + {tileB} + {tileB2} + {entireC} + {entireCExtra}+ {bias} + {E} = {total} elements or {total*8} bytes')
+            print(f'total = {tileA} + {tileA2} + {tileB} + {tileB2} + {entireC} + {entireCExtra}+ {bias} + {E} = {total} elements or {total*8} bytes')
             if total*8 > self.l1MemoryBytes:
                 print(f"which does NOT fit in L1 with {(total*8)-self.l1MemoryBytes} too many bytes!",end="\n\n")
             else:
                 print(f"which fits in L1 with {self.l1MemoryBytes-(total*8)} bytes to spare",end="\n\n")
           
         weightMatTileSpace = tileB + tileB2
-        tileSpace = tileA + tileB + tileB2
+        tileSpace = tileA + tileA2 + tileB + tileB2
         totalUsage = total 
         return tileSpace, weightMatTileSpace, totalUsage
     
@@ -384,7 +267,7 @@ class TileSizeGenerator:
         df["FakeNN JSON Name"]=df.apply(lambda y: f'{y["M"]}x{y["N"]}x{y["K"]}w{y["m Dim"]}-{y["Row Dim"]}-{y["Reduction Dim"]}' ,axis=1)
         df["m"]=df.apply(lambda y: y["m Dim"], axis=1)
         df["n"]=df.apply(lambda y: y["Row Dim"], axis=1)
-        df["k"]=df.apply(lambda y: y["Reduction Dim"], axis=1)        
+        df["k"]=df.apply(lambda y: y["Reduction Dim"], axis=1)     
         preferred_front_order = ['FakeNN JSON Name','M','N','K','m','n','k','JSON Name']
         pfoSet = set(preferred_front_order)
         wofSet = set(set(df.columns).difference(pfoSet))
