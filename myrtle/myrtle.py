@@ -10,7 +10,7 @@ import sklearn.svm
 from graphing.graph_utils import Curve
 import os
 
-# arg 1 is dispatchName as a string
+# arg 1 is dispatchName as a string (Quidditch Backend) or matmul dimensions (Manual C code Backend)
 # arg 2 is tile selection mode
 # arg 3 is file to write tile scheme to
 # arg 4 is file to import tiling scheme candidates (skip tile gen)
@@ -18,9 +18,18 @@ import os
 # python3 myrtle/myrtle.py "main\$async_dispatch_0_matmul_transpose_b_1x400x200_f64" sflt "test_output-disp-0.json"
 def main():
     dispatchName = sys.argv[1]
-    dispatchRegex=re.compile(r'main\$async_dispatch_\d+_matmul_transpose_b_(\d+)x(\d+)x(\d+)_f64')
-    M,N,K = dispatchRegex.search(dispatchName).groups()
-    dispatchNickName = f'{M}x{N}x{K}wm-n-k'
+    quidditch = True
+    if sys.argv[1][:6] == "matmul":
+        print("\tTSG: we will prune for Manual C Backend")
+        dispatchRegex=re.compile(r'matmul_(\d+)x(\d+)x(\d+)_f64')
+        M,N,K = dispatchRegex.search(dispatchName).groups()
+        dispatchNickName = f'{M}x{N}x{K}wm-n-k'
+        quidditch=False
+    else:
+        print("\tTSG: we will prune for Quidditch Backend")
+        dispatchRegex=re.compile(r'main\$async_dispatch_\d+_matmul_transpose_b_(\d+)x(\d+)x(\d+)_f64')
+        M,N,K = dispatchRegex.search(dispatchName).groups()
+        dispatchNickName = f'{M}x{N}x{K}wm-n-k'
     # take search space from command line if provided    
     if len(sys.argv) == 5: 
         # skip search space generation
@@ -30,7 +39,11 @@ def main():
         options_as_df = pd.read_csv(searchSpaceCSVName)
     else:
         # generate options
-        jen = tsg.TileSizeGenerator(int(M),int(N),int(K),dispatchName,l1MemoryBytes = 100000)
+        if quidditch:
+            jen = tsg.TileSizeGenerator(int(M),int(N),int(K),dispatchName,l1MemoryBytes = 100000)
+        else:
+            jen = tsg.TileSizeGeneratorC(int(M),int(N),int(K),dispatchName,l1MemoryBytes = 112 * 1024, bank_size=1024, dualBuff=True)
+        #jen = tsg.TileSizeGenerator(int(M),int(N),int(K),dispatchName,l1MemoryBytes = 100000)
         options = jen.validOptions(debug=False)
         options_as_df = jen.convertOptionsToDF(dispatchNickName, options)
         searchSpaceCSVName = jen.exportOptionsToCSV(dispatchNickName, options_as_df)

@@ -12,6 +12,7 @@ def roundUpToNearestMultipleOf(num, row_dim):
 class MatmulInputs:
     """Class for keeping track of input dimensions of a"""
     """matmul transpose with type `<MxK>, <NxK> -> <MxN>`"""
+    """OR a regular matmul with type `<MxK>, <KxN> -> <MxN>`"""
     m: int = 1
     n: int = 1200
     k: int = 400
@@ -20,6 +21,7 @@ class MatmulInputs:
 class TileSizes:
     """Class for keeping track of tiling in each dimension for a"""
     """matmul transpose with type `<MxK>, <NxK> -> <MxN>`"""
+    """OR a regular matmul with type `<MxK>, <KxN> -> <MxN>`"""
     m: int = 1
     n : int = 40
     k : int = 100
