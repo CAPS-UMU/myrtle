@@ -49,8 +49,7 @@ def main():
         print("myrtle: ",end='')
         print("We used an SVR to select tiles.")   
     # default values
-    with open(sys.argv[3], 'r') as file:
-        data = json.load(file)
+    data = {}
     node = {}    
     node["loop-order"] = [[2,0], [0,0], [1,0]]
     # set node values and export result to JSON
