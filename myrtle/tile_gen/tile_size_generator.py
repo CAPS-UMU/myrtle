@@ -384,10 +384,11 @@ class TileSizeGeneratorC(TileSizeGenerator):
         def byUnrollAndJamFactor(uAJ, max=max):
             return list(range(uAJ, max + 1, uAJ))
         multiples = list(map(byUnrollAndJamFactor, hardware_loop_body_options))
-        print(multiples) # debugging only
+        # print(multiples) # debugging only
+        # print(list(chain.from_iterable(multiples))) # debugging only
         # first convert to set to remove duplicates, then convert to list
         exhaustive = list(set(chain.from_iterable(multiples)))
-        print(exhaustive) # debugging only
+        # print(exhaustive) # debugging only
         if (self.me.k % 2) != 0:
             print(f"WARNING: K = {self.me.k} is NOT divisible by 2!")
         return exhaustive

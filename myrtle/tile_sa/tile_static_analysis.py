@@ -22,8 +22,6 @@ def getLogicalSizeAfterPadding(mat: MatmulInputs, sizes: TileSizes):
 
 
 """Given a tile of size sz, what is the subtile size when there are 8 subtiles?"""
-
-
 def coreTileSize(sz: int):
     if sz % 8 != 0:
         raise Exception(f"tile size MUST be divisible by 8, yet I have {sz}!")
@@ -78,10 +76,6 @@ def getCCTileCount(mat: MatmulInputs, sizes: TileSizes):
         raise Exception(f'{left} should = {right}')
     return (cc_tile_count, cc_tile, cluster_tile)
 
-def yodel():
-    print("yodelayheehooooo~~~~~~!")
-
-
 def LoadCountingAnnColumnNames():
     columns = [
         "Regular Loads",
@@ -99,16 +93,7 @@ def LoadCountingAnnColumnNames():
     return columns
 
 
-
-# @dataclass
-# class HardwareLoop:
-#     """Class for keeping track of hardware loop characteristics"""
-#     name: str = "frepOuter"#FrepOuter.name
-#     loop_iters: int = 1 # number of times loop executes
-#     body_size: int = 1    # number of instructions in body of the loop
-# #unrollAndJamFactor
-
-
+# don't actually peek
 def simulate_peek_at_lowered_matvec_tiling(matvec: MatmulInputs):
     # for potential_factor in range(1, self.pipeline_depth * 2):
     expectedFMADDs = matvec.n * matvec.k

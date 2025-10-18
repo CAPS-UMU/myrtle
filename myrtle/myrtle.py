@@ -30,6 +30,7 @@ def main():
         dispatchRegex=re.compile(r'main\$async_dispatch_\d+_matmul_transpose_b_(\d+)x(\d+)x(\d+)_f64')
         M,N,K = dispatchRegex.search(dispatchName).groups()
         dispatchNickName = f'{M}x{N}x{K}wm-n-k'
+    
     # take search space from command line if provided    
     if len(sys.argv) == 5: 
         # skip search space generation
@@ -43,13 +44,14 @@ def main():
             jen = tsg.TileSizeGenerator(int(M),int(N),int(K),dispatchName,l1MemoryBytes = 100000)
         else:
             jen = tsg.TileSizeGeneratorC(int(M),int(N),int(K),dispatchName,l1MemoryBytes = 112 * 1024, bank_size=1024, dualBuff=True)
-        #jen = tsg.TileSizeGenerator(int(M),int(N),int(K),dispatchName,l1MemoryBytes = 100000)
         options = jen.validOptions(debug=False)
         options_as_df = jen.convertOptionsToDF(dispatchNickName, options)
         searchSpaceCSVName = jen.exportOptionsToCSV(dispatchNickName, options_as_df)
+    
     # analyze tiling options
     analyzed = tsa.analyze_options(options_as_df)
     analyzedSearchSpaceCSVName = tsa.exportAnalysisToCSV(dispatchNickName, analyzed)
+    
     # select best tiling scheme using mode        
     m,n,k,dualBuffer = tss.tileSelection(analyzedSearchSpaceCSVName,sys.argv[2])   
     if sys.argv[2] == "sflt":
