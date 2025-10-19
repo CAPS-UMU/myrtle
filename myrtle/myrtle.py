@@ -1,7 +1,9 @@
 import sys
 import json
-import tile_gen.tile_size_generator as tsg
-import tile_sa.tile_static_analysis as tsa
+from tile_size_generation.TSG_Quidditch import TSG_Quidditch
+from tile_size_generation.TSG_C import TSG_C
+from tile_static_analysis.TSA_Quidditch import TSA_Quidditch
+from tile_static_analysis.TSA_Manual_C_Code import TSA_C
 import tile_sel.tile_selection as tss
 import re
 import pickle
@@ -41,15 +43,15 @@ def main():
     else:
         # generate options
         if quidditch:
-            jen = tsg.TileSizeGenerator(int(M),int(N),int(K),dispatchName,l1MemoryBytes = 100000)
+            jen = TSG_Quidditch(int(M),int(N),int(K),dispatchName,l1MemoryBytes = 100000)
         else:
-            jen = tsg.TileSizeGeneratorC(int(M),int(N),int(K),dispatchName,l1MemoryBytes = 112 * 1024, bank_size=1024, dualBuff=True)
+            jen = TSG_C(int(M),int(N),int(K),dispatchName,l1MemoryBytes = 112 * 1024, bank_size=1024, dualBuff=True)
         options = jen.validOptions(debug=False)
         options_as_df = jen.convertOptionsToDF(dispatchNickName, options)
         searchSpaceCSVName = jen.exportOptionsToCSV(dispatchNickName, options_as_df)
     
     # analyze tiling options
-    ann=tsa.TileSizeAnalyzer() if quidditch else tsa.TileSizeAnalyzerC()
+    ann=TSA_Quidditch() if quidditch else TSA_C()
     analyzed = ann.analyze_options(options_as_df)
     analyzedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
     

@@ -2,11 +2,12 @@ from dataclasses import dataclass, field
 import pandas as pd
 import sys
 from itertools import product, chain
-from tile_sa.utils import MatmulInputs, TileSizes, roundUpToNearestMultipleOf
+from tile_static_analysis.utils import MatmulInputs, TileSizes, roundUpToNearestMultipleOf
 import pathlib
+from tile_size_generation.TileSizeGenerator import TileSizeGenerator
 
 
-class TileSizeGenerator:
+class TSG_Quidditch(TileSizeGenerator):
     def __init__(
         self,
         M_dim,
@@ -355,7 +356,7 @@ if __name__ == "__main__":
 # matmul with type `<MxK>, <KxN> -> <MxN>`
 # m is the parallel dimension but does NOT need to be a multiple of 8
 # TCDM size in bytes: TCDM_HEAP_SIZE = 112 * 1024
-class TileSizeGeneratorC(TileSizeGenerator):
+class TSG_C(TSG_Quidditch):
     def hello(self):
         print("I am a tile size generator for the manual C backend")
 
