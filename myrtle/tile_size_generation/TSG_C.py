@@ -8,7 +8,7 @@ from tile_size_generation.TSG_Quidditch import TSG_Quidditch
 
 # Manual C Code Tile Constraints
 # m, n, and k must all divide evenly into corresponding M,N,K input sizes
-# k must be a multiple of 8 due to fixed unroll and jam factor of 8
+# n must be a multiple of 8 due to fixed unroll and jam factor of 8
 # m, n, and k must each be able to fit into 8 TCDM banks (optimized scratchpad layout constraint)
 #   BANK_SIZE = 1 * 1024  # ask Luca about this; if TCDM is 128 KiB and 32 banks,
 # shouldn't bank size be 4KiB = 2048 bytes??
@@ -34,15 +34,15 @@ class TSG_C(TSG_Quidditch):
             print(f"WARNING: M = {self.me.m} is NOT divisible by 2!")
         return exhaustive
     
-    def nDimOptions(self):
+    def kDimOptions(self):
         max = self.me.k
         min = 8 if self.me.k >= 8 else 1
         exhaustive = list(range(min, max + 1))
         if (self.me.n % 2) != 0:
-            print(f"WARNING: N = {self.me.n} is NOT divisible by 2!")
+            print(f"WARNING: K = {self.me.k} is NOT divisible by 2!")
         return exhaustive
 
-    def kDimOptions(self):
+    def nDimOptions(self):
         hardware_loop_body_options = [8]  # extend to 8,5 later
         max = self.me.n  # hides built-in max function
         # ASSUMES hardware loop body options are listed LEAST to GREATEST
@@ -56,8 +56,8 @@ class TSG_C(TSG_Quidditch):
         # first convert to set to remove duplicates, then convert to list
         exhaustive = list(set(chain.from_iterable(multiples)))
         # print(exhaustive) # debugging only
-        if (self.me.k % 2) != 0:
-            print(f"WARNING: K = {self.me.k} is NOT divisible by 2!")
+        if (self.me.n % 2) != 0:
+            print(f"WARNING: N = {self.me.n} is NOT divisible by 2!")
         return exhaustive
 
     def validOptions(self, debug=False):

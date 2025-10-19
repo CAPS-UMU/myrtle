@@ -1,4 +1,4 @@
-from tile_static_analysis.utils import roundUpToNearestMultipleOf, MatmulInputs, TileSizes, HardwareLoop, unrollAndJamFactor, EnclosingSCFLoop, unrollAndJamOuterLoops
+from tile_static_analysis.utils import roundUpToNearestMultipleOf, MatmulInputs, TileSizes, HardwareLoop, EnclosingSCFLoop
 import pandas as pd
 import pathlib
 from tile_static_analysis.TileSizeAnalyzer import TileSizeAnalyzer
@@ -80,6 +80,24 @@ class TSA_Quidditch(TileSizeAnalyzer):
             raise Exception(f'{left} should = {right}')
         return (cc_tile_count, cc_tile, cluster_tile)
 
+    def unrollAndJamFactor(self, rowDim):
+        options = [7,6,5,4,3,2]
+        factor = 1
+        for option in options:
+            if rowDim % option == 0:
+                factor = option
+                break
+        return factor
+
+    def unrollAndJamOuterLoops(self, rowDim):
+        # print(f'outer loops is {rowDim} / {unrollAndJamFactor(rowDim)} which is {rowDim / unrollAndJamFactor(rowDim)}')
+        if rowDim == 1:
+            return 1
+        if self.unrollAndJamFactor(rowDim) != 1:
+            return int(rowDim / self.unrollAndJamFactor(rowDim))
+        else:
+            return rowDim
+
     def simulate_peek_at_lowered_matmul_tiling(self, cc_tile: MatmulInputs):
         # for potential_factor in range(1, self.pipeline_depth * 2):
         expectedFMADDs = cc_tile.m * cc_tile.n * cc_tile.k
@@ -89,9 +107,9 @@ class TSA_Quidditch(TileSizeAnalyzer):
         k = cc_tile.k
         n = cc_tile.n
         # create the hardware loop
-        hLoop=HardwareLoop(loop_iters=k,body_size=unrollAndJamFactor(cc_tile.n))
+        hLoop=HardwareLoop(loop_iters=k,body_size=self.unrollAndJamFactor(cc_tile.n))
         # look for an enclosing loop
-        oLoop=EnclosingSCFLoop(iters=unrollAndJamOuterLoops(cc_tile.n))
+        oLoop=EnclosingSCFLoop(iters=self.unrollAndJamOuterLoops(cc_tile.n))
         # every matmul is really a loop of matvecs...
         ooLoop = EnclosingSCFLoop(iters=cc_tile.m)
         res = expectedFMADDs == (

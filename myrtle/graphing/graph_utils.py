@@ -16,7 +16,25 @@ import re
 from sklearn.svm import SVR
 import sklearn
 sys.path.insert(0, '../myrtle')
-from tile_static_analysis.utils import unrollAndJamFactor, unrollAndJamOuterLoops
+
+# TODO: customize unroll and jam factor for lowering version instead of defaulting to Quidditch!
+def unrollAndJamFactor(rowDim):
+    options = [7,6,5,4,3,2]
+    factor = 1
+    for option in options:
+        if rowDim % option == 0:
+            factor = option
+            break
+    return factor
+
+def unrollAndJamOuterLoops(rowDim):
+    # print(f'outer loops is {rowDim} / {unrollAndJamFactor(rowDim)} which is {rowDim / unrollAndJamFactor(rowDim)}')
+    if rowDim == 1:
+        return 1
+    if unrollAndJamFactor(rowDim) != 1:
+        return int(rowDim / unrollAndJamFactor(rowDim))
+    else:
+        return rowDim
 
 
 T = TypeVar("T")

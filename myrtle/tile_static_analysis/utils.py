@@ -44,20 +44,43 @@ class EnclosingSCFLoop:
     iters : int = 1   # number of times the enclosing loop executes; 
                       # if iters == 1, enclosing loop DNE.
 
-def unrollAndJamFactor(rowDim):
-    options = [7,6,5,4,3,2]
-    factor = 1
-    for option in options:
-        if rowDim % option == 0:
-            factor = option
-            break
-    return factor
+@dataclass
+class LoadCounts:
+    """Class for keeping track of a regular vs streaming loads while processing one core tile"""
+    regular_loads : int = 0
+    a_operand_ssr_reuse_loads : int = 0
+    a_operand_ssr_start_reuse_loads : int = 0
+    b_operand_ssr_loads : int = 0
+    not_resused_ssr_loads : int = 0
+    total_ssr_loads : int = 0
 
-def unrollAndJamOuterLoops(rowDim):
-    # print(f'outer loops is {rowDim} / {unrollAndJamFactor(rowDim)} which is {rowDim / unrollAndJamFactor(rowDim)}')
-    if rowDim == 1:
-        return 1
-    if unrollAndJamFactor(rowDim) != 1:
-        return int(rowDim / unrollAndJamFactor(rowDim))
-    else:
-        return rowDim
+def givenLoopsCreateLoadCount(hLoop : HardwareLoop, oLoop:EnclosingSCFLoop, ooLoop:EnclosingSCFLoop):
+    initialized = LoadCounts()
+    initialized.regular_loads = hLoop.body_size*oLoop.iters*ooLoop.iters
+    initialized.a_operand_ssr_reuse_loads = (hLoop.body_size-1)*hLoop.loop_iters*oLoop.iters*ooLoop.iters
+    initialized.a_operand_ssr_start_reuse_loads = 1*hLoop.loop_iters*oLoop.iters*ooLoop.iters
+    initialized.b_operand_ssr_loads = hLoop.body_size*hLoop.loop_iters*oLoop.iters*ooLoop.iters
+    initialized.not_resused_ssr_loads = initialized.a_operand_ssr_start_reuse_loads + initialized.b_operand_ssr_loads
+    initialized.total_ssr_loads = (hLoop.body_size*2)*hLoop.loop_iters*oLoop.iters*ooLoop.iters
+    assert initialized.total_ssr_loads == (initialized.a_operand_ssr_reuse_loads+initialized.a_operand_ssr_start_reuse_loads+initialized.b_operand_ssr_loads)
+    return initialized
+    
+def multByInt(left, i : int):
+    prod = LoadCounts()
+    prod.regular_loads = i*left.regular_loads
+    prod.a_operand_ssr_reuse_loads = i*left.a_operand_ssr_reuse_loads
+    prod.a_operand_ssr_start_reuse_loads = i*left.a_operand_ssr_start_reuse_loads
+    prod.b_operand_ssr_loads = i*left.b_operand_ssr_loads
+    prod.not_resused_ssr_loads = i*left.not_resused_ssr_loads
+    prod.total_ssr_loads= i*left.total_ssr_loads
+    return prod
+
+def sumLoadCounts(left, other):
+    sum = LoadCounts()
+    sum.regular_loads = left.regular_loads + other.regular_loads
+    sum.a_operand_ssr_reuse_loads = left.a_operand_ssr_reuse_loads + other.a_operand_ssr_reuse_loads
+    sum.a_operand_ssr_start_reuse_loads = left.a_operand_ssr_start_reuse_loads + other.a_operand_ssr_start_reuse_loads
+    sum.b_operand_ssr_loads = left.b_operand_ssr_loads + other.b_operand_ssr_loads
+    sum.not_resused_ssr_loads = left.not_resused_ssr_loads + other.not_resused_ssr_loads
+    sum.total_ssr_loads= left.total_ssr_loads + other.total_ssr_loads
+    return sum
