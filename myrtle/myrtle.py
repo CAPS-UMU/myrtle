@@ -49,8 +49,9 @@ def main():
         searchSpaceCSVName = jen.exportOptionsToCSV(dispatchNickName, options_as_df)
     
     # analyze tiling options
-    analyzed = tsa.analyze_options(options_as_df)
-    analyzedSearchSpaceCSVName = tsa.exportAnalysisToCSV(dispatchNickName, analyzed)
+    ann=tsa.TileSizeAnalyzer() if quidditch else tsa.TileSizeAnalyzerC()
+    analyzed = ann.analyze_options(options_as_df)
+    analyzedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
     
     # select best tiling scheme using mode        
     m,n,k,dualBuffer = tss.tileSelection(analyzedSearchSpaceCSVName,sys.argv[2])   
