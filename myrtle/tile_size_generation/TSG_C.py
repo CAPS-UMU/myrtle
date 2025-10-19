@@ -129,6 +129,11 @@ class TSG_C(TSG_Quidditch):
         tileA = m * k
         tileB = n * k
         tileC = m * n
+        # m is the parallel dimension
+        m_prime = m // 8
+        tileA_cc = m_prime * k 
+        tileB_cc = n * k 
+        tileC_cc = m_prime * n
 
         if debug:
             print("\n")
@@ -171,7 +176,7 @@ class TSG_C(TSG_Quidditch):
         weightMatTileSpace = 2 * tileB if self.dualBuff else tileB
         tileSpace = total
         totalSpace = total
-        return tileSpace, weightMatTileSpace, totalSpace, tileA, tileB, tileC
+        return tileSpace, weightMatTileSpace, totalSpace, tileA, tileB, tileC, tileA_cc, tileB_cc, tileC_cc
 
     # annotate a (m, n, k) tile size triple with
     # total spaced used in L1
@@ -179,7 +184,7 @@ class TSG_C(TSG_Quidditch):
     # space remaining
     # measured in BYTES
     def annotateOptionWL1Usage(self, tup):
-        tileSpace, weightMatTileSpace, totalUsage, tileA, tileB, tileC = self.computeL1Usage(
+        tileSpace, weightMatTileSpace, totalUsage, tileA, tileB, tileC, tileA_cc, tileB_cc, tileC_cc = self.computeL1Usage(
             tup[0], tup[1], tup[2]
         )
         return {
@@ -190,6 +195,9 @@ class TSG_C(TSG_Quidditch):
             "tileA": tileA * 8,
             "tileB": tileB * 8,
             "tileC": tileC * 8,
+            "tileA_cc": tileA_cc *8,
+            "tileB_cc": tileB_cc * 8,
+            "tileC_cc": tileC_cc * 8
         }
 
     # convert dictionary to simpler, more readable, annotated triple
@@ -222,6 +230,9 @@ class TSG_C(TSG_Quidditch):
             "tileA": d["tileA"],
             "tileB": d["tileB"],
             "tileC": d["tileC"],
+            "tileA_cc": d["tileA_cc"],
+            "tileB_cc": d["tileB_cc"],
+            "tileC_cc": d["tileC_cc"],
         }
 
     # helper for converting to CSV
@@ -257,13 +268,3 @@ class TSG_C(TSG_Quidditch):
         df = df[preferred_order]
         return df
 
-    # export annotated options to CSV
-    def exportOptionsToCSV(self, dispatchNickName, df):
-        filename = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_searchSpace_c.csv"
-        df.to_csv(
-            filename,
-            index=False,
-        )
-        print("\t", end="")
-        print(f"TSG: wrote search space to {filename}")
-        return filename

@@ -145,3 +145,16 @@ class TSA_C(TSA_Quidditch):
         info["Little K"]=cc_tile_info["usualSize"].k
         
         return info
+
+    def exportAnalysisToCSV(self, dispatchNickName, df):
+        filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_searchSpace_c_analyzed.csv"
+        df.to_csv(
+            filename,
+            index=False,
+        )
+        print("\t",end='')
+        print(
+            
+            f"TSA: wrote analyzed search space to {filename}"
+        )
+        return filename
