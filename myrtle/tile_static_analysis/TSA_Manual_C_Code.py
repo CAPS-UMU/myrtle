@@ -16,9 +16,9 @@ class TSA_C(TSA_Quidditch):
         # labels = list(df.columns) + self.getLoweringInfoColumnNames()
         # return pd.DataFrame(analyzed, columns=labels)
         cols = analyzed[0].keys()
-        print(cols)
+        # print(cols)
         df = pd.DataFrame(analyzed, columns=cols)  
-        print(df)
+        # print(df)
         return df
 
     def analyze_option(self, d):
@@ -118,8 +118,8 @@ class TSA_C(TSA_Quidditch):
     
 
         oneUsualTile = givenLoopsCreateLoadCount(hLoop, oLoop, ooLoop)
-        print(oneUsualTile)
-        print(cc_tile_info["usualCount"])
+        # print(oneUsualTile)
+        # print(cc_tile_info["usualCount"])
         allUsualTiles = multByInt(oneUsualTile,int(cc_tile_info["usualCount"]))
         # analyze unusual tiles (tiles with m dimension increased by one to take on part of remainder)
         res, hLoop, oLoop, ooLoop = self.simulate_peek_at_lowered_matmul_tiling(cc_tile_info["unusualSize"])

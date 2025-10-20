@@ -88,47 +88,17 @@ def tileSelection(csvFile, mode):
             csvFileRanked = f"{basename}-myrtle-{mode}-ranking.csv"
             print(f'TSS: wrote ranking to file {csvFileRanked}')
             stages.to_csv(f"{basename}-myrtle-{mode}-ranking.csv",index=False)
-            # df_sorted = df.sort_values("SSR Config Count", ascending=True)
-    
-            # # minimize microkernel runs
+            # print(filtered[["JSON Name","stage","Regular Loads"]])
+            # print(stages[["JSON Name","stage","Regular Loads"]])
             
-            # #sprint(stages[["JSON Name","stage"]])
-            # df_sorted = df_sorted.iloc[range(0, len(df_sorted)//3)]
-            # # mark which tiling schemes survived filter
-            # mask = stages["JSON Name"].isin(df_sorted["JSON Name"])
-            # stages.loc[mask, 'stage']=1
-            #print(stages[["JSON Name","stage"]])
-            
-            # maximise L1 usage
-            # df_sorted = df_sorted.sort_values("Space Needed in L1", ascending=False)
-            # df_sorted = df_sorted.iloc[range(0, len(df_sorted)//2)]
-            # # mark which tiling schemes survived filter
-            # mask = stages["JSON Name"].isin(df_sorted["JSON Name"])
-            # print("stages.loc[mask, stage] is")
-            # print(stages.loc[mask, "stage"])
-            # stages.loc[mask, 'stage']=2
-            # print(f'len of df_sorted is {len(df_sorted)}')
-            # #print(stages[["JSON Name","stage"]])
-            
-        #     # minimize regular loads
-        #     final_ranking = df_sorted.sort_values("Regular Loads", ascending=True)
-        #     df = final_ranking
-        # # print(f'final_ranking is {final_ranking}')
-        #     # mark which tiling schemes survived final filter
-        #     mask = stages["JSON Name"].isin(final_ranking.iloc[0])
-        #     stages.loc[mask, "stage"]=3
-        #     #print(stages[["JSON Name","stage"]])
-        #     print("\t",end='')
-        #     csvFileRanked = f"{basename}-myrtle-{mode}-ranking.csv"
-        #     print(f'TSS: wrote ranking to file {csvFileRanked}')
-        #     stages.to_csv(f"{basename}-myrtle-{mode}-ranking.csv",index=False)
-            # df["stage"]=0
-            # stages=df
-            # # minimize the SSR Configurations performed
-            # filtered = labelThenTakeNSmallestX(df,"SSR Config Count", 3, stages, "stage", 1)
-            # # maximise L1 usage
-            # filtered = labelThenTakeNBiggestX(filtered,"Space Needed in L1", 2, stages, "stage", 2)            
-            # minimized regular loads performed
+            top = stages[stages["stage"] >= 2]            
+            #print(top[["JSON Name","stage","Regular Loads"]])
+            top = top.sort_values("Regular Loads", ascending=True)
+            #print(top[["JSON Name","stage","Regular Loads","Space Needed in L1"]])
+            top = top.iloc[0:5]
+            top.to_csv(f"{basename}-myrtle-{mode}-ranking-top5.csv",index=False)
+           
+           
 
     # TODO: return the ONLY row with stage 3, NOT the first row
     m = int(df.iloc[0]["m"])
