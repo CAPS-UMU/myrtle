@@ -94,9 +94,17 @@ def tileSelection(csvFile, mode):
             top = stages[stages["stage"] >= 2]            
             #print(top[["JSON Name","stage","Regular Loads"]])
             top = top.sort_values("Regular Loads", ascending=True)
-            #print(top[["JSON Name","stage","Regular Loads","Space Needed in L1"]])
+            print(top[["JSON Name","stage","Regular Loads","Space Needed in L1"]])
             top = top.iloc[0:5]
             top.to_csv(f"{basename}-myrtle-{mode}-ranking-top5.csv",index=False)
+            
+            # greedy baseline
+            topL1 = df.sort_values("Space Needed in L1", ascending=False).iloc[0:1]
+            print(topL1[["JSON Name","Space Needed in L1","tileB_cc"]])
+            print(df.sort_values("Space Needed in L1", ascending=False)[["JSON Name","Space Needed in L1","tileB_cc"]])
+            topL1 .to_csv(f"{basename}-myrtle-{mode}-ranking-topL1.csv",index=False)
+            # topBTile = df.sort_values("tileB_cc", ascending=False)
+            # print(topBTile[["JSON Name","Space Needed in L1","tileB_cc"]])
            
            
 
