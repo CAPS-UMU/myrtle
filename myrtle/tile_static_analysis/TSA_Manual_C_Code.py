@@ -33,7 +33,8 @@ class TSA_C(TSA_Quidditch):
     def coreTileParDimSize(self, sz: int):
         usualSize = sz // 8
         remainder = sz % 8
-        usualCount = (sz / usualSize) - remainder
+        usualCount = ((sz  - remainder) / usualSize) - remainder
+        print(f"size is {sz} and sz/usualSize is {sz / usualSize} usualCount is {usualCount} and remainder is {remainder}")
         subtiles = {
             "totalCount" : usualCount + remainder,
             "usualCount": usualCount,
@@ -41,6 +42,7 @@ class TSA_C(TSA_Quidditch):
             "unusualCount": remainder, # the remainder is spread out across the first remainder tiles (1 extra elt each)
             "unusualSize": usualSize + 1
         }
+        print(subtiles)
         assert subtiles["totalCount"] % 8 == 0
         return subtiles
 
