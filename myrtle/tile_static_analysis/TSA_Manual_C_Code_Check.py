@@ -1,7 +1,7 @@
 from tile_static_analysis.utils import roundUpToNearestMultipleOf, MatmulInputs, TileSizes, HardwareLoop, EnclosingSCFLoop, LoadCounts, sumLoadCounts, multByInt, givenLoopsCreateLoadCount, ComputeCoreTiles, LoadCounter, add
 import pandas as pd
 import pathlib
-from tile_static_analysis.TSA_Manual_C_Code import TSA_C
+from tile_static_analysis.TSA_Manual_C_Code_deprecated import TSA_C
 
 
 
@@ -41,6 +41,12 @@ class TSA_C_Check(TSA_C):
         # loweringInfo = self.getLoweringInfoAnnotation(inputSizes, l1TileSizes)
         loweringInfo = self.getLoweringInfo(l1TileSizes,ccTileSizes)
         d.update(loweringInfo)
+        # add L3 load counting
+        d["m_tiles"] = d["M"]/ d["m"]
+        d["n_tiles"] = d["N"]/ d["n"]
+        d["k_tiles"] = d["K"]/ d["k"]
+        d["L3 Loads"] = (d["m_tiles"]*d["n_tiles"]*d["k_tiles"])*(d["m"]*d["k"]+d["k"]*d["n"]) + (d["m_tiles"]*d["n_tiles"])*(d["m"]*d["n"])
+    
         return d
     
     """Given a tile with parallel dim of sz, what is the compute core's dim when there are 8 cores?"""

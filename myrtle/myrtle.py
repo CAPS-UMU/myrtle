@@ -3,7 +3,7 @@ import json
 from tile_size_generation.TSG_Quidditch import TSG_Quidditch
 from tile_size_generation.TSG_C import TSG_C
 from tile_static_analysis.TSA_Quidditch import TSA_Quidditch
-from tile_static_analysis.TSA_Manual_C_Code import TSA_C
+# from tile_static_analysis.TSA_Manual_C_Code_deprecated import TSA_C
 from tile_static_analysis.TSA_Manual_C_Code_Check import TSA_C_Check
 import tile_sel.tile_selection as tss
 import re
