@@ -100,8 +100,8 @@ def tileSelection(csvFile, mode):
             
             # greedy baseline
             topL1 = df.sort_values("Space Needed in L1", ascending=False).iloc[0:1]
-            print(topL1[["JSON Name","Space Needed in L1","tileB_cc"]])
-            print(df.sort_values("Space Needed in L1", ascending=False)[["JSON Name","Space Needed in L1","tileB_cc"]])
+            # print(topL1[["JSON Name","Space Needed in L1","tileB_cc"]])
+            # print(df.sort_values("Space Needed in L1", ascending=False)[["JSON Name","Space Needed in L1","tileB_cc"]])
             topL1 .to_csv(f"{basename}-myrtle-{mode}-ranking-topL1.csv",index=False)
             # topBTile = df.sort_values("tileB_cc", ascending=False)
             # print(topBTile[["JSON Name","Space Needed in L1","tileB_cc"]])
