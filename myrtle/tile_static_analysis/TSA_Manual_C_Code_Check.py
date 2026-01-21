@@ -31,8 +31,8 @@ class TSA_C_Check(TSA_C):
         k_num = int(d["K"] / d["k"])
         l1TileSizes = TileSizes(m=d["m"], n=d["n"], k=d["k"], m_count=m_num, n_count=n_num, k_count=k_num)
         ccTileSizes = self.getComputeCoreTileSizes(l1TileSizes)
-        print(l1TileSizes)
-        print(ccTileSizes)
+        # print(l1TileSizes)
+        # print(ccTileSizes)
         # loads=self.getStreamingLoadsPerClusterTile(ccTileSizes)
         # loads=loads.mapMult(m_num).mapMult(n_num).mapMult(k_num)
         # print(f'final: {loads}')
@@ -120,51 +120,51 @@ class TSA_C_Check(TSA_C):
 
         return (res, hLoop, oLoop, ooLoop)
 
-    def getLoweringInfoAnnotation(self, mat: MatmulInputs, sizes: TileSizes):
-        cc_tile_info = self.getCCTileCountsAndSizes(MatmulInputs,sizes)
-        cc_tile_count = int(cc_tile_info["cc_tile_count"])
-        info ={
-            "SSR Config Count":cc_tile_count
-        }
-        # analyze usual tiles
-        res, hLoop, oLoop, ooLoop = self.simulate_peek_at_lowered_matmul_tiling(cc_tile_info["usualSize"])
-        if not res:
-            raise Exception("Lowering to snitch hardware loop failed!")
-        info["LittleMPrime Little VecMat Runs"]=ooLoop.iters
-        info["LittleMPrime UnrollAndJam Loop Iters"]=oLoop.iters
-        info["LittleMPrime HW Loop Iters"]=hLoop.loop_iters
-        info["LittleMPrime HW Loop Body Size"]=hLoop.body_size
-        info["LittleMPrime Little M Prime"]=cc_tile_info["usualSize"].n
+    # def getLoweringInfoAnnotation(self, mat: MatmulInputs, sizes: TileSizes):
+    #     cc_tile_info = self.getCCTileCountsAndSizes(MatmulInputs,sizes)
+    #     cc_tile_count = int(cc_tile_info["cc_tile_count"])
+    #     info ={
+    #         "SSR Config Count":cc_tile_count
+    #     }
+    #     # analyze usual tiles
+    #     res, hLoop, oLoop, ooLoop = self.simulate_peek_at_lowered_matmul_tiling(cc_tile_info["usualSize"])
+    #     if not res:
+    #         raise Exception("Lowering to snitch hardware loop failed!")
+    #     info["LittleMPrime Little VecMat Runs"]=ooLoop.iters
+    #     info["LittleMPrime UnrollAndJam Loop Iters"]=oLoop.iters
+    #     info["LittleMPrime HW Loop Iters"]=hLoop.loop_iters
+    #     info["LittleMPrime HW Loop Body Size"]=hLoop.body_size
+    #     info["LittleMPrime Little M Prime"]=cc_tile_info["usualSize"].n
     
 
-        oneUsualTile = givenLoopsCreateLoadCount(hLoop, oLoop, ooLoop)
-        # print(oneUsualTile)
-        # print(cc_tile_info["usualCount"])
-        allUsualTiles = multByInt(oneUsualTile,int(cc_tile_info["usualCount"]))
-        # analyze unusual tiles (tiles with m dimension increased by one to take on part of remainder)
-        res, hLoop, oLoop, ooLoop = self.simulate_peek_at_lowered_matmul_tiling(cc_tile_info["unusualSize"])
-        if not res:
-            raise Exception("Lowering to snitch hardware loop failed!")
-        info["LittleMPrimeP1 Little VecMat Runs"]=ooLoop.iters
-        info["LittleMPrimeP1 UnrollAndJam Loop Iters"]=oLoop.iters
-        info["LittleMPrimeP1 HW Loop Iters"]=hLoop.loop_iters
-        info["LittleMPrimeP1 HW Loop Body Size"]=hLoop.body_size
-        info["LittleMPrimeP1 Little M Prime"]=cc_tile_info["unusualSize"].n
-        oneUnUsualTile = LoadCounts
-        oneUnUsualTile.intializeGivenLoops=(hLoop, oLoop, ooLoop)
-        allUnUsualTiles = multByInt(oneUnUsualTile,int(cc_tile_info["unusualCount"]))
-        # sum results of usual and unusual tiles
-        allTiles = sumLoadCounts(allUsualTiles,allUnUsualTiles)
+    #     oneUsualTile = givenLoopsCreateLoadCount(hLoop, oLoop, ooLoop)
+    #     # print(oneUsualTile)
+    #     # print(cc_tile_info["usualCount"])
+    #     allUsualTiles = multByInt(oneUsualTile,int(cc_tile_info["usualCount"]))
+    #     # analyze unusual tiles (tiles with m dimension increased by one to take on part of remainder)
+    #     res, hLoop, oLoop, ooLoop = self.simulate_peek_at_lowered_matmul_tiling(cc_tile_info["unusualSize"])
+    #     if not res:
+    #         raise Exception("Lowering to snitch hardware loop failed!")
+    #     info["LittleMPrimeP1 Little VecMat Runs"]=ooLoop.iters
+    #     info["LittleMPrimeP1 UnrollAndJam Loop Iters"]=oLoop.iters
+    #     info["LittleMPrimeP1 HW Loop Iters"]=hLoop.loop_iters
+    #     info["LittleMPrimeP1 HW Loop Body Size"]=hLoop.body_size
+    #     info["LittleMPrimeP1 Little M Prime"]=cc_tile_info["unusualSize"].n
+    #     oneUnUsualTile = LoadCounts
+    #     oneUnUsualTile.intializeGivenLoops=(hLoop, oLoop, ooLoop)
+    #     allUnUsualTiles = multByInt(oneUnUsualTile,int(cc_tile_info["unusualCount"]))
+    #     # sum results of usual and unusual tiles
+    #     allTiles = sumLoadCounts(allUsualTiles,allUnUsualTiles)
        
-        info["Regular Loads"]=allTiles.regular_loads
-        info["Total SSR Loads"]=allTiles.total_ssr_loads
-        info["Not Reused SSR Loads"]=allTiles.not_resused_ssr_loads
-        info["A SSR Reuse Loads"]=allTiles.a_operand_ssr_reuse_loads
-        info["A SSR Start Reuse Loads"]=allTiles.a_operand_ssr_start_reuse_loads
-        info["B SSR Loads"]=allTiles.b_operand_ssr_loads
-        info["Little K"]=cc_tile_info["usualSize"].k
+    #     info["Regular Loads"]=allTiles.regular_loads
+    #     info["Total SSR Loads"]=allTiles.total_ssr_loads
+    #     info["Not Reused SSR Loads"]=allTiles.not_resused_ssr_loads
+    #     info["A SSR Reuse Loads"]=allTiles.a_operand_ssr_reuse_loads
+    #     info["A SSR Start Reuse Loads"]=allTiles.a_operand_ssr_start_reuse_loads
+    #     info["B SSR Loads"]=allTiles.b_operand_ssr_loads
+    #     info["Little K"]=cc_tile_info["usualSize"].k
         
-        return info
+    #     return info
 
     def exportAnalysisToCSV(self, dispatchNickName, df):
         filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_searchSpace_c_analyzed.csv"
@@ -184,9 +184,9 @@ class TSA_C_Check(TSA_C):
         mHat = mPrime + 1
         remainderCount = l1.m % 8
         regularCount = 8-remainderCount 
-        print()
-        print(f"L1 tile sizes are: {l1.m}-{l1.n}-{l1.k}")
-        print(f"mPrime:{mPrime} mHat:{mHat} remainderCount:{remainderCount} regularCount:{regularCount}")
+        # print()
+        # print(f"L1 tile sizes are: {l1.m}-{l1.n}-{l1.k}")
+        # print(f"mPrime:{mPrime} mHat:{mHat} remainderCount:{remainderCount} regularCount:{regularCount}")
         assert (remainderCount + regularCount) == 8
         mPrime_tiles = TileSizes(m=mPrime,n=l1.n,k=l1.k,m_count=regularCount,n_count=1,k_count=1)
         mHat_tiles = TileSizes(m=mHat,n=l1.n,k=l1.k,m_count=remainderCount,n_count=1,k_count=1)

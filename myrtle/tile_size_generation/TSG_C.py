@@ -104,6 +104,8 @@ class TSG_C(TSG_Quidditch):
         valid_options_8_banks = list(
             filter(lambda d: max(d["tileA"],d["tileB"],d["tileC"]) <= eb, annotated_options)
         )
+        # print(f"ignoring 8 bank constraint - 8 banks BTW takes up {self.bankSizeBytes} bytes")
+        # valid_options_8_banks = valid_options_l1
 
         if debug:
             valid_options= list(
