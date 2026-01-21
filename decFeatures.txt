@@ -1,0 +1,4 @@
+L3 L/S Timed
+fmaddsPerCore
+CC L1 Footprint
+Regular Loads
