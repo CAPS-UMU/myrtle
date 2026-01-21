@@ -177,7 +177,7 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
                   df,
                   x=x_col,
                   y=y_col,
-                  color="Kernel Time",  # Optional: color points by a category column
+                  color="Regular Loads",  # Optional: color points by a category column
                   hover_data=hover_data,  # Show these columns on hover
                   title=f"{title} {x_col} vs {y_col}",)
              html = pio.to_html(fig, include_plotlyjs="cdn", full_html=False)
@@ -193,18 +193,7 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
             df,
             x=x_col,
             y=y_col,
-            color="fmaddsPerCore",  # "Regular Loads",  # Optional: color points by a category column
-            hover_data=hover_data,  # Show these columns on hover
-            title=f"{title} {x_col} vs {y_col}",
-        )
-
-        x_col = "fmaddsPerCore"
-        y_col = "Kernel Time"
-        fig2 = px.scatter(
-            df,
-            x=x_col,
-            y=y_col,
-            color="Regular Loads",#"L3 L/S Timed",  # "Regular Loads",  # Optional: color points by a category column
+            color="Regular Loads",  # "Regular Loads",  # Optional: color points by a category column
             hover_data=hover_data,  # Show these columns on hover
             title=f"{title} {x_col} vs {y_col}",
         )
@@ -215,7 +204,40 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
             df,
             x=x_col,
             y=y_col,
-            color="Regular Loads",  # Optional: color points by a category column
+            color="fmaddsPerCore",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}",
+        )
+
+        x_col = "Regular Loads"
+        y_col = "Kernel Time"
+        fig2 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="L1 Usage",#"L3 L/S Timed",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}",
+        )
+
+        x_col = "k"
+        y_col = "Kernel Time"
+        fig4 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="Regular Loads",#"L3 L/S Timed",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}",
+        )
+
+        x_col = "fmaddsPerCore"
+        y_col = "Kernel Time"
+        fig5 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="Regular Loads",#"L3 L/S Timed",  # "Regular Loads",  # Optional: color points by a category column
             hover_data=hover_data,  # Show these columns on hover
             title=f"{title} {x_col} vs {y_col}",
         )
@@ -227,6 +249,9 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
         div1 = pio.to_html(fig1, include_plotlyjs="cdn", full_html=False)
         div2 = pio.to_html(fig2, include_plotlyjs="cdn", full_html=False)
         div3 = pio.to_html(fig3, include_plotlyjs="cdn", full_html=False)
+        div4 = pio.to_html(fig4, include_plotlyjs="cdn", full_html=False)
+        div5 = pio.to_html(fig5, include_plotlyjs="cdn", full_html=False)
+        
         # --- Combine into HTML page with grid layout ---
         html = f"""
     <html>
@@ -265,6 +290,8 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
         <div class="plot-box">{div1}</div>
         <div class="plot-box">{div2}</div>
         <div class="plot-box">{div3}</div>
+        <div class="plot-box">{div4}</div>
+        <div class="plot-box">{div5}</div>
         </div>
         </body>
         </html>

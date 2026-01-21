@@ -252,7 +252,7 @@ def main():
     output = sys.argv[2]  
     modelPickle = f'{sys.argv[3]}.pickle'
     features = get_lines_from_file(sys.argv[4])
-    print(f'features of svr are {features}')
+    #print(f'features of svr are {features}')
     x_col = "Regular Loads"
     y_col = "Kernel Time"
     title = f"{input[7:-4]}"
