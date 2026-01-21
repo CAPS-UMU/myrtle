@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 #from xdsl.dialects.riscv_snitch import FrepOuter
 
 def roundUpToNearestMultipleOf(num, row_dim):
@@ -25,6 +25,10 @@ class TileSizes:
     m: int = 1
     n : int = 40
     k : int = 100
+    m_count: int = 1 # number of tiles of size m
+    n_count : int = 1 # number of tiles of size n
+    k_count: int = 1 # number of tiles of size k
+
 
 @dataclass
 class HardwareLoop:
@@ -84,3 +88,20 @@ def sumLoadCounts(left, other):
     sum.not_resused_ssr_loads = left.not_resused_ssr_loads + other.not_resused_ssr_loads
     sum.total_ssr_loads= left.total_ssr_loads + other.total_ssr_loads
     return sum
+
+@dataclass
+class LoadCounter:
+    a_ssr : int = 0
+    a_ssr_reuse : int = 0
+    b_ssr : int = 0
+    c_regular : int = 0
+    def mapMult(self, x:int):
+        return LoadCounter(self.a_ssr*x,self.a_ssr_reuse*x,self.b_ssr*x,self.c_regular*x)
+
+def add(l:LoadCounter, r:LoadCounter):
+        return LoadCounter(l.a_ssr + r.a_ssr,l.a_ssr_reuse + r.a_ssr_reuse,l.b_ssr + r.b_ssr,l.c_regular + r.c_regular)
+
+@dataclass
+class ComputeCoreTiles:
+    mPrime : TileSizes = field(default_factory=TileSizes)
+    mHat : TileSizes = field(default_factory=TileSizes)

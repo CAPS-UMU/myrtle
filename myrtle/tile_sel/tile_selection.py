@@ -10,6 +10,32 @@ def labelThenTakeNSmallestX(df, x, n, df_record, label_name, label_val):
     df_sorted = df.sort_values(x, ascending=True)
     # take best N
     df_best_n = df_sorted.iloc[range(0, len(df_sorted)//n)]
+    if label_val == -1:
+        print(f"YODEL taking {n} best but len(df_sorted)//n is {len(df_sorted)//n}")
+        df_best_n = df_sorted.iloc[range(0, len(df_sorted))]
+        # print(df_best_n[["JSON Name","Regular Loads","myrtle"]])
+        # print(df_sorted[["JSON Name","Regular Loads"]])
+        df_best_n[label_name] = range(1, int(df_sorted.shape[0] + 1))
+        print(df_best_n[["JSON Name","Regular Loads","myrtle"]])
+        # mask = df_record["JSON Name"].isin(df_best_n["JSON Name"])
+        # print("HELP")
+        # print(df_record.loc[mask, label_name, "JSON Name"])
+        # df_record.loc[mask, label_name]=df_best_n[label_name] 
+        # df_record.update(df_best_n.set_index("JSON Name"), overwrite=True)
+        # print(df_record[["JSON Name","Regular Loads","myrtle"]])
+        # B = B.merge(A, on='id', how='left')
+        df_record.set_index("JSON Name", inplace=True)
+        df_best_n.set_index("JSON Name", inplace=True)
+        # df_record = df_best_n.merge(df_record,on="JSON Name",how="left")
+        df_record.update(df_best_n)
+        df_record.reset_index(inplace=True)
+        df_best_n.reset_index(inplace=True)
+        print("HELP")
+        print(df_record)
+        df_best_n = df_sorted.iloc[range(0, len(df_sorted)//n)]
+        print(df_best_n[["JSON Name","Regular Loads","myrtle"]])
+        return df_best_n
+   
     # mark in record df which tiling schemes from df survived filter
     mask = df_record["JSON Name"].isin(df_best_n["JSON Name"])
     df_record.loc[mask, label_name]=label_val
@@ -73,6 +99,7 @@ def tileSelection(csvFile, mode):
             df = ranked
             df.to_csv(f"{basename}-myrtle-{mode}-ranking.csv",index=False)
         else:
+            myrtleRank = df
             stages=df
             stages["stage"]=0
             # minimize SSR configs performed
@@ -107,6 +134,15 @@ def tileSelection(csvFile, mode):
             topL1.to_csv(f"{basename}-myrtle-{mode}-ranking-topL1.csv",index=False)
             # topBTile = df.sort_values("tileB_cc", ascending=False)
             # print(topBTile[["JSON Name","Space Needed in L1","tileB_cc"]])
+            print ("NEW FILTERING ALGO!")
+            print(df)
+            myrtleRank["myrtle"]=400
+            filtered = labelThenTakeNSmallestX(df,"L3 Loads", 2, myrtleRank, "myrtle", 300) 
+            filtered = labelThenTakeNSmallestX(filtered,"SSR Config Count", 3, myrtleRank, "myrtle", 200)           
+            # filtered = labelThenTakeNBiggestX(filtered,"Space Needed in L1", 2, myrtleRank, "stage", 2) 
+            filtered = labelThenTakeNSmallestX(filtered,"Regular Loads", len(filtered), myrtleRank, "myrtle", -1)
+            myrtleRank.to_csv(f"{basename}-myrtle-{mode}-new-ranking.csv",index=False)
+            
            
            
 
