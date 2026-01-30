@@ -12,15 +12,11 @@ where
 - `<kernel>` is a string representing the **type of kernel** and its **input sizes**, formatted differently depending on the backend selected.
   - Quidditch: use the name of the iree dispatch to tile, for example, `"main\$async_dispatch_9_matmul_transpose_b_1x161x600_f64"`
   - Manual C code: use the string format `matmul_MxNxK_f64` where `M`, `N`, and `K`, are input dimensions, for ex, `"matmul_2x768x760_f64"`
-
-- `<dispatchName>` is the name of the iree dispatch to tile, for example, `"main$async_dispatch_9_matmul_transpose_b_1x161x600_f64"`
 - `<mode>` is the tile size selection mode, either
   - `"sflt"` - simple filtering tile selection
   - ~~`"scyc"` - simple cycle count predicted tile selection~~ (deprecated)
   - ~~`"svrcyc"` - SVR (support vector machine) cycle count predicted tile selection~~ (deprecated)
-
 - `<output-tiles.json>` full path to where myrtle should store its output
-
 - `<optional-bypass-gen.json>` is a file containing a search space that you would like myrtle to use instead of its own.
 
 ### Example runs
