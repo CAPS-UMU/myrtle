@@ -54,3 +54,17 @@ bash many_gemms.sh 128x128x128wm-n-k_searchSpace_top10-sorted-L1.csv check run n
 echo "Finished running three top 10 runs. It's a miracle."
 ```
 
+## Extracting results inside snitch repo
+
+```
+bash many_gemms.sh 128x128x128wm-n-k_searchSpace_top10-sorted-L1.csv no no no extract; 
+python combineKernelTimesIntoSingleCSV.py 128x128x128wm-n-k_searchSpace_top10-sorted-L1.csv;
+
+bash many_gemms.sh 64x128x128wm-n-k_searchSpace_top10-sorted-L1.csv no no no extract;
+python combineKernelTimesIntoSingleCSV.py 64x128x128wm-n-k_searchSpace_top10-sorted-L1.csv;
+
+bash many_gemms.sh 32x128x128wm-n-k_searchSpace_top10-sorted-L1.csv no no no extract;
+python combineKernelTimesIntoSingleCSV.py 32x128x128wm-n-k_searchSpace_top10-sorted-L1.csv;
+
+```
+
