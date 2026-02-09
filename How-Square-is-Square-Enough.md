@@ -65,6 +65,7 @@ python combineKernelTimesIntoSingleCSV.py 64x128x128wm-n-k_searchSpace_top10-sor
 
 bash many_gemms.sh 32x128x128wm-n-k_searchSpace_top10-sorted-L1.csv no no no extract;
 python combineKernelTimesIntoSingleCSV.py 32x128x128wm-n-k_searchSpace_top10-sorted-L1.csv;
-
 ```
+
+## Let's do this again, but for a bunch more input sizes
 

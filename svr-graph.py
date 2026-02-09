@@ -255,7 +255,7 @@ def main():
     #print(f'features of svr are {features}')
     x_col = "Regular Loads"
     y_col = "Kernel Time"
-    title = f"{input[7:-4]}"
+    title = f"{input[38:-4]}"
     titleOfWebpage = f"{modelPickle} tested on {input}"
     # --- Step 1: Read the CSV file ---
     df = pd.read_csv(input)
