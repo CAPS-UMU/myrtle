@@ -87,6 +87,7 @@ def addFeatures(df):
 
 
 def addCost(df):
+    df["sumSSRsRegs"] = df["SSR Config Count"] + df["Regular Loads"]
     df["fmaddsPerCore"] = df["m"] * df["n"] * df["k"] / 8
     df["L3 Loads Timed"] = df["L3 Loads"] - df["tileC"] - df["tileA"] - df["tileB"]
     df["L3 Stores Timed"] = df["M"] * df["N"] - df["m"] * df["n"]
@@ -94,6 +95,8 @@ def addCost(df):
     df["CC L1 Footprint"] = df.apply(
         lambda y: (y["m"] * y["n"] + y["m"] * y["k"]) / 8.0 + y["k"] * y["n"], axis=1
     )
+    df["L1/CC L1"] = df["L1 Usage"] + df["CC L1 Footprint"]
+    df["tileA_cc/tileC_cc"] = df["tileA_cc"] + df["tileC_cc"] + (df["tileA_cc"] / 1.0 / df["tileC_cc"])
     cmFeatures = [
         "fmaddsPerCore",
         "L3 L/S Timed",
@@ -252,11 +255,12 @@ def main():
     output = sys.argv[2]  
     modelPickle = f'{sys.argv[3]}.pickle'
     features = get_lines_from_file(sys.argv[4])
+    titleOfWebpage = sys.argv[5]
     #print(f'features of svr are {features}')
     x_col = "Regular Loads"
     y_col = "Kernel Time"
     title = f"{input[38:-4]}"
-    titleOfWebpage = f"{modelPickle} tested on {input}"
+    # titleOfWebpage = f"{modelPickle} tested on {input}"
     # --- Step 1: Read the CSV file ---
     df = pd.read_csv(input)
 

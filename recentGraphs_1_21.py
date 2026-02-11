@@ -108,10 +108,15 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
             "L1 Usage",
             "CC L1 Footprint",
             "tileA",
-            "tileA_cc",
             "tileB",
             "tileC",
-            "cost",
+            "tileA_cc",
+            "tileC_cc",
+            "k",
+            #"cost",
+            #"dma",
+            "sumSSRsRegs",
+            "fmaddsPerCore",
         ]
       
         # let's merge kernel time and predicted kernel time into a single y column to graph more easily
@@ -186,6 +191,41 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
         #print('\n'.join(figs))
         feature_graphs='\n'.join(figs)
 
+        # more experiments
+        x_col = "SSR Config Count"#"sumSSRsRegs"
+        y_col = "Kernel Time"
+        fig8 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="tileA_cc/tileC_cc",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}",
+        )
+
+        df["MNK/m"]=df["M"] * df["N"] * df["K"] / df ["m"]
+        x_col = "MNK/m"
+        y_col = "Kernel Time"
+        fig6 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="SSR Config Count",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}",
+        )
+
+        df["MNK/n"]=df["M"] * df["N"] * df["K"] / df ["n"]
+        x_col = "MNK/n"
+        y_col = "Kernel Time"
+        fig7 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="SSR Config Count",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}",
+        )
 
         x_col = "L1 Usage"
         y_col = "Kernel Time"
@@ -251,6 +291,9 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
         div3 = pio.to_html(fig3, include_plotlyjs="cdn", full_html=False)
         div4 = pio.to_html(fig4, include_plotlyjs="cdn", full_html=False)
         div5 = pio.to_html(fig5, include_plotlyjs="cdn", full_html=False)
+        div6 = pio.to_html(fig6, include_plotlyjs="cdn", full_html=False)
+        div7 = pio.to_html(fig7, include_plotlyjs="cdn", full_html=False)
+        div8 = pio.to_html(fig8, include_plotlyjs="cdn", full_html=False)
         
         # --- Combine into HTML page with grid layout ---
         html = f"""
@@ -292,6 +335,9 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
         <div class="plot-box">{div3}</div>
         <div class="plot-box">{div4}</div>
         <div class="plot-box">{div5}</div>
+        <div class="plot-box">{div6}</div>
+        <div class="plot-box">{div7}</div>
+        <div class="plot-box">{div8}</div>
         </div>
         </body>
         </html>

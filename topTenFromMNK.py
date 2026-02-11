@@ -21,6 +21,7 @@ def get_lines_from_file(file_name):
         return f"Error: The file '{file_name}' was not found."
     
 # python topTenFromMNK.py "fileWInputSizes.txt" 
+# python topTenFromMNK.py "02092026InputSizes.txt" 
 def main():
     print("hello")
     inputSizes = sys.argv[1]

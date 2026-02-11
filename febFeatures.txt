@@ -1,0 +1,4 @@
+SSR Config Count
+Regular Loads
+tileA_cc/tileC_cc
+fmaddsPerCore
