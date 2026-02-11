@@ -96,7 +96,7 @@ def addCost(df):
         lambda y: (y["m"] * y["n"] + y["m"] * y["k"]) / 8.0 + y["k"] * y["n"], axis=1
     )
     df["L1/CC L1"] = df["L1 Usage"] + df["CC L1 Footprint"]
-    df["tileA_cc/tileC_cc"] = df["tileA_cc"] + df["tileC_cc"] + (df["tileA_cc"] / 1.0 / df["tileC_cc"])
+    df["tileA_cc/tileC_cc"] = (df["tileA_cc"] / 1.0 / df["tileC_cc"])
     cmFeatures = [
         "fmaddsPerCore",
         "L3 L/S Timed",
