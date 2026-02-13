@@ -378,6 +378,18 @@ def generateInteractiveC1C2Graph(df, titleOfWebpage):
 
         x_col = "c1"
         y_col = "c2"
+        df_filtered = df[df["Rank Sum"] < 20]
+        fig1_1 = px.scatter(
+            df_filtered,
+            x=x_col,
+            y=y_col,
+            color="Rank Sum",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title="C1 Vs C2 values colored by the sum of ranks of the two points in pair (P1, P2), only showing pairs with rank sum < 20.",
+        )
+
+        x_col = "c1"
+        y_col = "c2"
         fig1_2 = px.scatter(
             df,
             x=x_col,
@@ -525,6 +537,7 @@ def generateInteractiveC1C2Graph(df, titleOfWebpage):
         # --- Convert each figure to HTML div ---
 
         div1 = pio.to_html(fig1, include_plotlyjs="cdn", full_html=False)
+        div1_1 = pio.to_html(fig1_1, include_plotlyjs="cdn", full_html=False)
         div1_3 = pio.to_html(fig1_3, include_plotlyjs="cdn", full_html=False)
         div1_2 = pio.to_html(fig1_2, include_plotlyjs="cdn", full_html=False)
         div2 = pio.to_html(fig2, include_plotlyjs="cdn", full_html=False)
@@ -570,6 +583,7 @@ def generateInteractiveC1C2Graph(df, titleOfWebpage):
     <h1 style="text-align:center;">{titleOfWebpage}</h1>
     <div class="dashboard">
         <div class="plot-box">{div1}</div>
+        <div class="plot-box">{div1_1}</div>
         <div class="plot-box">{div7}</div>
         <div class="plot-box">{div8}</div>
         <div class="plot-box">{div1_2}</div>
