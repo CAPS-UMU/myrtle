@@ -116,6 +116,7 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
             #"cost",
             #"dma",
             "sumSSRsRegs",
+            "k/n",
             "fmaddsPerCore",
         ]
       
@@ -198,7 +199,7 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
             df,
             x=x_col,
             y=y_col,
-            color="tileA_cc/tileC_cc",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            color="k/n",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
             hover_data=hover_data,  # Show these columns on hover
             title=f"{title} {x_col} vs {y_col}",
         )
@@ -216,13 +217,13 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
         )
 
         df["MNK/n"]=df["M"] * df["N"] * df["K"] / df ["n"]
-        x_col = "MNK/n"
+        x_col = "L1 Usage"
         y_col = "Kernel Time"
         fig7 = px.scatter(
             df,
             x=x_col,
             y=y_col,
-            color="SSR Config Count",  # "Regular Loads",  # Optional: color points by a category column
+            color="k/n",  # "Regular Loads",  # Optional: color points by a category column
             hover_data=hover_data,  # Show these columns on hover
             title=f"{title} {x_col} vs {y_col}",
         )
@@ -338,6 +339,250 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
         <div class="plot-box">{div6}</div>
         <div class="plot-box">{div7}</div>
         <div class="plot-box">{div8}</div>
+        </div>
+        </body>
+        </html>
+        """
+        return html
+
+def generateInteractiveC1C2Graph(df, titleOfWebpage):
+        #print("WARNING: we remove points with 8-64-16 because it makes the scale of the graph way too large.")
+        #df = df[df["fst"]!="8-64-16"]
+        df["Rank Sum"] = df["P1 Rank"] + df["P2 Rank"]
+        df["SSR Config Diff"] = abs(df["P1 SSR Configs"] - df["P2 SSR Configs"])
+    #     df["SSR Config Diff"] = df.apply(
+    #     lambda y: if df["P1 SSR Configs"] - df["P1 SSR Configs"] < 0, y[] - (y["m"] * y["n"] + y["m"] * y["k"]) / 8.0 + y["k"] * y["n"], axis=1
+    # )
+
+        x_col = "c1"
+        y_col = "c2"
+        hover_data = [
+            "pair",
+            "Time Diff",
+            x_col,
+            y_col,
+            "P1 SSR Configs","P2 SSR Configs","Time P1","Time P2","P1 Rank","P2 Rank"
+        ]
+
+        print("HOODLE")
+        print(type(df["Time P1"].iloc(0)))
+
+        fig1 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="Time P1",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title="C1 Vs C2 values colored by speed of the point P1 in pair (P1, P2).",
+        )
+
+        x_col = "c1"
+        y_col = "c2"
+        fig1_2 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="Time Diff",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title="C1 Vs C2 values colored by time difference between points in pair (P1, P2)",
+        )
+
+        y_col = "Time Diff"
+        x_col = "c2"
+        fig7 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="Rank Sum",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title="C2 values ordered by time difference between points in pair (P1, P2)",
+        )
+
+        y_col = "Time Diff"
+        x_col = "c1"
+        fig8 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="Rank Sum",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title="C1 values ordered by time difference between points in pair (P1, P2)",
+        )
+
+        x_col = "Rank Sum"
+        y_col = "c2"
+        df_filtered = df[df["Rank Sum"] < 10]
+        fig6 = px.scatter(
+            df_filtered,
+            x=x_col,
+            y=y_col,
+            color="pair",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title="C1 values for pairs of points with sum of their ranks < 10",
+        )
+
+        x_col = "c1"
+        y_col = "c2"
+        df_filtered = df[df["P1 SSR Configs"] == df["P2 SSR Configs"]]
+        fig9 = px.scatter(
+            df_filtered,
+            x=x_col,
+            y=y_col,
+            color="P1 SSR Configs",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title="C1 vs C2 values for pairs of points with same number of SSR Configs",
+        )
+
+        x_col = "P1 SSR Configs"
+        y_col = "c1"
+        df_filtered = df[df["P1 SSR Configs"] == df["P2 SSR Configs"]]
+        fig10 = px.scatter(
+            df_filtered,
+            x=x_col,
+            y=y_col,
+            color="P1 SSR Configs",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title="C1 values for pairs of points with same number of SSR Configs",
+        )
+
+        x_col = "P1 SSR Configs"
+        y_col = "c2"
+        df_filtered = df[df["P1 SSR Configs"] == df["P2 SSR Configs"]]
+        fig11 = px.scatter(
+            df_filtered,
+            x=x_col,
+            y=y_col,
+            color="Rank Sum",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title="C2 values for pairs of points with same number of SSR Configs",
+        )
+
+        x_col = "P1 Rank"
+        y_col = "P2 Rank"
+        fig4 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="c1",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title="Speed of P1 vs Speed of P2 colored by C1 value for pair (P1,P2)",
+        )
+        x_col = "P1 Rank"
+        y_col = "P2 Rank"
+        fig5 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="c2",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title="Speed of P1 vs Speed of P2 colored by C2 value for pair (P1,P2)",
+        )
+
+        x_col = "c1"
+        y_col = "c2"
+        fig1_3 = px.scatter(
+            df[df["fst"]=="16-16-64"],
+            x=x_col,
+            y=y_col,
+            color="P2 Rank",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title="C1 vs C2 values when P1 = 16-16-64 (fastest)",
+        )
+
+        x_col = "c1"
+        y_col = "c2"
+        fig2 = px.scatter(
+            df[df["fst"]=="32-32-32"],
+            x=x_col,
+            y=y_col,
+            color="P2 Rank",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title="C1 vs C2 values when P1 = 32-32-32 (biggest)",
+        )
+
+        x_col = "P1 SSR Configs"
+        y_col = "c2"
+        fig12 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="P2 SSR Configs",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title="C2 values for pairs of points as SSR Configs changes",
+        )
+
+        x_col = "SSR Config Diff"
+        y_col = "c1"
+        fig13 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="SSR Config Diff",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title="As difference between SSR Configs increases, how do pairs' c1 values change?",
+        )
+
+        # --- Convert each figure to HTML div ---
+
+        div1 = pio.to_html(fig1, include_plotlyjs="cdn", full_html=False)
+        div1_3 = pio.to_html(fig1_3, include_plotlyjs="cdn", full_html=False)
+        div1_2 = pio.to_html(fig1_2, include_plotlyjs="cdn", full_html=False)
+        div2 = pio.to_html(fig2, include_plotlyjs="cdn", full_html=False)
+        div4 = pio.to_html(fig4, include_plotlyjs="cdn", full_html=False)
+        div5 = pio.to_html(fig5, include_plotlyjs="cdn", full_html=False)
+        div6 = pio.to_html(fig6, include_plotlyjs="cdn", full_html=False)
+        div7 = pio.to_html(fig7, include_plotlyjs="cdn", full_html=False)
+        div8 = pio.to_html(fig8, include_plotlyjs="cdn", full_html=False)
+        div9 = pio.to_html(fig9, include_plotlyjs="cdn", full_html=False)
+        div10 = pio.to_html(fig10, include_plotlyjs="cdn", full_html=False)
+        div11 = pio.to_html(fig11, include_plotlyjs="cdn", full_html=False)
+        div12 = pio.to_html(fig12, include_plotlyjs="cdn", full_html=False)
+        div13 = pio.to_html(fig13, include_plotlyjs="cdn", full_html=False)
+        
+        # --- Combine into HTML page with grid layout ---
+        html = f"""
+    <html>
+    <head>
+    <title>Plotly Express 5x1 Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {{
+        font-family: Arial, sans-serif;
+        margin: 30px;
+        background-color: #f7f7f7;
+        }}
+        .dashboard {{
+        display: flex;
+        flex-direction: column;
+        gap: 30px; /* space between charts */
+        }}
+        .plot-box {{
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+    </style>
+    </head>
+    <body>
+    <h1 style="text-align:center;">{titleOfWebpage}</h1>
+    <div class="dashboard">
+        <div class="plot-box">{div1}</div>
+        <div class="plot-box">{div7}</div>
+        <div class="plot-box">{div8}</div>
+        <div class="plot-box">{div1_2}</div>
+        <div class="plot-box">{div1_3}</div>
+        <div class="plot-box">{div6}</div>
+        <div class="plot-box">{div2}</div>
+        <div class="plot-box">{div4}</div>
+        <div class="plot-box">{div5}</div>
+        <div class="plot-box">{div9}</div>
+        <div class="plot-box">{div10}</div>
+        <div class="plot-box">{div11}</div>
+        <div class="plot-box">{div12}</div>
+        <div class="plot-box">{div13}</div>
         </div>
         </body>
         </html>

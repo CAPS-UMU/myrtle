@@ -86,7 +86,11 @@ def addFeatures(df):
     return df
 
 
-def addCost(df):
+def addCost(df, c1=1.0,c2=1.0):
+    # c1=5461.0/107684
+    # c2=8.0
+    c1 = 27552.0
+    c2 = 131072.0
     df["sumSSRsRegs"] = df["SSR Config Count"] + df["Regular Loads"]
     df["fmaddsPerCore"] = df["m"] * df["n"] * df["k"] / 8
     df["L3 Loads Timed"] = df["L3 Loads"] - df["tileC"] - df["tileA"] - df["tileB"]
@@ -96,7 +100,7 @@ def addCost(df):
         lambda y: (y["m"] * y["n"] + y["m"] * y["k"]) / 8.0 + y["k"] * y["n"], axis=1
     )
     df["L1/CC L1"] = df["L1 Usage"] + df["CC L1 Footprint"]
-    df["tileA_cc/tileC_cc"] = (df["tileA_cc"] / 1.0 / df["tileC_cc"])
+    df["k/n"] = df["k"] / 1.0 / df["n"]#(df["tileA_cc"] / 1.0 / df["tileC_cc"])
     cmFeatures = [
         "fmaddsPerCore",
         "L3 L/S Timed",
@@ -117,6 +121,7 @@ def addCost(df):
         "B SSR Loads",
     ]
     df["cost"] = df[cmFeatures].sum(axis=1)
+    df["cost"] =1.0* df["SSR Config Count"]/c1 - df["k/n"]*(c2/c1)
     return df, cmFeatures
 
 def addFx(df):
