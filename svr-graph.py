@@ -92,6 +92,7 @@ def addCost(df, c1=1.0,c2=1.0):
     c1 = 27552.0
     c2 = 131072.0
     df["sumSSRsRegs"] = df["SSR Config Count"] + df["Regular Loads"]
+    df["regPerStream"] = df["n"] * df["m"] / (128.0 * df["k"])
     df["fmaddsPerCore"] = df["m"] * df["n"] * df["k"] / 8
     df["L3 Loads Timed"] = df["L3 Loads"] - df["tileC"] - df["tileA"] - df["tileB"]
     df["L3 Stores Timed"] = df["M"] * df["N"] - df["m"] * df["n"]
@@ -122,7 +123,8 @@ def addCost(df, c1=1.0,c2=1.0):
     ]
     #df["cost"] = df[cmFeatures].sum(axis=1)
     #df["cost"] =1.0* df["SSR Config Count"]/c1 - df["k/n"]*(c2/c1)
-    df["cost"] = df["SSR Config Count"] - df["k/n"]*df["Hardware Loops"] - df["k/n"] - df["L1 Usage"]
+    #df["cost"] = df["SSR Config Count"] - df["k/n"]*df["Hardware Loops"] - df["k/n"] - df["L1 Usage"]
+    df["cost"] = df["regPerStream"]
     #df["cost"] = df["k/n"]*df["Hardware Loops"]
     return df, cmFeatures
 

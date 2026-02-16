@@ -29,3 +29,11 @@ python svr-graph.py "$FOLDER/512x384x384wm-n-k_searchSpace_L1_top_10-results.csv
 python svr-graph.py "$FOLDER/32x128x128wm-n-k_searchSpace_L1_top_10-results.csv" "febFeatures/32x128x128wm-n-k-cube-svr" "febFeatures-256-cube-svr" "febFeatures.txt" "32x128x128"
 python svr-graph.py "$FOLDER/64x128x128wm-n-k_searchSpace_L1_top_10-results.csv" "febFeatures/64x128x128wm-n-k-cube-svr" "febFeatures-256-cube-svr" "febFeatures.txt" "64x128x128"
 python svr-graph.py "$FOLDER/96x128x128wm-n-k_searchSpace_L1_top_10-results.csv" "febFeatures/96x128x128wm-n-k-cube-svr" "febFeatures-256-cube-svr" "febFeatures.txt" "96x128x128"
+
+python svr-graph.py "$FOLDER/128x32x128wm-n-k_searchSpace_L1_top_10-results.csv" "febFeatures/128x32x128wm-n-k-cube-svr" "febFeatures-256-cube-svr" "febFeatures.txt" "128x32x128"
+python svr-graph.py "$FOLDER/128x64x128wm-n-k_searchSpace_L1_top_10-results.csv" "febFeatures/128x64x128wm-n-k-cube-svr" "febFeatures-256-cube-svr" "febFeatures.txt" "128x64x128"
+python svr-graph.py "$FOLDER/128x96x128wm-n-k_searchSpace_L1_top_10-results.csv" "febFeatures/128x96x128wm-n-k-cube-svr" "febFeatures-256-cube-svr" "febFeatures.txt" "128x96x128"
+python svr-graph.py "$FOLDER/128x128x32wm-n-k_searchSpace_L1_top_10-results.csv" "febFeatures/128x128x32wm-n-k-cube-svr" "febFeatures-256-cube-svr" "febFeatures.txt" "128x128x32"
+
+python svr-graph.py "$FOLDER/128x128x64wm-n-k_searchSpace_L1_top_10-results.csv" "febFeatures/128x128x64wm-n-k-cube-svr" "febFeatures-256-cube-svr" "febFeatures.txt" "128x128x64"
+python svr-graph.py "$FOLDER/128x128x96wm-n-k_searchSpace_L1_top_10-results.csv" "febFeatures/128x128x96wm-n-k-cube-svr" "febFeatures-256-cube-svr" "febFeatures.txt" "128x128x96"

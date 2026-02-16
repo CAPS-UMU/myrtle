@@ -114,7 +114,7 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
             "tileC_cc",
             "k",
             "cost",
-            #"dma",
+            "regPerStream",
             "sumSSRsRegs",
             "k/n",
             "fmaddsPerCore",
@@ -183,7 +183,7 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
                   df,
                   x=x_col,
                   y=y_col,
-                  color="Regular Loads",  # Optional: color points by a category column
+                  color="regPerStream",  # Optional: color points by a category column
                   hover_data=hover_data,  # Show these columns on hover
                   title=f"{title} {x_col} vs {y_col}",)
              html = pio.to_html(fig, include_plotlyjs="cdn", full_html=False)
@@ -199,20 +199,21 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
             df,
             x=x_col,
             y=y_col,
-            color="k/n",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            color="regPerStream",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
             hover_data=hover_data,  # Show these columns on hover
             title=f"{title} {x_col} vs {y_col}",
         )
         x_col = "SSR Config Count"#"sumSSRsRegs"
-        y_col = "Kernel Time"#"cost"
+        y_col = "Kernel Time"
         fig9 = px.scatter(
             df,
             x=x_col,
             y=y_col,
             color="cost",#"k/n",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
             hover_data=hover_data,  # Show these columns on hover
-            title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS - (k/n)*(NUM_HW_LOOPS) - (k/n) - L1_USAGE",
+            title=f"{title} {x_col} vs {y_col}, where c = regPerStream = REG_LOADS / SSR_LOADS per core = n*m/128*k",
         )
+        #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS - (k/n)*(NUM_HW_LOOPS) - (k/n) - L1_USAGE",
         #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS / c1 + k/n * c2/c1"
         #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS - (k/n)*(NUM_HW_LOOPS) - (k/n) - L1_USAGE",
         #df["cost"] = df["SSR Config Count"] - df["k/n"]*df["Hardware Loops"] - df["k/n"] - df["L1 Usage"]
