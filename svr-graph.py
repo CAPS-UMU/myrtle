@@ -121,7 +121,9 @@ def addCost(df, c1=1.0,c2=1.0):
         "B SSR Loads",
     ]
     #df["cost"] = df[cmFeatures].sum(axis=1)
-    df["cost"] =1.0* df["SSR Config Count"]/c1 - df["k/n"]*(c2/c1)
+    #df["cost"] =1.0* df["SSR Config Count"]/c1 - df["k/n"]*(c2/c1)
+    df["cost"] = df["SSR Config Count"] - df["k/n"]*df["Hardware Loops"] - df["k/n"] - df["L1 Usage"]
+    #df["cost"] = df["k/n"]*df["Hardware Loops"]
     return df, cmFeatures
 
 def addFx(df):

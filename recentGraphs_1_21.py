@@ -204,15 +204,18 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
             title=f"{title} {x_col} vs {y_col}",
         )
         x_col = "SSR Config Count"#"sumSSRsRegs"
-        y_col = "cost"
+        y_col = "Kernel Time"#"cost"
         fig9 = px.scatter(
             df,
             x=x_col,
             y=y_col,
-            color="k/n",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            color="cost",#"k/n",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
             hover_data=hover_data,  # Show these columns on hover
-            title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS / c1 + k/n * c2/c1",
+            title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS - (k/n)*(NUM_HW_LOOPS) - (k/n) - L1_USAGE",
         )
+        #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS / c1 + k/n * c2/c1"
+        #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS - (k/n)*(NUM_HW_LOOPS) - (k/n) - L1_USAGE",
+        #df["cost"] = df["SSR Config Count"] - df["k/n"]*df["Hardware Loops"] - df["k/n"] - df["L1 Usage"]
 
         df["MNK/m"]=df["M"] * df["N"] * df["K"] / df ["m"]
         x_col = "MNK/m"
@@ -524,15 +527,40 @@ def generateInteractiveC1C2Graph(df, titleOfWebpage):
             title="C1 vs C2 values when P1 = 32-32-32 (biggest)",
         )
 
-        x_col = "P1 SSR Configs"
+        # x_col = "P1 SSR Configs"
+        # y_col = "c2"
+        # fig12 = px.scatter(
+        #     df,
+        #     x=x_col,
+        #     y=y_col,
+        #     color="P2 SSR Configs",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+        #     hover_data=hover_data,  # Show these columns on hover
+        #     title="C2 values for pairs of points as SSR Configs changes",
+        # )
+
+        # x_col = "SSR Config Diff"
+        # y_col = "c1"
+        # fig13 = px.scatter(
+        #     df,
+        #     x=x_col,
+        #     y=y_col,
+        #     color="SSR Config Diff",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+        #     hover_data=hover_data,  # Show these columns on hover
+        #     title="As difference between SSR Configs increases, how do pairs' c1 values change?",
+        # )
+
+        df_pruned = df[df["P1 SSR Configs"] <= 8192]
+        df_pruned = df_pruned[df["P2 SSR Configs"] <= 8192]
+
+        x_col = "c1"
         y_col = "c2"
         fig12 = px.scatter(
-            df,
+            df_pruned,
             x=x_col,
             y=y_col,
-            color="P2 SSR Configs",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            color="P1 SSR Configs",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
             hover_data=hover_data,  # Show these columns on hover
-            title="C2 values for pairs of points as SSR Configs changes",
+            title="C1,C2 values for pairs of points with SSR Configs <= 8192",
         )
 
         x_col = "SSR Config Diff"

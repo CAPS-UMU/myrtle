@@ -82,7 +82,7 @@ def main():
          p1_rank = int(p1["absoluteRank"].iloc[0])
          p2_rank = int(p2["absoluteRank"].iloc[0])
          timeDiff = abs(t1-t2)
-        # print(f'{c},{c1}, {c2}')
+         print(f'{c[0]}:{p1_ssr_configs},{p2_ssr_configs}')
          rows.append((f'{c}',c1,c2,timeDiff,f'{c[0]}',f'{c[1]}',p1_ssr_configs,p2_ssr_configs,t1,t2,p1_rank,p2_rank))
 
     approx = pd.DataFrame(rows, columns=cols)
