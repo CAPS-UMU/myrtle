@@ -113,7 +113,7 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
             "tileA_cc",
             "tileC_cc",
             "k",
-            #"cost",
+            "cost",
             #"dma",
             "sumSSRsRegs",
             "k/n",
@@ -202,6 +202,16 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
             color="k/n",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
             hover_data=hover_data,  # Show these columns on hover
             title=f"{title} {x_col} vs {y_col}",
+        )
+        x_col = "SSR Config Count"#"sumSSRsRegs"
+        y_col = "cost"
+        fig9 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="k/n",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS / c1 + k/n * c2/c1",
         )
 
         df["MNK/m"]=df["M"] * df["N"] * df["K"] / df ["m"]
@@ -295,6 +305,7 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
         div6 = pio.to_html(fig6, include_plotlyjs="cdn", full_html=False)
         div7 = pio.to_html(fig7, include_plotlyjs="cdn", full_html=False)
         div8 = pio.to_html(fig8, include_plotlyjs="cdn", full_html=False)
+        div9 = pio.to_html(fig9, include_plotlyjs="cdn", full_html=False)
         
         # --- Combine into HTML page with grid layout ---
         html = f"""
@@ -339,6 +350,7 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
         <div class="plot-box">{div6}</div>
         <div class="plot-box">{div7}</div>
         <div class="plot-box">{div8}</div>
+        <div class="plot-box">{div9}</div>
         </div>
         </body>
         </html>

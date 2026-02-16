@@ -120,7 +120,7 @@ def addCost(df, c1=1.0,c2=1.0):
         "A Not Reused SSR Loads",
         "B SSR Loads",
     ]
-    df["cost"] = df[cmFeatures].sum(axis=1)
+    #df["cost"] = df[cmFeatures].sum(axis=1)
     df["cost"] =1.0* df["SSR Config Count"]/c1 - df["k/n"]*(c2/c1)
     return df, cmFeatures
 
@@ -274,6 +274,7 @@ def main():
     df = df_sorted
     df = addFeatures(df)
     df, cmFeatures = addCost(df)
+    df.to_csv("pumpkin.csv")
     df, fxParams = addFx(df)
     shapeMetric = "CC L1 Footprint"#"fmaddsPerCore"
     df = specializeMarkers(df, shapeMetric)
