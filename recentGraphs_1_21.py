@@ -203,13 +203,13 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
             hover_data=hover_data,  # Show these columns on hover
             title=f"{title} {x_col} vs {y_col}",
         )
-        x_col = "SSR Config Count"#"sumSSRsRegs"
+        x_col = "cost"#"sumSSRsRegs"
         y_col = "Kernel Time"
         fig9 = px.scatter(
             df,
             x=x_col,
             y=y_col,
-            color="cost",#"k/n",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            color="SSR Config Count",#"k/n",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
             hover_data=hover_data,  # Show these columns on hover
             title=f"{title} {x_col} vs {y_col}, where c = regPerStream = REG_LOADS / SSR_LOADS per core = n*m/128*k",
         )
