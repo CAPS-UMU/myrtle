@@ -91,18 +91,26 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
             "SSR Configs",
         ]
 
+
+    # df["SSRconfigsXregPerStream"] = df["SSR Config Count"] * df["regPerStream"]
+    # df["L1UsageXregPerStream"] = df["L1 Usage"] * df["regPerStream"]
+    # df["CCL1FootprintXregPerStream"] = df["CC L1 Footprint"] * df["regPerStream"]
+
         hover_data = [
             "JSON Name",
             x_col,
             y_col,
+            "SSRconfigsXregPerStream",
+            "L1UsageXregPerStream",
+            "CCL1FootprintXregPerStream",
             "SSR Config Count",
             "absoluteRank",
             "costRank",
             "L3 Loads",
-            "B SSR Loads",
-            "Total SSR Loads",
-            "A SSR Reuse Loads",
-            "A Not Reused SSR Loads",
+            # "B SSR Loads",
+            # "Total SSR Loads",
+            # "A SSR Reuse Loads",
+            # "A Not Reused SSR Loads",
             "Hardware Loops",
             "L3 Loads Timed",
             "L1 Usage",
@@ -213,6 +221,55 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
             hover_data=hover_data,  # Show these columns on hover
             title=f"{title} {x_col} vs {y_col}, where c = regPerStream = REG_LOADS / SSR_LOADS per core = n*m/128*k",
         )
+
+    # df["SSRconfigsXregPerStream"] = df["SSR Config Count"] * df["regPerStream"]
+    # df["L1UsageXregPerStream"] = df["L1 Usage"] * df["regPerStream"]
+    # df["CCL1FootprintXregPerStream"] = df["CC L1 Footprint"] * df["regPerStream"]
+        x_col = "SSRconfigsXregPerStream"#"sumSSRsRegs"
+        y_col = "Kernel Time"
+        fig11 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="SSR Config Count",#"k/n",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}; estimate time with product of SSR Configs and regPerStream",
+        )
+
+        x_col = "L1UsageXregPerStream"#"sumSSRsRegs"
+        y_col = "Kernel Time"
+        fig12 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="SSR Config Count",#"k/n",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}; estimate time with product of L1 Usage and regPerStream",
+        )
+
+        x_col = "CCL1FootprintXregPerStream"#"sumSSRsRegs"
+        y_col = "Kernel Time"
+        fig13 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="SSR Config Count",#"k/n",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}; estimate time with product of CC L1 Footprint and regPerStream",
+        )
+
+
+        x_col = "SSR Config Count"#"sumSSRsRegs"
+        y_col = "Kernel Time"
+        fig10 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="SSR Config Count",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}",
+        )
+        x_col = "cost"#"sumSSRsRegs"
         #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS - (k/n)*(NUM_HW_LOOPS) - (k/n) - L1_USAGE",
         #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS / c1 + k/n * c2/c1"
         #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS - (k/n)*(NUM_HW_LOOPS) - (k/n) - L1_USAGE",
@@ -310,6 +367,9 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
         div7 = pio.to_html(fig7, include_plotlyjs="cdn", full_html=False)
         div8 = pio.to_html(fig8, include_plotlyjs="cdn", full_html=False)
         div9 = pio.to_html(fig9, include_plotlyjs="cdn", full_html=False)
+        div11 = pio.to_html(fig11, include_plotlyjs="cdn", full_html=False)
+        div12 = pio.to_html(fig12, include_plotlyjs="cdn", full_html=False)
+        div13 = pio.to_html(fig13, include_plotlyjs="cdn", full_html=False)
         
         # --- Combine into HTML page with grid layout ---
         html = f"""
@@ -355,6 +415,9 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
         <div class="plot-box">{div7}</div>
         <div class="plot-box">{div8}</div>
         <div class="plot-box">{div9}</div>
+        <div class="plot-box">{div11}</div>
+        <div class="plot-box">{div12}</div>
+        <div class="plot-box">{div13}</div>
         </div>
         </body>
         </html>

@@ -102,6 +102,9 @@ def addCost(df, c1=1.0,c2=1.0):
     )
     df["L1/CC L1"] = df["L1 Usage"] + df["CC L1 Footprint"]
     df["k/n"] = df["k"] / 1.0 / df["n"]#(df["tileA_cc"] / 1.0 / df["tileC_cc"])
+    df["SSRconfigsXregPerStream"] = df["SSR Config Count"]*1.0 * df["regPerStream"]
+    df["L1UsageXregPerStream"] = df["L1 Usage"]*1.0 * df["regPerStream"]
+    df["CCL1FootprintXregPerStream"] = df["CC L1 Footprint"]*1.0 * df["regPerStream"]
     cmFeatures = [
         "fmaddsPerCore",
         "L3 L/S Timed",
