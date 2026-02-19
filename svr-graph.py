@@ -91,8 +91,9 @@ def addCost(df, c1=1.0,c2=1.0):
     # c2=8.0
     c1 = 27552.0
     c2 = 131072.0
-    df["sumSSRsRegs"] = df["SSR Config Count"] + df["Regular Loads"]
+    df["sumSSRsRegs"] = (df["SSR Config Count"] + df["Regular Loads"])# * df["L3 Loads"]
     df["regPerStream"] = df["n"] * df["m"] / (128.0 * df["k"])
+    df["mk/n"] = df["m"] * df["k"] / (1.0 * df["n"])
     df["fmaddsPerCore"] = df["m"] * df["n"] * df["k"] / 8
     df["L3 Loads Timed"] = df["L3 Loads"] - df["tileC"] - df["tileA"] - df["tileB"]
     df["L3 Stores Timed"] = df["M"] * df["N"] - df["m"] * df["n"]
@@ -105,6 +106,7 @@ def addCost(df, c1=1.0,c2=1.0):
     df["SSRconfigsXregPerStream"] = df["SSR Config Count"]*1.0 * df["regPerStream"]
     df["L1UsageXregPerStream"] = df["L1 Usage"]*1.0 * df["regPerStream"]
     df["CCL1FootprintXregPerStream"] = df["CC L1 Footprint"]*1.0 * df["regPerStream"]
+    df["k/nXregPerStream"] = df["k/n"] * df["regPerStream"]
     cmFeatures = [
         "fmaddsPerCore",
         "L3 L/S Timed",
@@ -268,13 +270,21 @@ def main():
     modelPickle = f'{sys.argv[3]}.pickle'
     features = get_lines_from_file(sys.argv[4])
     titleOfWebpage = sys.argv[5]
+    inputUntimed = sys.argv[6]
     #print(f'features of svr are {features}')
-    x_col = "Regular Loads"
-    y_col = "Kernel Time"
+    # x_col = "Regular Loads"
+    # y_col = "Kernel Time"
     title = f"{input[38:-4]}"
     # titleOfWebpage = f"{modelPickle} tested on {input}"
     # --- Step 1: Read the CSV file ---
     df = pd.read_csv(input)
+
+    if inputUntimed != "":    # load and further annotate untimed data
+        df_untimed = pd.read_csv(inputUntimed)
+        df_untimed = addFeatures(df_untimed)
+        df_untimed, cmFeaturesUnused = addCost(df_untimed)
+        df_untimed, fxParams = addFx(df_untimed)
+       
 
     df_sorted = df.sort_values(by="Kernel Time", ascending=True)
     df_sorted["absoluteRank"] = range(1, int(df_sorted.shape[0] + 1))
@@ -319,9 +329,10 @@ def main():
         
     df_w_prediction, coeffs = testTrained(df, modelPickle, features)
 
-    # Create interactive scatter plots
-    html = rg.generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures, coeffs, features, df_w_prediction)
-
+    if inputUntimed == "":    # Create interactive scatter plots
+        html = rg.generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures, coeffs, features, df_w_prediction)
+    else:
+        html = rg.generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untimed)
     # --- Write to file ---
     with open(f"{output}.html", "w") as f:
         f.write(html)
