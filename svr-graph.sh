@@ -17,7 +17,8 @@ python approximateC1C2.py "$FOLDER/review-cube.csv" "c1-c2.csv"
 
 python svr-graph.py "$FOLDER/review-cube.csv" "febFeatures/Cube256x256x256-svr" "febFeatures-256-cube-svr" "febFeatures.txt" "256x256x256" ""
 python svr-graph.py "$FOLDER/512x512x512wm-n-k_distillbert-results.csv" "febFeatures/Cube512x512x512-svr" "febFeatures-256-cube-svr" "febFeatures.txt" "512x512x512" ""
-python svr-graph.py "$FOLDER/128x128x128wm-n-k_top10_l1.csv" "febFeatures/Cube128x128x128-svr" "febFeatures-256-cube-svr" "febFeatures.txt" "128x128x128" ""
+pwd
+python svr-graph.py "$FOLDER/128x128x128wm-n-k_top10_l1.csv" "febFeatures/Cube128x128x128-svr" "febFeatures-256-cube-svr" "febFeatures.txt" "128x128x128" "$FOLDER/128x128x128wm-n-k_searchSpace_c_analyzed-untimed.csv"
 python svr-graph.py "$FOLDER/384x384x384wm-n-k_searchSpace_L1_top_10-results.csv" "febFeatures/Cube384x384x384-svr" "febFeatures-256-cube-svr" "febFeatures.txt" "384x384x384" "$FOLDER/384x384x384wm-n-k_searchSpace_c_analyzed_untimed.csv"
 python svr-graph.py "$FOLDER/review-phenomizer.csv" "febFeatures/Phonemizer384x768x768-cube-svr" "febFeatures-256-cube-svr" "febFeatures.txt" "384x768x768" ""
 # python svr-graph.py "$FOLDER/192x384x384wm-n-k_searchSpace_L1_top_10-results.csv" "febFeatures/192x384x384wm-n-k-cube-svr" "febFeatures-256-cube-svr" "febFeatures.txt" "192x384x384" ""

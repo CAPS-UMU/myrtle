@@ -291,7 +291,7 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
             df_mod,
             x=x_col,
             y=y_col,
-            color="regPerStream",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            color="SSRconfigsXregPerStream",#"regPerStream",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
             hover_data=hover_data,  # Show these columns on hover
             title=f"{title} {x_col} vs {y_col} with L3 Loads > {prunePointL3} pruned away.",
         )
@@ -432,6 +432,7 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
     </head>
     <body>
     <h1 style="text-align:center;">{titleOfWebpage}</h1>
+    <a href="../results.html" target="_blank">Back to Landing Page</a>
     <div class="dashboard">
         <div class="plot-box">{div10}</div>
         <div class="plot-box">{div20}</div>
@@ -718,6 +719,7 @@ def generateInteractiveC1C2Graph(df, titleOfWebpage):
     </head>
     <body>
     <h1 style="text-align:center;">{titleOfWebpage}</h1>
+    <a href="../results.html" target="_blank">Back to Landing Page</a>
     <div class="dashboard">
         <div class="plot-box">{div1}</div>
         <div class="plot-box">{div1_1}</div>
@@ -931,18 +933,18 @@ def generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untim
 
         x_col = "L3 Loads" #"SSR Configs"
         y_col = "Kernel Time"
-        color ="regPerStream"
+        color ="SSRconfigsXregPerStream"#"regPerStream"
 
         topL3 =  max(df_mod["L3 Loads"].values)
         botL3 =  min(df_mod["L3 Loads"].values)
-        midL3 = (topL3 - botL3) / 2.0
+        midL3 = (topL3 - botL3) / 4.0
         prunePointL3 = botL3 + midL3 #2686976
 
         #df_mod = df_mod[df_mod["L3 Loads"]<=prunePointL3]
 
         top =  max(df_mod["SSR Configs"].values)
         bot =  min(df_mod["SSR Configs"].values)
-        mid = (top - bot) / 2.0
+        mid = (top - bot) / 4.0
         prunePoint = bot + mid
        # df_pruned = df[df["L3 Loads"]<=topL3]
         #df_mod.loc(filter,"color") = 0
@@ -1119,6 +1121,7 @@ def generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untim
     </head>
     <body>
     <h1 style="text-align:center;">{titleOfWebpage}</h1>
+    <a href="../results.html" target="_blank">Back to Landing Page</a>
     <div class="dashboard">
 
         {"<div>Experiments</div>"}
