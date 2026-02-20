@@ -274,7 +274,7 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
         )
 
 
-        x_col = "L3 Loads"#"SSR Configs"
+        x_col = "SSR Configs"
         y_col = "Kernel Time"
         df_mod = df
        # df_mod["color"] = df_mod["k/n"]
@@ -283,20 +283,20 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
         bot =  min(df_mod["L3 Loads"].values)
         mid = (top - bot) / 2.0
         prunePointL3 = bot + mid#2686976
-       # print(f'bot = {bot}, top = {top}, so mid = {mid} and prunePoint is {prunePoint}')
-        #print(f'median is {median}')
-       # df_mod = df_mod[df_mod["L3 Loads"]<=prunePoint]
-        #df_mod.loc(filter,"color") = 0
+ 
+        prunePoint = sorted(df_mod["SSR Configs"].values)[1]
         fig14 = px.scatter(
             df_mod,
             x=x_col,
             y=y_col,
             color="SSRconfigsXregPerStream",#"regPerStream",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
             hover_data=hover_data,  # Show these columns on hover
-            title=f"{title} {x_col} vs {y_col} with L3 Loads > {prunePointL3} pruned away.",
+            title=f"{title} {x_col} vs {y_col} with SSR Configs > {prunePoint} pruned away.",
+            # title=f"{title} {x_col} vs {y_col} with L3 Loads > {prunePointL3} pruned away.",
         )
         
-        fig14.add_vline(x=prunePointL3, line_width=3, line_dash="dash", line_color="green")
+        
+        fig14.add_vline(x=prunePoint, line_width=3, line_dash="dash", line_color="green")
         #fig14.add_vline(x=top/2.0, line_width=3, line_dash="dash", line_color="pink")
 
 
@@ -432,7 +432,7 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
     </head>
     <body>
     <h1 style="text-align:center;">{titleOfWebpage}</h1>
-    <a href="../results.html" target="_blank">Back to Landing Page</a>
+    <a href="../results.html" >Back to Landing Page</a>
     <div class="dashboard">
         <div class="plot-box">{div10}</div>
         <div class="plot-box">{div20}</div>
@@ -719,7 +719,7 @@ def generateInteractiveC1C2Graph(df, titleOfWebpage):
     </head>
     <body>
     <h1 style="text-align:center;">{titleOfWebpage}</h1>
-    <a href="../results.html" target="_blank">Back to Landing Page</a>
+    <a href="../results.html" >Back to Landing Page</a>
     <div class="dashboard">
         <div class="plot-box">{div1}</div>
         <div class="plot-box">{div1_1}</div>
@@ -793,6 +793,11 @@ def generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untim
         df_mod["absoluteRank"] = 0
         df_mod["costRank"] = 0
         df_mod['color']=5
+        topL3 =  max(df_mod["L3 Loads"].values)
+        botL3 =  min(df_mod["L3 Loads"].values)
+        midL3 = (topL3 - botL3) / 4.0
+        prunePointL3 = botL3 + midL3 #2686976
+        prunePoint = sorted(df_mod["SSR Configs"].values)[1]
         blacklist = df['m-n-k']
         # Filter df1 to keep only rows where 'ID' is NOT in the blacklist
         df_mod = df_mod[~df_mod['m-n-k'].isin(blacklist)]
@@ -931,21 +936,17 @@ def generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untim
         )
 
 
-        x_col = "L3 Loads" #"SSR Configs"
+        x_col = "SSR Configs"
         y_col = "Kernel Time"
         color ="SSRconfigsXregPerStream"#"regPerStream"
 
-        topL3 =  max(df_mod["L3 Loads"].values)
-        botL3 =  min(df_mod["L3 Loads"].values)
-        midL3 = (topL3 - botL3) / 4.0
-        prunePointL3 = botL3 + midL3 #2686976
-
+     
         #df_mod = df_mod[df_mod["L3 Loads"]<=prunePointL3]
 
-        top =  max(df_mod["SSR Configs"].values)
-        bot =  min(df_mod["SSR Configs"].values)
-        mid = (top - bot) / 4.0
-        prunePoint = bot + mid
+        # top =  max(df_mod["SSR Configs"].values)
+        # bot =  min(df_mod["SSR Configs"].values)
+        # mid = (top - bot) / 4.0
+        # prunePoint = bot + mid
        # df_pruned = df[df["L3 Loads"]<=topL3]
         #df_mod.loc(filter,"color") = 0
         fig14 = px.scatter(
@@ -954,7 +955,7 @@ def generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untim
             y=y_col,
             color=color,#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
             hover_data=hover_data,  # Show these columns on hover
-            title=f"{title} {x_col} vs {y_col} with L3 Loads > {prunePointL3} pruned away.",
+            title=f"{title} {x_col} vs {y_col} with SSR Configs > {prunePoint} pruned away.",
         )
         # fig14.add_scatter(
         #         x=df_mod[x_col],
@@ -982,7 +983,7 @@ def generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untim
                 "<extra></extra>" 
             )     ,
         )
-        fig14.add_vline(x=prunePointL3, line_width=3, line_dash="dash", line_color="green")
+        fig14.add_vline(x=prunePoint, line_width=3, line_dash="dash", line_color="green")
         #fig14.add_vline(x=top/2.0, line_width=3, line_dash="dash", line_color="pink")
 
 
@@ -1121,7 +1122,7 @@ def generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untim
     </head>
     <body>
     <h1 style="text-align:center;">{titleOfWebpage}</h1>
-    <a href="../results.html" target="_blank">Back to Landing Page</a>
+    <a href="../results.html" >Back to Landing Page</a>
     <div class="dashboard">
 
         {"<div>Experiments</div>"}

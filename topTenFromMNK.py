@@ -5,8 +5,6 @@ import subprocess
 # Posted by Manoj Govindan, modified by community. See post 'Timeline' for change history
 # Retrieved 2026-02-03, License - CC BY-SA 4.0
 
-#python3 myrtle/myrtle.py "matmul_128x128x128_f64" sflt test_output-disp-7.json
-
 def get_lines_from_file(file_name):
     """
     Opens a file, reads its contents, and returns a list of strings

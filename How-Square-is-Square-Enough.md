@@ -69,3 +69,11 @@ python combineKernelTimesIntoSingleCSV.py 32x128x128wm-n-k_searchSpace_top10-sor
 
 ## Let's do this again, but for a bunch more input sizes
 
+```
+python topTenFromMNK.py "inputSizes.txt" 
+```
+- [inputSizes.txt](inputSizes.txt)
+- [topTenFomMNK.py](topTenFromMNK.py)
+
+Search spaces csv files and accompanying compilation, run, and result extraction scripts will be stored in a folder called [top10](top10). Copy this folder to your snitch repo to run the experiments.
+

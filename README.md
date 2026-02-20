@@ -47,9 +47,10 @@ python3 myrtle/myrtle.py "main\$async_dispatch_7_matmul_transpose_b_1x600x400_f6
 python3 myrtle/myrtle.py "main\$async_dispatch_8_matmul_transpose_b_1x600x600_f64" sflt test_output-disp-8.json /home/hoppip/myrtle/sensitivity-analysis/holistic-data/dispatch_8_case1_everything.csv
 ```
 
+## Work In Progress
 
+- [Analytical Model Summary](results.html)
+- [How Square is Square Enough?](How-Square-is-Square-Enough.md)
 
-
-
-
+- [Using an SVR to select the tile](notes-on-svr.md)
 
