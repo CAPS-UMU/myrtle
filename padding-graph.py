@@ -32,7 +32,7 @@ import plotly.graph_objects as go
 from sklearn.svm import SVC, SVR
 import pickle
 import messy_graphs as mg
-import recentGraphs_1_21 as rg_1_21
+import recentGraphs_2_23 as rg_2_23
 
 # from itertools import zip
 
@@ -40,42 +40,9 @@ import recentGraphs_1_21 as rg_1_21
 # python svr-graph.py "review-cube.csv" "Cube256x256x256-svr"
 
 # this script graphs X vs Y for the input CSV and exports an interactive version of the graph to an html file.
-# it also compares Y with an SVR's predicted Y value trained on the data.
-# it also looks at points with same C cc tile, regular load and SSR config counts and tries to distinguish them
-
-
-
-
-def dealWTieBreakers(df):
-    ccTileSize = [64, 128, 256, 512, 1024]
-    loadCounts = list(set(df["Regular Loads"].values))
-    groups = {}
-    pairs = {}
-    for lc in loadCounts:
-        lc_group = df[(df["Regular Loads"] == lc)]
-        groups[lc] = lc_group
-        for cc in ccTileSize:
-            cc_group = df[(df["Regular Loads"] == lc) & (df["tileC_cc"] == cc)]
-            if not cc_group.empty:
-                pairs[(lc, cc)] = cc_group  # groups[lc][(df['tileC_cc'] == cc)]
-                print()
-                print("\t", end="")
-                print(f"C tile Size {cc} with regular load count {lc}:")
-                print(
-                    pairs[(lc, cc)].sort_values(by="absoluteRank", ascending=True)[
-                        [
-                            "m-n-k",
-                            "SSR Configs",
-                            "tileC_cc",
-                            "L3 Loads Timed",
-                            "L1 Usage",
-                            "tileA",
-                            "tileB",
-                            "absoluteRank",
-                        ]
-                    ]
-                )
-
+# shows search space pruned for a certain X value
+# plots untimed points, but colors them gray
+# TODO: plots "padded" points, timed and untimed.
 
 def addFeatures(df):
     df["Hardware Loops"] = df["M"] * df["N"] * df["K"] / (8 * df["k"])
@@ -155,65 +122,6 @@ def addFx(df):
 
 
 
-# adding line of best fit for SSR configs ^^^^^^^
-
-
-# train an SVR given data, output file name, features and target name.
-def learnCostTest(dfName, outputModelName, feature_names, target_name):
-    df = pd.read_csv(dfName)  # read in the CSV
-    df = addFeatures(df)
-    # lowIsGood = True
-    # by = target_name
-    # df_sorted = df.sort_values(by=by, ascending=lowIsGood)
-    # df_sorted["rank"] = range(1, int(df_sorted.shape[0] + 1))
-    # df_sorted = df_sorted[:9] # top 10
-    # print(f"shape is {df_sorted.shape}")
-    # print(df_sorted[["JSON Name", target_name, "rank"]])
-    # print("is it the conversion to numpy that is holding us up?")
-    # df = df_sorted
-    X = np.array(df[feature_names].astype(int))
-    y = np.array(df[target_name].astype(int))
-
-    #print(f"size of x is {X.size} and shape is {X.shape} and type is {type(X)}")
-    #print(f"size of y is {y.size} and shape is {y.shape} and type is {type(y)}")
-
-    #print(f"x[0] is {X[0]} and y[0] is {y[0]}")
-    # Build the model
-    svm = SVR(kernel="linear", gamma=0.5, C=1.0)  # maybe try poly or rbf?
-
-    #print("before training")
-    # Train the model
-    svm.fit(X, y)
-    print(svm._decision_function)
-    #print("done")
-
-    file = open(outputModelName, "wb")
-    # # dump information to that file
-    pickle.dump(svm, file)
-    # # close the file
-    file.close()
-    return df
-
-
-def testTrained(df, svm_name, features):
-    file = open(svm_name, "rb")
-    svr = pickle.load(file)
-    # print(f'The weights are {svr.coef_}')
-    df["Predicted Kernel Time"] = df.apply(
-        lambda y: svr.predict([y[features]])[0], axis=1
-    )
-    df["kernelTimeDiff"] = (df["Kernel Time"] - df["Predicted Kernel Time"]) / df["Kernel Time"]
-    df_sorted = df.sort_values("Predicted Kernel Time", ascending=True)
-    df_sorted["predictedRank"] = range(1, int(df_sorted.shape[0] + 1))
-    df_sorted["rankDiff"] = abs(df_sorted["predictedRank"] - df_sorted["absoluteRank"])
-    df = df_sorted
-    # print(df[["JSON Name", "Kernel Time", "Predicted Kernel Time", "diff"]])
-    root = svm_name[: (len(svm_name) - len(".pickle"))]
-    outputFileName = f"{root}-accuracy.csv"
-    df.to_csv(outputFileName)
-    return df, svr.coef_
-
-
 def specializeMarkers(df, shapeMetric):
     markerOptions = [
         "circle",
@@ -250,6 +158,7 @@ def specializeMarkers(df, shapeMetric):
     #     print(c)
     # print(df[["JSON Name","Marker"]])
     return df
+
 def get_lines_from_file(file_name):
     """
     Opens a file, reads its contents, and returns a list of strings
@@ -267,8 +176,8 @@ def get_lines_from_file(file_name):
 def main():
     input = sys.argv[1]  # "review-phenomizer.csv"
     output = sys.argv[2]  
-    modelPickle = f'{sys.argv[3]}.pickle'
-    features = get_lines_from_file(sys.argv[4])
+    #modelPickle = f'{sys.argv[3]}.pickle'
+    #features = get_lines_from_file(sys.argv[4])
     titleOfWebpage = sys.argv[5]
     inputUntimed = sys.argv[6]
     #print(f'features of svr are {features}')
@@ -321,18 +230,18 @@ def main():
     #     # "tileA",
     #     # "L3 Loads Timed"
     # ]
-    if not os.path.exists(modelPickle):
-        print("We are training a NEW SVR...")
-        df.to_csv(f"svr_training_data_{sys.argv[3]}.csv")
-        target = "Kernel Time"
-        learnCostTest(f"svr_training_data_{sys.argv[3]}.csv",modelPickle,features,target)
+    # if not os.path.exists(modelPickle):
+    #     print("We are training a NEW SVR...")
+    #     df.to_csv(f"svr_training_data_{sys.argv[3]}.csv")
+    #     target = "Kernel Time"
+    #     learnCostTest(f"svr_training_data_{sys.argv[3]}.csv",modelPickle,features,target)
         
-    df_w_prediction, coeffs = testTrained(df, modelPickle, features)
+    # df_w_prediction, coeffs = testTrained(df, modelPickle, features)
 
     if inputUntimed == "":    # Create interactive scatter plots
-        html = rg_1_21.generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures, coeffs, features, df_w_prediction)
+        html = rg_2_23.generateInteractiveGraphs(df, title, titleOfWebpage)
     else:
-        html = rg_1_21.generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untimed)
+        html = rg_2_23.generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untimed)
     # --- Write to file ---
     with open(f"{output}.html", "w") as f:
         f.write(html)

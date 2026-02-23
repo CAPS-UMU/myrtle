@@ -1,0 +1,66 @@
+
+    <html>
+    <head>
+    <title>Myrtle Cost Model NAIVE PADDING Results Summary</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+        font-family: Arial, sans-serif;
+        margin: 30px;
+        background-color: #f7f7f7;
+        }
+        .dashboard {
+        display: flex;
+        flex-direction: column;
+        gap: 30px; /* space between charts */
+        }
+        .plot-box {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+    </head>
+    <body>
+    <h1 style="text-align:center;">Myrtle Results (NAIVE PADDING)</h1>
+    <div class="dashboard">
+        <h2>Summary</h2>
+        <a href="https://caps-umu.github.io/myrtle" >Back to Homepage</a>
+        <p>The following tile selection algorithm works for Square Matmuls (M=N=K):</p>
+        <ol>
+        <li>Prune all tiling schemes with SSR Configs <= 2nd Smallest SSR Configs</li>
+        <li>Select tile by minimizing ratio of regular to streaming loads per core.</li>
+        <p>Note that in example M=N=K=384, there exists a point with a smaller ratio of reg:stream. We discard this point by pruning to 2nd smallest SSR Configs beforehand.</p>
+    </ol>
+        <h2>Cube Matmuls (M=N=K)</h2>
+        <p>At the bottom of each of these subpages, the final graph represents the algorithm described above. The green, dashed, vertical line represents the point at which tiling schemes are pruned out by SSR Config count).</p>
+    <ul>
+        <li><a href="Cube128x128x128-svr.html"  >128x128x128 *</a></li>
+        <li><a href="Cube256x256x256-svr.html"  >256x256x256</a></li>
+        <li><a href="Cube512x512x512-svr.html"  >512x512x512</a></li>
+         <li><a href="Cube384x384x384-svr.html"  >384x384x384 *</a></li>
+    </ul>
+    <h2>Non-cube Matmuls *</h2>
+    <ul>
+    <b><li><a href="Phonemizer384x768x768-cube-svr.html"  >Phonemizer 384x768x768</a></li></b>
+    <li><a href="128x128x32wm-n-k-cube-svr.html"  >128x128x32 *</a></li>
+    <li><a href="512x384x384wm-n-k-cube-svr.html"  >512x384x384 *</a></li>
+    <li><a href="128x128x64wm-n-k-cube-svr.html"  >128x128x64 *</a></li>
+    <li><a href="64x128x128wm-n-k-cube-svr.html"  >64x128x128 *</a></li>
+    <li><a href="128x128x96wm-n-k-cube-svr.html"  >128x128x96 *</a></li>
+    <li><a href="96x128x128wm-n-k-cube-svr.html"  >96x128x128 *</a></li>
+    <li><a href="128x32x128wm-n-k-cube-svr.html"  >128x32x128 *</a></li>
+    <li><a href="128x384x384wm-n-k-cube-svr.html"  >128x384x384 *</a></li>
+    <li><a href="128x64x128wm-n-k-cube-svr.html"  >128x64x128 *</a></li>
+    <li><a href="128x96x128wm-n-k-cube-svr.html"  >128x96x128 *</a></li>
+    <li><a href="192x384x384wm-n-k-cube-svr.html"  >192x384x384 *</a></li>
+    <li><a href="32x128x128wm-n-k-cube-svr.html"  >32x128x128 *</a></li>
+</ul>
+<i>* (only 10 points timed)</i>
+    </div>
+        </body>
+        </html>
+        
