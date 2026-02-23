@@ -23,6 +23,7 @@ def get_lines_from_file(file_name):
 def main():
     print("hello")
     inputSizes = sys.argv[1]
+    outputFolder = sys.argv[2]
     lines = get_lines_from_file(inputSizes)
     expNameRegex = re.compile(
             r"(\d+)x(\d+)x(\d+)"
@@ -48,12 +49,12 @@ def main():
     for (a,b) in zip(kernelNames,outputFiles):
         print(f'Generated SS for {a}')
         print(f'Output file is {b}')
-    subprocess.call(['cp']+ topTenFiles+[ "-t", "./top10"])
+    subprocess.call(['cp']+ topTenFiles+[ "-t", f"./{outputFolder}"])
     # generate shell scripts for snitch compilation, verilator runs, correctness checks and data extraction
-    compileScript = open(f"./top10/compile.sh", "w")
-    runScript = open(f"./top10/run.sh", "w")
-    checkScript = open(f"./top10/check.sh", "w")
-    extractScript = open(f"./top10/extract.sh", "w")
+    compileScript = open(f"./{outputFolder}/compile.sh", "w")
+    runScript = open(f"./{outputFolder}/run.sh", "w")
+    checkScript = open(f"./{outputFolder}/check.sh", "w")
+    extractScript = open(f"./{outputFolder}/extract.sh", "w")
     scripts = [compileScript, runScript, checkScript,extractScript]
     for s in scripts:
         print("#!/bin/bash", file=s)
@@ -61,16 +62,16 @@ def main():
         print("cd ..;", file=s)
 
     for basename in basenames:
-        subprocess.call(['ls', f"./top10/{basename}_L1_top_10.csv"])
-        ss = f"./top10/{basename}_L1_top_10.csv"
-        print(f"bash many_gemms.sh {ss} compile no no no > ./top10/compile-{basename}.txt;",file=compileScript)
-        print(f"bash many_gemms.sh {ss} check run no no > ./top10/run-{basename}.txt;",file=runScript)
+        subprocess.call(['ls', f"./{outputFolder}/{basename}_L1_top_10.csv"])
+        ss = f"./{outputFolder}/{basename}_L1_top_10.csv"
+        print(f"bash many_gemms.sh {ss} compile no no no > ./{outputFolder}/compile-{basename}.txt;",file=compileScript)
+        print(f"bash many_gemms.sh {ss} check run no no > ./{outputFolder}/run-{basename}.txt;",file=runScript)
         print(f"bash many_gemms.sh {ss} check no no no;",file=checkScript)
         print(f"bash many_gemms.sh {ss} no no no extract;",file=extractScript)
         print(f"python combineKernelTimesIntoSingleCSV.py {ss};",file=extractScript)
     
     for s in scripts:
-        print("cd top10;", file=s)
+        print(f"cd {outputFolder};", file=s)
         
     compileScript.close()
     runScript.close()
