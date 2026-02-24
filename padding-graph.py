@@ -34,11 +34,6 @@ import pickle
 import messy_graphs as mg
 import recentGraphs_2_23 as rg_2_23
 
-# from itertools import zip
-
-# python svr-graph.py "review-phenomizer.csv" "Phemonizer768x384x384-svr"
-# python svr-graph.py "review-cube.csv" "Cube256x256x256-svr"
-
 # this script graphs X vs Y for the input CSV and exports an interactive version of the graph to an html file.
 # shows search space pruned for a certain X value
 # plots untimed points, but colors them gray
@@ -172,12 +167,13 @@ def get_lines_from_file(file_name):
     except FileNotFoundError:
         return f"Error: The file '{file_name}' was not found."
     
-# python svr-graph.py "review-cube.csv" "decFeatures/Cube256x256x256-svr" "256-cube-svr"
+# python padding-graph.py "$FOLDER/128x128x128wm-n-k_top10_l1.csv" "padding-naive/Cube128x128x128-svr" "febFeatures-256-cube-svr" "febFeatures.txt" "128x128x128" "$FOLDER/128x128x128wm-n-k_searchSpace_c_analyzed-untimed.csv"
+
 def main():
     input = sys.argv[1]  # "review-phenomizer.csv"
-    output = sys.argv[2]  
-    #modelPickle = f'{sys.argv[3]}.pickle'
-    #features = get_lines_from_file(sys.argv[4])
+    output = sys.argv[2]  # an html file
+    inputPadded = sys.argv[3]
+    inputPaddedUntimed = sys.argv[4]
     titleOfWebpage = sys.argv[5]
     inputUntimed = sys.argv[6]
     #print(f'features of svr are {features}')
@@ -193,6 +189,11 @@ def main():
         df_untimed = addFeatures(df_untimed)
         df_untimed, cmFeaturesUnused = addCost(df_untimed)
         df_untimed, fxParams = addFx(df_untimed)
+    
+    if inputPadded != "":
+        print("TODO: HANDLE PADDED DATA")
+    if inputPaddedUntimed != "":
+        print("TODO: HANDLE PADDED, UNTIMED DATA")
        
 
     df_sorted = df.sort_values(by="Kernel Time", ascending=True)

@@ -888,7 +888,7 @@ def generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untim
         #         #hover_data=small_hover_data,
         #     )
         customdata=df[small_hover_data].to_numpy()
-        print(customdata[0][0])
+       # print(customdata[0][0])
         fig14.add_scatter(
             x=df_mod[x_col],
             y=df_mod[y_col],

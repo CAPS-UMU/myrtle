@@ -89,12 +89,14 @@ def generateInteractiveGraphs(
     <body>
     <h1 style="text-align:center;">{titleOfWebpage}</h1>
     <div class="dashboard">
-    <div><h2 style="text-align:center;"> Tile 16-16-64 (wide B tile) is faster than Tile 64-16-16 (square B tile). How come?
+    <div><h2 style="text-align:center;"> Tile 16-16-64 (dark blue point) is faster than Tile 64-16-16 (yellow point). How come?
         </h2><h2 style="text-align:center;"> Tap/Hover over the points to see factors we've considered.
         </h2></div>
         <div class="plot-box">{div1}</div>
-        <h2 style="text-align:center;"> <a href="#"> Tell Us What You Think Here! </a></h2>
-        </div>
+        <h2 style="text-align:center;"> <a href="https://docs.google.com/forms/d/e/1FAIpQLSdF2JKaTMMKEZvscaYM_-02P6dRkKRDM6uwOpoSoTWbx0BYRw/viewform?usp=publish-editor"> Tell Us What You Think Here! </a></h2>
+         <h3 style="text-align:center;"><a href="https://github.com/CAPS-UMU/myrtle"> Our Github Repo </a></h3>
+       
+        </div> 
         </body>
         </html>
         """
