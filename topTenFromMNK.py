@@ -21,9 +21,14 @@ def get_lines_from_file(file_name):
 # python topTenFromMNK.py "fileWInputSizes.txt" 
 # python topTenFromMNK.py "02092026InputSizes.txt" 
 def main():
-    print("hello")
+    print("Usage example: python topTenFromMNK.py \"fileWInputSizes.txt\" \"outputFolderName\" all")
     inputSizes = sys.argv[1]
     outputFolder = sys.argv[2]
+    exhaustiveOverride = False
+    if len(sys.argv) == 4:
+        if sys.argv[3] == "all":
+            exhaustiveOverride = True
+         
     lines = get_lines_from_file(inputSizes)
     expNameRegex = re.compile(
             r"(\d+)x(\d+)x(\d+)"
@@ -49,7 +54,10 @@ def main():
     for (a,b) in zip(kernelNames,outputFiles):
         print(f'Generated SS for {a}')
         print(f'Output file is {b}')
-    subprocess.call(['cp']+ topTenFiles+[ "-t", f"./{outputFolder}"])
+    if exhaustiveOverride:
+        subprocess.call(['cp']+ outputFiles+[ "-t", f"./{outputFolder}"])
+    else:
+        subprocess.call(['cp']+ topTenFiles+[ "-t", f"./{outputFolder}"])
     # generate shell scripts for snitch compilation, verilator runs, correctness checks and data extraction
     compileScript = open(f"./{outputFolder}/compile.sh", "w")
     runScript = open(f"./{outputFolder}/run.sh", "w")
@@ -62,8 +70,11 @@ def main():
         print("cd ..;", file=s)
 
     for basename in basenames:
-        subprocess.call(['ls', f"./{outputFolder}/{basename}_L1_top_10.csv"])
-        ss = f"./{outputFolder}/{basename}_L1_top_10.csv"
+        theTop = f"./{outputFolder}/{basename}_L1_top_10.csv"
+        if exhaustiveOverride:
+            theTop = f"./{outputFolder}/{basename}_c_analyzed-myrtle-sflt-sorted-L1.csv"
+        subprocess.call(['ls', theTop])
+        ss = theTop
         print(f"bash many_gemms.sh {ss} compile no no no > ./{outputFolder}/compile-{basename}.txt;",file=compileScript)
         print(f"bash many_gemms.sh {ss} check run no no > ./{outputFolder}/run-{basename}.txt;",file=runScript)
         print(f"bash many_gemms.sh {ss} check no no no;",file=checkScript)

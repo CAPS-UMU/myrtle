@@ -22,10 +22,25 @@ from tile_size_generation.TSG_Quidditch import TSG_Quidditch
 # matmul with type `<MxK>, <KxN> -> <MxN>`
 # m is the parallel dimension but does NOT need to be a multiple of 8
 # TCDM size in bytes: TCDM_HEAP_SIZE = 112 * 1024
+
+# class Shape:
+#     def __init__(self, shapename, **kwds):
+#         self.shapename = shapename
+#         super().__init__(**kwds)        
+
+# class ColoredShape(Shape):
+#     def __init__(self, color, **kwds):
+#         self.color = color
+#         super().__init__(**kwds)
+
+# cs = ColoredShape(color='red', shapename='circle')
+
 class TSG_C(TSG_Quidditch):
     def hello(self):
         print("I am a tile size generator for the manual C backend")
-
+    def __init__(self, naivePadding=False, **kwds):
+          self.naivePadding = naivePadding
+          super().__init__(**kwds)  
     def mDimOptions(self):
         max = self.me.m
         min = 8 if self.me.m >= 8 else 1
