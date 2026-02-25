@@ -29,7 +29,7 @@ def get_lines_from_file(file_name):
     
 # python topTenFromMNK.py 128x128x128-naive-padding/inputSize.txt 128x128x128-naive-padding all 
 def main():
-    print("Usage example: python topTenFromMNK.py \"fileWInputSizes.txt\" \"outputFolderName\" all")
+    #print("Usage example: python topTenFromMNK.py \"fileWInputSizes.txt\" \"outputFolderName\" all")
     inputSizes = sys.argv[1]
     outputFolder = sys.argv[2]
     fullSuffix = "_c_analyzed-myrtle-sflt-sorted-L1"

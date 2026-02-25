@@ -118,8 +118,11 @@ class TSG_C(TSG_Quidditch):
         valid_options_8_banks = list(
             filter(lambda d: max(d["tileA"],d["tileB"],d["tileC"]) <= eb, annotated_options)
         )
-        # print(f"ignoring 8 bank constraint - 8 banks BTW takes up {self.bankSizeBytes} bytes")
-        # valid_options_8_banks = valid_options_l1
+
+        # mark each of these tiling schemes with padding info
+        valid_options_8_banks_no_pad = list(
+            map(lambda d: self.annnotatePaddingStatus(d), annotated_options)
+        )
 
         if debug:
             valid_options= list(
@@ -134,7 +137,7 @@ class TSG_C(TSG_Quidditch):
             print(valid_options)
         if len(valid_options_8_banks) == 0:
             raise Exception("Cannot find a valid tiling scheme!")
-        return valid_options_8_banks
+        return valid_options_8_banks_no_pad
 
     # regular matmul: A : MxK, B : KxN, C : MxN
     # compute L1 usage measured in ELEMENT COUNT
@@ -215,6 +218,10 @@ class TSG_C(TSG_Quidditch):
             "tileB_cc": tileB_cc * 8,
             "tileC_cc": tileC_cc * 8
         }
+    
+    def annnotatePaddingStatus(self, d):
+        d.update({"padding": "000", "Mpad": 0,"Npad": 0,"Kpad": 0})
+        return d
 
     # convert dictionary to simpler, more readable, annotated triple
     def dictToTuple(self, d):
@@ -231,6 +238,7 @@ class TSG_C(TSG_Quidditch):
         return {
             "JSON Name": f"{tup[0]}-{tup[1]}-{tup[2]}",
             "FakeNN JSON Name":f"{self.me.m}x{self.me.n}x{self.me.k}w{tup[0]}-{tup[1]}-{tup[2]}",
+            "Original Name":f"{self.me.m}x{self.me.n}x{self.me.k}w{tup[0]}-{tup[1]}-{tup[2]}",
             "m Dim":tup[0],
             "Row Dim":tup[1],
             "Reduction Dim":tup[2],
@@ -249,20 +257,24 @@ class TSG_C(TSG_Quidditch):
             "tileA_cc": d["tileA_cc"],
             "tileB_cc": d["tileB_cc"],
             "tileC_cc": d["tileC_cc"],
+            "padding" : d["padding"],
+            "Mpad":d["Mpad"],
+            "Npad":d["Npad"],
+            "Kpad":d["Kpad"],
         }
 
     # helper for converting to CSV
-    def annotationColumnNames(self):
-        columns = [
-            "JSON Name",
-            "m Dim",
-            "Row Dim",
-            "Reduction Dim",
-            "Space Needed in L1",
-            "Weight Matrix Tile Size",
-            "Space Remaining",
-        ]
-        return columns
+    # def annotationColumnNames(self):
+    #     columns = [
+    #         "JSON Name",
+    #         "m Dim",
+    #         "Row Dim",
+    #         "Reduction Dim",
+    #         "Space Needed in L1",
+    #         "Weight Matrix Tile Size",
+    #         "Space Remaining",
+    #     ]
+    #     return columns
 
     def convertOptionsToDF(self, dispatchNickName, options):
         flat = list(map(lambda ann: self.convertAnnotationToFlatDict(ann).values(), options))

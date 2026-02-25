@@ -92,25 +92,66 @@ class TSG_C_Padding(TSG_C):
             raise Exception(
                 f"TSG: Cannot find a tile size that divides evenly into dimension M = {self.me.m}!"
             )
-
         little_n_no_pad = list(filter(lambda x: self.dividesIntoN(x), little_n_options))
         n_options = little_n_no_pad
         if len(little_n_no_pad) < 1:  # prime N dimension
             raise Exception(
                 f"TSG: Cannot find a tile size that divides evenly into dimension N = {self.me.n}!"
             )
-
         little_k_no_pad = list(filter(lambda x: self.dividesIntoK(x), little_k_options))
         k_options = little_k_no_pad
         if len(little_k_no_pad) < 1:  # prime K dimension
             raise Exception(
                 f"TSG: Cannot find a tile size that divides evenly into dimension K = {self.me.k}!"
             )
+        
+        # filter for m's, n's and k's that DO NOT divide evenly into M,N,K respectively
+        little_m_pad = list(filter(lambda x: not self.dividesIntoM(x), little_m_options))
+        if len(little_m_pad) < 1:  # prime M dimension
+            raise Exception(
+                f"TSG: Cannot find a tile size that DOESN'T divide evenly into dimension M = {self.me.m}!"
+            )
+        little_n_pad = list(filter(lambda x: not self.dividesIntoN(x), little_n_options))
+        if len(little_n_pad) < 1:  # prime N dimension
+            raise Exception(
+                f"TSG: Cannot find a tile size that DOESN'T divide evenly into dimension N = {self.me.n}!"
+            )
+        little_k_pad = list(filter(lambda x: not self.dividesIntoK(x), little_k_options))
+        if len(little_k_pad) < 1:  # prime K dimension
+            raise Exception(
+                f"TSG: Cannot find a tile size that DOESN'T divide evenly into dimension K = {self.me.k}!"
+            )
+        # enumerate all padding possibilities
+        mnk = list(product(little_m_pad, little_n_pad, little_k_pad))     # M, N, K :)
+        only_m = list(product(little_m_pad, n_options, k_options))        # only M
+        only_mn = list(product(little_m_pad, little_n_pad, k_options))    # only M, N
+        only_mk = list(product(little_m_pad, n_options, little_k_pad))    # only M, K
+        only_n = list(product(m_options, little_n_pad, k_options))        # only N
+        only_nk = list(product(m_options, little_n_pad, little_k_pad))    # only N, K
+        only_k = list(product(m_options, n_options, little_k_pad))        # only K
+        # remove duplicates
+        options = set(mnk)
+        options.update(only_m)
+        options.update(only_mn)
+        options.update(only_mk)
+        options.update(only_n)
+        options.update(only_nk)
+        options.update(only_k)
+        
+        options_as_triples = list(options)
+        return self.pruneForSizeConstraints(options_as_triples, debug)
+        
 
-        options_as_triples = list(product(m_options, n_options, k_options))
+    def pruneForSizeConstraints(self, options_as_triples, debug = False):
+        options_as_dicts = list(map(lambda tup: {"id":tup}, options_as_triples))
+
+        # mark that none of these tiling schemes require padding
+        annotated_options = list(
+            map(lambda d: self.annnotatePaddingStatus(d), options_as_dicts)
+        )
 
         annotated_options = list(
-            map(lambda tup: self.annotateOptionWL1Usage(tup), options_as_triples)
+            map(lambda d: self.annotateOptionWL1Usage(d), annotated_options)
         )
 
         # filter out tiling schemes that do not fit in L1
@@ -141,9 +182,76 @@ class TSG_C_Padding(TSG_C):
             raise Exception("Cannot find a valid tiling scheme!")
         return valid_options_8_banks
 
+    def annnotatePaddingStatus(self, d):
+        m = d["id"][0]
+        n = d["id"][1]
+        k = d["id"][2]
+        mRem = self.me.m % m
+        nRem = self.me.n % n
+        kRem = self.me.k % k
+        # padding in M dim?
+        if mRem == 0:
+            mPadType = 0
+            mPad = 0
+        else:
+            mPadType = "M"
+            mPad = m - mRem
+        # padding in N dim?
+        if nRem == 0:
+            nPadType = "0"
+            nPad = 0
+        else:
+            nPadType = "N"
+            nPad = n - nRem
+            # padding in K dim?
+        if kRem == 0:
+            kPadType = "0"
+            kPad = 0
+        else: 
+            kPadType = "K"
+            kPad = k - kRem
+        paddingType = f"{mPadType}{nPadType}{kPadType}"
+        d.update({"padding": paddingType, "Mpad": mPad,"Npad": nPad,"Kpad": kPad, "FakeNN JSON Name":f"{self.me.m+mPad}x{self.me.n+nPad}x{self.me.k+kPad}w{m}-{n}-{k}"})
+        return d
+    
+    # flatten dictionary + add more information
+    def convertAnnotationToFlatDict(self, d):
+        tup = d["id"]
+        fakeName = d["FakeNN JSON Name"]
+        return {
+            "JSON Name": f"{tup[0]}-{tup[1]}-{tup[2]}",
+            "FakeNN JSON Name":fakeName,
+            "m Dim":tup[0],
+            "Row Dim":tup[1],
+            "Reduction Dim":tup[2],
+            "M":self.me.m,
+            "N":self.me.n,
+            "K":self.me.k,
+            "m":tup[0],
+            "n":tup[1],
+            "k":tup[2],
+            "Space Needed in L1": d["Space Needed in L1"],
+            "Weight Matrix Tile Size": d["Weight Matrix Tile Size"],
+            "Space Remaining": d["Space Remaining"],
+            "tileA": d["tileA"],
+            "tileB": d["tileB"],
+            "tileC": d["tileC"],
+            "tileA_cc": d["tileA_cc"],
+            "tileB_cc": d["tileB_cc"],
+            "tileC_cc": d["tileC_cc"],
+            "padding" : d["padding"],
+            "Mpad":d["Mpad"],
+            "Npad":d["Npad"],
+            "Kpad":d["Kpad"],
+            "Original Name" : f"{self.me.m}x{self.me.n}x{self.me.k}w{tup[0]}-{tup[1]}-{tup[2]}"
+        }
+
     # regular matmul: A : MxK, B : KxN, C : MxN
     # compute L1 usage measured in ELEMENT COUNT
-    def computeL1Usage(self, m, n, k, debug=False):
+    def computeL1Usage(self, d, debug=False):
+        m = d["id"][0]
+        n = d["id"][1]
+        k = d["id"][2]
         tileSpace = 0
         weightMatTileSpace = 0
         total = 0
@@ -199,17 +307,17 @@ class TSG_C_Padding(TSG_C):
         totalSpace = total
         return tileSpace, weightMatTileSpace, totalSpace, tileA, tileB, tileC, tileA_cc, tileB_cc, tileC_cc
 
-    # annotate a (m, n, k) tile size triple with
+    # augment a dictionary {"id":(m,n,k)} to include
     # total spaced used in L1
     # weight matrix tile size
     # space remaining
     # measured in BYTES
-    def annotateOptionWL1Usage(self, tup):
+    def annotateOptionWL1Usage(self, d):
         tileSpace, weightMatTileSpace, totalUsage, tileA, tileB, tileC, tileA_cc, tileB_cc, tileC_cc = self.computeL1Usage(
-            tup[0], tup[1], tup[2]
+            d
         )
         return {
-            "id": tup,
+            "id": d["id"],
             "Space Needed in L1": totalUsage * 8,
             "Weight Matrix Tile Size": weightMatTileSpace * 8,
             "Space Remaining": self.l1MemoryBytes - totalUsage * 8,
@@ -218,7 +326,12 @@ class TSG_C_Padding(TSG_C):
             "tileC": tileC * 8,
             "tileA_cc": tileA_cc *8,
             "tileB_cc": tileB_cc * 8,
-            "tileC_cc": tileC_cc * 8
+            "tileC_cc": tileC_cc * 8,
+            "padding" : d["padding"],
+            "Mpad":d["Mpad"],
+            "Npad":d["Npad"],
+            "Kpad":d["Kpad"],
+            "FakeNN JSON Name":d["FakeNN JSON Name"]
         }
 
     # convert dictionary to simpler, more readable, annotated triple
@@ -230,71 +343,21 @@ class TSG_C_Padding(TSG_C):
             d["Space Remaining"]
         )
 
-    # flatten dictionary + add more information
-    def convertAnnotationToFlatDict(self, d):
-        tup = d["id"]
-        return {
-            "JSON Name": f"{tup[0]}-{tup[1]}-{tup[2]}",
-            "FakeNN JSON Name":f"{self.me.m}x{self.me.n}x{self.me.k}w{tup[0]}-{tup[1]}-{tup[2]}",
-            "m Dim":tup[0],
-            "Row Dim":tup[1],
-            "Reduction Dim":tup[2],
-            "M":self.me.m,
-            "N":self.me.n,
-            "K":self.me.k,
-            "m":tup[0],
-            "n":tup[1],
-            "k":tup[2],
-            "Space Needed in L1": d["Space Needed in L1"],
-            "Weight Matrix Tile Size": d["Weight Matrix Tile Size"],
-            "Space Remaining": d["Space Remaining"],
-            "tileA": d["tileA"],
-            "tileB": d["tileB"],
-            "tileC": d["tileC"],
-            "tileA_cc": d["tileA_cc"],
-            "tileB_cc": d["tileB_cc"],
-            "tileC_cc": d["tileC_cc"],
-        }
-
-    # helper for converting to CSV
-    def annotationColumnNames(self):
-        columns = [
-            "JSON Name",
-            "m Dim",
-            "Row Dim",
-            "Reduction Dim",
-            "Space Needed in L1",
-            "Weight Matrix Tile Size",
-            "Space Remaining",
-        ]
-        return columns
-
-    def convertOptionsToDF(self, dispatchNickName, options):
-        flat = list(map(lambda ann: self.convertAnnotationToFlatDict(ann).values(), options))
-        cols = self.convertAnnotationToFlatDict(options[0]).keys()
-        df = pd.DataFrame(flat, columns=cols)        
-        preferred_front_order = [
-            "FakeNN JSON Name",
-            "M",
-            "N",
-            "K",
-            "m",
-            "n",
-            "k",
-            "JSON Name",
-        ]
-        pfoSet = set(preferred_front_order)
-        wofSet = set(set(df.columns).difference(pfoSet))
-        preferred_order = preferred_front_order + list(wofSet)
-        df = df[preferred_order]
-        return df
-
     def exportOptionsToCSV(self, dispatchNickName, df):
         filename = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_searchSpace_padded_c.csv"
         df.to_csv(
             filename,
             index=False,
         )
+        filenameSorted = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_searchSpace_padded_c_sorted_L1.csv"
+        sortedByL1=df.sort_values("Space Needed in L1", ascending=False)
+        sortedByL1.to_csv(filenameSorted,index=False)
+        filenameNoK = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_searchSpace_padded_c_no_K.csv"
+        noK = df[df["Kpad"] == 0 ]
+        noK.to_csv(filenameNoK,index=False)
+        filenameOnlyK = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_searchSpace_padded_c_only_K.csv"
+        noK = df[df["padding"] == "00K" ]
+        noK.to_csv(filenameOnlyK,index=False)
         print("\t", end="")
         print(f"TSG: wrote padded search space to {filename}")
         return filename
