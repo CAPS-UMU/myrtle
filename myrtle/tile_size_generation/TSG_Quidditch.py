@@ -320,7 +320,6 @@ class TSG_Quidditch(TileSizeGenerator):
         df = df[preferred_order]
         return df
 
-    # export annotated options to CSV
     def exportOptionsToCSV(self, dispatchNickName, df):
         filename = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_searchSpace_q.csv"
         df.to_csv(

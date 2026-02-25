@@ -2,9 +2,11 @@ import sys
 import json
 from tile_size_generation.TSG_Quidditch import TSG_Quidditch
 from tile_size_generation.TSG_C import TSG_C
+from tile_size_generation.TSG_C_Padding import TSG_C_Padding
 from tile_static_analysis.TSA_Quidditch import TSA_Quidditch
 # from tile_static_analysis.TSA_Manual_C_Code_deprecated import TSA_C
 from tile_static_analysis.TSA_Manual_C_Code_Check import TSA_C_Check
+from tile_static_analysis.TSA_C_Padding import TSA_C_Padding
 import tile_sel.tile_selection as tss
 import re
 import pickle
@@ -46,7 +48,7 @@ def main():
         if quidditch:
             jen = TSG_Quidditch(int(M),int(N),int(K),dispatchName,l1MemoryBytes = 100000)
         else:
-            jen = TSG_C(M_dim=int(M),N_dim=int(N),K_dim=int(K),dispatchName=dispatchName,l1MemoryBytes = 112 * 1024, bank_size=1024, dualBuff=True)
+            jen = TSG_C(int(M),int(N),int(K),dispatchName=dispatchName,l1MemoryBytes = 112 * 1024, bank_size=1024, dualBuff=True)
         options = jen.validOptions(debug=False)
         options_as_df = jen.convertOptionsToDF(dispatchNickName, options)
         searchSpaceCSVName = jen.exportOptionsToCSV(dispatchNickName, options_as_df)
@@ -55,7 +57,17 @@ def main():
     ann=TSA_Quidditch() if quidditch else TSA_C_Check()
     analyzed = ann.analyze_options(options_as_df)
     analyzedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
-    
+
+    # if using manual C backend, consider padding and generate analyzed search space for it.
+    if not quidditch:
+        gen = TSG_C_Padding(jen)
+        paddedOptions = gen.validOptions(debug=False)
+        paddedOptions_as_df = gen.convertOptionsToDF(dispatchNickName, paddedOptions)
+        paddedSearchSpaceCSVName = gen.exportOptionsToCSV(dispatchNickName, paddedOptions_as_df)
+        ann = TSA_C_Padding(ann)
+        analyzed = ann.analyze_options(paddedOptions_as_df)
+        analyzedPaddedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
+
     # select best tiling scheme using mode        
     m,n,k,dualBuffer = tss.tileSelection(analyzedSearchSpaceCSVName,sys.argv[2])   
     if sys.argv[2] == "sflt":
