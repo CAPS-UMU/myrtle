@@ -192,6 +192,10 @@ def main():
     
     if inputPadded != "":
         print("TODO: HANDLE PADDED DATA")
+        df_padded = pd.read_csv(inputPadded)
+        df_padded = addFeatures(df_padded)
+        df_padded, cmFeaturesUnused = addCost(df_padded)
+        df_padded, fxParams = addFx(df_padded)
     if inputPaddedUntimed != "":
         print("TODO: HANDLE PADDED, UNTIMED DATA")
        
@@ -242,7 +246,10 @@ def main():
     if inputUntimed == "":    # Create interactive scatter plots
         html = rg_2_23.generateInteractiveGraphs(df, title, titleOfWebpage)
     else:
-        html = rg_2_23.generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untimed)
+        if inputPadded != "":
+            html = rg_2_23.generateInteractiveGraphsTimedAndUntimedAndPadded(df, title, titleOfWebpage, df_untimed, df_padded)
+        else:
+            html = rg_2_23.generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untimed)
     # --- Write to file ---
     with open(f"{output}.html", "w") as f:
         f.write(html)
