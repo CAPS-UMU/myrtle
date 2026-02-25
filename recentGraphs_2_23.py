@@ -5,6 +5,443 @@ import numpy as np
 import plotly.graph_objects as go
 from sklearn.linear_model import LinearRegression
 
+def generateInteractiveGraphsTimedAndUntimedAndPadded(df, title, titleOfWebpage, df_untimed, df_padded):
+        x_col = "Regular Loads"
+        y_col = "Kernel Time"
+        color = "regPerStream"
+        hover_data = [
+            "JSON Name",
+            x_col,
+            y_col,
+            "SSRconfigsXregPerStream",
+            "L1UsageXregPerStream",
+            "CCL1FootprintXregPerStream",
+            "SSR Config Count",
+            "absoluteRank",
+            "costRank",
+            "L3 Loads",
+            "k/nXregPerStream",
+            "mk/n",
+            # "B SSR Loads",
+            # "Total SSR Loads",
+            # "A SSR Reuse Loads",
+            # "A Not Reused SSR Loads",
+            "Hardware Loops",
+            "L3 Loads Timed",
+            "L1 Usage",
+            "CC L1 Footprint",
+            # "tileA",
+            # "tileB",
+            "tileC",
+            "tileA_cc",
+            "tileC_cc",
+            "k",
+            "cost",
+            "regPerStream",
+            "sumSSRsRegs",
+            "k/n",
+            "fmaddsPerCore",
+        ]
+        small_hover_data = [
+            "JSON Name",
+            x_col,
+            y_col,
+            "regPerStream",
+            "L3 Loads"
+        ]
+
+        df_mod = df_untimed
+        avgTime = sum(df["Kernel Time"].values) / len(df["Kernel Time"].values)
+        df_mod["Kernel Time"] = avgTime
+        df_mod["absoluteRank"] = 0
+        df_mod["costRank"] = 0
+        df_mod['color']=5
+        topL3 =  max(df_mod["L3 Loads"].values)
+        botL3 =  min(df_mod["L3 Loads"].values)
+        midL3 = (topL3 - botL3) / 4.0
+        prunePointL3 = botL3 + midL3 #2686976
+        prunePoint = sorted(df_mod["SSR Configs"].values)[1]
+        blacklist = df['m-n-k']
+        # Filter df1 to keep only rows where 'ID' is NOT in the blacklist
+        df_mod = df_mod[~df_mod['m-n-k'].isin(blacklist)]
+
+        # experiments
+        x_col = "SSR Configs"#"sumSSRsRegs"
+        y_col = "Kernel Time"
+        color = "regPerStream"
+        # first, graph timed data
+        fig8= px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color=color,#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}",
+        )
+        # next, padded
+        # fig8.add_scatter(
+        #     x=df_mod[x_col],
+        #     y=df_mod[y_col],
+        #     mode='markers',
+        #     marker=dict(color='lightgray'),
+        #     name = "untimed",
+        #     customdata=df[small_hover_data].to_numpy(),
+        #     hovertemplate=(
+        #         "<b>m-n-k: %{customdata[0]:.5f}</b><br>" +
+        #         "x: %{x}<br>" +
+        #         "y: %{y}<br>" +
+        #         "Color: %{customdata[3]:.5f}<br>" +
+        #         "L3 Loads: %{customdata[4]:.5f}<br>" +
+        #         "<extra></extra>" 
+        #     )            
+        # )
+        # next, untimed
+        # idx = {col: i for i, col in enumerate(df_mod.columns.values)}
+        # fig8.add_scatter(
+        #     x=df_mod[x_col],
+        #     y=df_mod[y_col],
+        #     mode='markers',
+        #     marker=dict(color='lightgray'),
+        #     name = "untimed",
+        #     customdata=df[small_hover_data].to_numpy(),
+        #     hovertemplate=(
+        #         "<b>m-n-k: %{{customdata[0]:.5f}}</b><br>" +
+        #         "x: %{x}<br>" +
+        #         "y: %{y}<br>" +
+        #         "Color: %{{customdata[3]:.5f}}<br>" +
+        #         "L3 Loads: %{{customdata[4]:.5f}}<br>" +
+        #         "<extra></extra>" 
+        #     )            
+        # )
+
+        # 1. Provide the extra columns as a list of lists (stack them)
+    # customdata=subset[['species', 'petal_length', 'petal_width']],
+    # # 2. Design the label using %{x}, %{y}, and %{customdata[index]}
+    # hovertemplate=(
+    #     "<b>Species: %{customdata[0]}</b><br>" +
+    #     "Sepal Width: %{x}<br>" +
+    #     "Sepal Length: %{y}<br>" +
+    #     "Petal Length: %{customdata[1]}<br>" +
+    #     "<extra></extra>" # This removes the secondary 'trace name' box
+    # )
+    #  "JSON Name",
+    #         x_col,
+    #         y_col,
+    #         color,
+    #         "L2 Loads"
+    # customdata=df[small_hover_data],
+    # # # 2. Design the label using %{x}, %{y}, and %{customdata[index]}
+    # hovertemplate=(
+    #     "<b>m-n-k: %{customdata[0]}</b><br>" +
+    #     "Sepal Width: %{x}<br>" +
+    #     "Sepal Length: %{y}<br>" +
+    #     "Petal Length: %{customdata[1]}<br>" +
+    #     "<extra></extra>" # This removes the secondary 'trace name' box
+    # )
+
+
+        x_col = "cost"#"sumSSRsRegs"
+        y_col = "Kernel Time"
+        color = "SSR Config Count"
+        fig9 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color=color,#"k/n",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}, where c = regPerStream = REG_LOADS / SSR_LOADS per core = n*m/128*k",
+        )
+
+        x_col = "SSRconfigsXregPerStream"#"sumSSRsRegs"
+        y_col = "Kernel Time"
+        color ="regPerStream"
+        fig11 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color=color,#"k/n",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}; estimate time with product of SSR Configs and regPerStream",
+        )
+
+        x_col = "L1UsageXregPerStream"#"sumSSRsRegs"
+        y_col = "Kernel Time"
+        color = "regPerStream"
+        fig12 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color=color,#"k/n",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}; estimate time with product of L1 Usage and regPerStream",
+        )
+
+        x_col = "CCL1FootprintXregPerStream"#"sumSSRsRegs"
+        y_col = "Kernel Time"
+        color="regPerStream"
+        fig13 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color=color,#"k/n",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}; estimate time with product of CC L1 Footprint and regPerStream",
+        )
+
+
+        x_col = "SSR Configs"
+        y_col = "Kernel Time"
+        color ="SSRconfigsXregPerStream"#"regPerStream"
+
+     
+        #df_mod = df_mod[df_mod["L3 Loads"]<=prunePointL3]
+
+        # top =  max(df_mod["SSR Configs"].values)
+        # bot =  min(df_mod["SSR Configs"].values)
+        # mid = (top - bot) / 4.0
+        # prunePoint = bot + mid
+       # df_pruned = df[df["L3 Loads"]<=topL3]
+        #df_mod.loc(filter,"color") = 0
+        fig14 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color=color,#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col} with SSR Configs > {prunePoint} pruned away.",
+        )
+        # fig14.add_scatter(
+        #         x=df_mod[x_col],
+        #         y=df_mod[y_col],
+        #         mode='markers',
+        #         marker=dict(color='lightgray'),
+        #         name = "untimed",
+        #         #hover_data=small_hover_data,
+        #     )
+        idx = {col: i for i, col in enumerate(df_mod[small_hover_data].columns.values)}
+        customData=df_mod[small_hover_data].to_numpy()
+        print(customData[0][0])
+        print(idx)
+        print(customData[idx["JSON Name"]])
+        fig14.add_scatter(
+            x=df_mod[x_col],
+            y=df_mod[y_col],
+            mode='markers',
+            marker=dict(color='lightgray'),
+            name = "untimed",
+            customdata=customData,
+            hovertemplate=(
+                "<b>m-n-k: %{customdata[0]}</b><br>" +
+                "x: %{x}<br>" +
+                "y: %{y}<br>" +
+                "RegPerStream: %{customdata[3]}<br>" +
+                "L3 Loads: %{customdata[4]}<br>" +
+                "<extra></extra>" 
+            ),
+        )
+        idx = {col: i for i, col in enumerate(df_mod[small_hover_data].columns.values)}
+        customData=df_mod[small_hover_data].to_numpy()
+        print(customData[0][0])
+        print(idx)
+        print(customData[idx["JSON Name"]])
+        fig14.add_scatter(
+            x=df_mod[x_col],
+            y=df_mod[y_col],
+            mode='markers',
+            marker=dict(color='lightgray'),
+            name = "untimed",
+            customdata=customData,
+            hovertemplate=(
+                "Untimed <br>" +
+                "<b>m-n-k: %{customdata[0]}</b><br>" +
+                "SSR Configs: %{x}<br>" +
+                "Kernel Time: %{y}<br>" +
+                "RegPerStream: %{customdata[3]}<br>" +
+                "L3 Loads: %{customdata[4]}<br>" +
+                "<extra></extra>" 
+            ),
+        )
+        fig14.add_vline(x=prunePoint, line_width=3, line_dash="dash", line_color="green")
+        customData=df_padded[small_hover_data].to_numpy()
+        fig14.add_scatter(
+            x=df_padded[x_col],
+            y=df_padded[y_col],
+            mode='markers',
+            marker=dict(color='black',symbol="triangle-up"),
+            name = "padded",
+            customdata=customData,
+            hovertemplate=(
+                "Padded <br>" +
+                "m-n-k: %{customdata[0]}<br>" +
+                "SSR Configs: %{x}<br>" +
+                "Kernel Time: %{y}<br>" +
+                "RegPerStream: %{customdata[3]}<br>" +
+                "L3 Loads: %{customdata[4]}<br>" +
+                "<extra></extra>" 
+            ),
+        )
+        #marker=dict(color='lightgray',symbol='diamond'),
+        #fig14.add_vline(x=top/2.0, line_width=3, line_dash="dash", line_color="pink")
+
+
+       # x_col = "cost"#"sumSSRsRegs"
+        #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS - (k/n)*(NUM_HW_LOOPS) - (k/n) - L1_USAGE",
+        #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS / c1 + k/n * c2/c1"
+        #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS - (k/n)*(NUM_HW_LOOPS) - (k/n) - L1_USAGE",
+        #df["cost"] = df["SSR Config Count"] - df["k/n"]*df["Hardware Loops"] - df["k/n"] - df["L1 Usage"]
+
+       # df["MNK/m"]=df["M"] * df["N"] * df["K"] / df ["m"]
+        x_col = "k/nXregPerStream"
+        y_col = "Kernel Time"
+        color = "SSR Config Count"
+        fig6 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color=color,  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}",
+        )
+
+        df["MNK/n"]=df["M"] * df["N"] * df["K"] / df ["n"]
+        x_col = "L1 Usage"
+        y_col = "Kernel Time"
+        color="regPerStream"
+        fig7 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color=color,  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}",
+        )
+
+        x_col = "L1 Usage"
+        y_col = "Kernel Time"
+        color="Regular Loads"
+        fig1 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color=color,  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}",
+        )
+
+        x_col = "SSR Config Count"
+        y_col = "Kernel Time"
+        color="fmaddsPerCore"
+        fig3 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color=color,  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}",
+        )
+
+        x_col = "Regular Loads"
+        y_col = "Kernel Time"
+        fig2 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="L1 Usage",#"L3 L/S Timed",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}",
+        )
+
+        x_col = "k"
+        y_col = "Kernel Time"
+        fig4 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="Regular Loads",#"L3 L/S Timed",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}",
+        )
+
+        x_col = "fmaddsPerCore"
+        y_col = "Kernel Time"
+        fig5 = px.scatter(
+            df,
+            x=x_col,
+            y=y_col,
+            color="Regular Loads",#"L3 L/S Timed",  # "Regular Loads",  # Optional: color points by a category column
+            hover_data=hover_data,  # Show these columns on hover
+            title=f"{title} {x_col} vs {y_col}",
+        )
+
+        # --- Convert each figure to HTML div ---
+
+   
+        div1 = pio.to_html(fig1, include_plotlyjs="cdn", full_html=False)
+        div2 = pio.to_html(fig2, include_plotlyjs="cdn", full_html=False)
+        div3 = pio.to_html(fig3, include_plotlyjs="cdn", full_html=False)
+        div4 = pio.to_html(fig4, include_plotlyjs="cdn", full_html=False)
+        div5 = pio.to_html(fig5, include_plotlyjs="cdn", full_html=False)
+        div6 = pio.to_html(fig6, include_plotlyjs="cdn", full_html=False)
+        div7 = pio.to_html(fig7, include_plotlyjs="cdn", full_html=False)
+        div8 = pio.to_html(fig8, include_plotlyjs="cdn", full_html=False)
+        div9 = pio.to_html(fig9, include_plotlyjs="cdn", full_html=False)
+        div11 = pio.to_html(fig11, include_plotlyjs="cdn", full_html=False)
+        div12 = pio.to_html(fig12, include_plotlyjs="cdn", full_html=False)
+        div13 = pio.to_html(fig13, include_plotlyjs="cdn", full_html=False)
+        div14 = pio.to_html(fig14, include_plotlyjs="cdn", full_html=False)
+        
+        # --- Combine into HTML page with grid layout ---
+        html = f"""
+    <html>
+    <head>
+    <title>Plotly Express 5x1 Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {{
+        font-family: Arial, sans-serif;
+        margin: 30px;
+        background-color: #f7f7f7;
+        }}
+        .dashboard {{
+        display: flex;
+        flex-direction: column;
+        gap: 30px; /* space between charts */
+        }}
+        .plot-box {{
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+    </style>
+    </head>
+    <body>
+    <h1 style="text-align:center;">{titleOfWebpage}</h1>
+    <a href="results.html" >Back to Landing Page</a>
+    <div class="dashboard">
+
+        {"<div>Experiments</div>"}
+        <div class="plot-box">{div1}</div>
+        <div class="plot-box">{div2}</div>
+        <div class="plot-box">{div3}</div>
+        <div class="plot-box">{div4}</div>
+        <div class="plot-box">{div5}</div>
+        <div class="plot-box">{div6}</div>
+        <div class="plot-box">{div7}</div>
+        <div class="plot-box">{div8}</div>
+        <div class="plot-box">{div9}</div>
+        <div class="plot-box">{div11}</div>
+        <div class="plot-box">{div12}</div>
+        <div class="plot-box">{div13}</div>
+        <div class="plot-box">{div14}</div>
+        </div>
+        </body>
+        </html>
+        """
+        return html
+
 def addLineOfBestFit(df, x_col, y_col, fig):
     # adding line of best fit for SSR configs vvvvvvv
     x = np.array(df[x_col])
@@ -906,7 +1343,7 @@ def generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untim
             )     ,
         )
         fig14.add_vline(x=prunePoint, line_width=3, line_dash="dash", line_color="green")
-        #fig14.add_vline(x=top/2.0, line_width=3, line_dash="dash", line_color="pink")
+      
 
 
        # x_col = "cost"#"sumSSRsRegs"
