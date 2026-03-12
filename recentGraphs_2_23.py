@@ -46,7 +46,7 @@ def generateInteractiveGraphsTimedAndUntimedAndPadded(df, title, titleOfWebpage,
             "JSON Name",
             x_col,
             y_col,
-            "regPerStream",
+            "HwLoopsPerStream",
             "L3 Loads"
         ]
 
