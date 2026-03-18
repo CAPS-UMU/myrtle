@@ -100,6 +100,7 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
             "JSON Name",
             x_col,
             y_col,
+            "HwLoopPerStream",
             "SSRconfigsXregPerStream",
             "L1UsageXregPerStream",
             "CCL1FootprintXregPerStream",
@@ -222,7 +223,7 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
             df,
             x=x_col,
             y=y_col,
-            color="regPerStream",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+            color="HwLoopPerStream",#"regPerStream",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
             hover_data=hover_data,  # Show these columns on hover
             title=f"{title} {x_col} vs {y_col}",
         )
@@ -432,7 +433,7 @@ def generateInteractiveGraphs(df, title, titleOfWebpage, shapeMetric,cmFeatures,
     </head>
     <body>
     <h1 style="text-align:center;">{titleOfWebpage}</h1>
-    <a href="../results.html" >Back to Landing Page</a>
+    <a href="../results-beta-0.html" >Back to Landing Page</a>
     <div class="dashboard">
         <div class="plot-box">{div10}</div>
         <div class="plot-box">{div20}</div>

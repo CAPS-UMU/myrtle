@@ -93,6 +93,7 @@ def addCost(df, c1=1.0,c2=1.0):
     c2 = 131072.0
     df["sumSSRsRegs"] = (df["SSR Config Count"] + df["Regular Loads"])# * df["L3 Loads"]
     df["regPerStream"] = df["n"] * df["m"] / (128.0 * df["k"])
+    df["HwLoopPerStream"] = df["n"] * df["m"] / (1024 * df["k"])
     df["mk/n"] = df["m"] * df["k"] / (1.0 * df["n"])
     df["fmaddsPerCore"] = df["m"] * df["n"] * df["k"] / 8
     df["L3 Loads Timed"] = df["L3 Loads"] - df["tileC"] - df["tileA"] - df["tileB"]
