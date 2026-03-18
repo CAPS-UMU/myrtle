@@ -296,3 +296,12 @@ class TSG_C(TSG_Quidditch):
         df = df[preferred_order]
         return df
 
+    def exportOptionsToCSV(self, dispatchNickName, df):
+        filename = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_gen.csv"
+        df.to_csv(
+            filename,
+            index=False,
+        )
+        print("\t", end="")
+        print(f"TSG: wrote search space to {filename}")
+        return filename

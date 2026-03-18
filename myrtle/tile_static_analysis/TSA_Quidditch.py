@@ -171,7 +171,7 @@ class TSA_Quidditch(TileSizeAnalyzer):
         return tup + loweringInfo
 
     def exportAnalysisToCSV(self, dispatchNickName, df):
-        filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_searchSpace_analyzed.csv"
+        filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_q_ana.csv"
         df.to_csv(
             filename,
             index=False,

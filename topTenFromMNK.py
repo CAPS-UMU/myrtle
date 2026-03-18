@@ -1,6 +1,7 @@
 import sys
 import re
 import subprocess
+import pandas as pd
 # Given matmul input dimensions M,N,K, this program queries myrtle for the search space 
 # specified by `suffix`` (top 10 in L1 usage by default)
 # then generates the scripts to compile, run, and extract results for that search space.
@@ -32,8 +33,8 @@ def main():
     #print("Usage example: python topTenFromMNK.py \"fileWInputSizes.txt\" \"outputFolderName\" all")
     inputSizes = sys.argv[1]
     outputFolder = sys.argv[2]
-    fullSuffix = "_c_analyzed-myrtle-sflt-sorted-L1"
-    top10Suffix = "_searchSpace_L1_top_10"
+    fullSuffix = "_c_ana"
+    top10Suffix = "_top10_c_L1"
     suffix = top10Suffix # by default
     if len(sys.argv) == 4:
         if sys.argv[3] == "all":
@@ -53,10 +54,10 @@ def main():
     for line in lines:
         M_str, N_str, K_str = expNameRegex.search(line).groups()
         kernelName=f"matmul_{M_str}x{N_str}x{K_str}_f64"
-        fullSS=f"./myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k_searchSpace{fullSuffix}.csv"
-        top10File=f"./myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k_searchSpace{top10Suffix}.csv"
-        requestedFile=f"./myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k_searchSpace{suffix}.csv"
-        basenames.append(f"{M_str}x{N_str}x{K_str}wm-n-k_searchSpace")
+        fullSS=f"./myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k_ss{fullSuffix}.csv"
+        top10File=f"./myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k{top10Suffix}.csv"
+        requestedFile=f"./myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k{suffix}.csv"
+        basenames.append(f"{M_str}x{N_str}x{K_str}wm-n-k")
         kernelNames.append(kernelName)
         outputFiles.append(fullSS)
         topTenFiles.append(top10File)
@@ -65,10 +66,14 @@ def main():
         f = open(top10File, "w")
         subprocess.call(['head', fullSS, "-n", "11"],stdout=f)
         f.close()
+        #FakeNN JSON Name,M,N,K,m,n,k,JSON Name,Space Needed in L1
+        fewerCols = pd.read_csv(top10File)
+        fewerCols = fewerCols[["FakeNN JSON Name","M","N","K","m","n","k","JSON Name","Space Needed in L1"]]
+        fewerCols.to_csv(top10File)
 
     for (a,b) in zip(kernelNames,outputFiles):
         print(f'Generated SS for {a}')
-        print(f'Output file is {b}')
+        print(f'Myrtle Output file is {b}')
     
     subprocess.call(['cp']+ requestedFiles+[ "-t", f"./{outputFolder}"])
     
@@ -85,13 +90,22 @@ def main():
 
     for basename in basenames:
         theTop = f"./{outputFolder}/{basename}{suffix}.csv"
+        print("Top 10 output file is ...")
         subprocess.call(['ls', theTop])
         ss = theTop
+        # create compile script
         print(f"bash many_gemms.sh {ss} compile no no no > ./{outputFolder}/compile-{basename}.txt;",file=compileScript)
+    
+        # create run script        
         print(f"bash many_gemms.sh {ss} check run no no > ./{outputFolder}/run-{basename}.txt;",file=runScript)
+     
+        # create check script
         print(f"bash many_gemms.sh {ss} check no no no;",file=checkScript)
+      
+        # create extract script
         print(f"bash many_gemms.sh {ss} no no no extract;",file=extractScript)
-        print(f"python combineKernelTimesIntoSingleCSV.py {ss};",file=extractScript)
+        print(f"python combineKernelTimesIntoSingleCSV.py {ss} $gemmDir;",file=extractScript)
+       
     
     for s in scripts:
         print(f"cd {outputFolder};", file=s)

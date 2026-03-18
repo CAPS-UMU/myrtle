@@ -344,18 +344,18 @@ class TSG_C_Padding(TSG_C):
         )
 
     def exportOptionsToCSV(self, dispatchNickName, df):
-        filename = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_searchSpace_padded_c.csv"
+        filename = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_pad.csv"
         df.to_csv(
             filename,
             index=False,
         )
-        filenameSorted = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_searchSpace_padded_c_sorted_L1.csv"
+        filenameSorted = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_pad_ord_L1.csv"
         sortedByL1=df.sort_values("Space Needed in L1", ascending=False)
         sortedByL1.to_csv(filenameSorted,index=False)
-        filenameNoK = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_searchSpace_padded_c_no_K.csv"
+        filenameNoK = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_padded_c_no_K.csv"
         noK = df[df["Kpad"] == 0 ]
         noK.to_csv(filenameNoK,index=False)
-        filenameOnlyK = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_searchSpace_padded_c_only_K.csv"
+        filenameOnlyK = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_padded_c_only_K.csv"
         noK = df[df["padding"] == "00K" ]
         noK.to_csv(filenameOnlyK,index=False)
         print("\t", end="")

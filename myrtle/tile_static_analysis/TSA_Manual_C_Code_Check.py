@@ -167,7 +167,7 @@ class TSA_C_Check(TSA_C):
     #     return info
 
     def exportAnalysisToCSV(self, dispatchNickName, df):
-        filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_searchSpace_c_analyzed.csv"
+        filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_ana.csv"
         df.to_csv(
             filename,
             index=False,

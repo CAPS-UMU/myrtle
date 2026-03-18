@@ -292,36 +292,8 @@ class TSG_Quidditch(TileSizeGenerator):
         ]
         return columns
 
-    def convertOptionsToDF(self, dispatchNickName, options):
-        flat = list(map(lambda tup: self.flattenThenAnnotateMore(tup), options))
-        cols = self.annotationColumnNames() + ["M", "N", "K"]
-        df = pd.DataFrame(flat, columns=cols)
-        # add logistical info to data frame
-        df["FakeNN JSON Name"] = df.apply(
-            lambda y: f'{y["M"]}x{y["N"]}x{y["K"]}w{y["m Dim"]}-{y["Row Dim"]}-{y["Reduction Dim"]}',
-            axis=1,
-        )
-        df["m"] = df.apply(lambda y: y["m Dim"], axis=1)
-        df["n"] = df.apply(lambda y: y["Row Dim"], axis=1)
-        df["k"] = df.apply(lambda y: y["Reduction Dim"], axis=1)
-        preferred_front_order = [
-            "FakeNN JSON Name",
-            "M",
-            "N",
-            "K",
-            "m",
-            "n",
-            "k",
-            "JSON Name",
-        ]
-        pfoSet = set(preferred_front_order)
-        wofSet = set(set(df.columns).difference(pfoSet))
-        preferred_order = preferred_front_order + list(wofSet)
-        df = df[preferred_order]
-        return df
-
     def exportOptionsToCSV(self, dispatchNickName, df):
-        filename = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_searchSpace_q.csv"
+        filename = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_q_gen.csv"
         df.to_csv(
             filename,
             index=False,

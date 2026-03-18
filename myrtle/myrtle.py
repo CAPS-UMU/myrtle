@@ -59,14 +59,14 @@ def main():
     analyzedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
 
     # if using manual C backend, consider padding and generate analyzed search space for it.
-    if not quidditch:
-        gen = TSG_C_Padding(jen)
-        paddedOptions = gen.validOptions(debug=False)
-        paddedOptions_as_df = gen.convertOptionsToDF(dispatchNickName, paddedOptions)
-        paddedSearchSpaceCSVName = gen.exportOptionsToCSV(dispatchNickName, paddedOptions_as_df)
-        ann = TSA_C_Padding(ann)
-        analyzed = ann.analyze_options(paddedOptions_as_df)
-        analyzedPaddedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
+    # if not quidditch:
+    #     gen = TSG_C_Padding(jen)
+    #     paddedOptions = gen.validOptions(debug=False)
+    #     paddedOptions_as_df = gen.convertOptionsToDF(dispatchNickName, paddedOptions)
+    #     paddedSearchSpaceCSVName = gen.exportOptionsToCSV(dispatchNickName, paddedOptions_as_df)
+    #     ann = TSA_C_Padding(ann)
+    #     analyzed = ann.analyze_options(paddedOptions_as_df)
+    #     analyzedPaddedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
 
     # select best tiling scheme using mode        
     m,n,k,dualBuffer = tss.tileSelection(analyzedSearchSpaceCSVName,sys.argv[2])   

@@ -77,15 +77,15 @@ def tileSelection(csvFile, mode):
     print("\t",end='')
     print(f'TSS: about to read in file {csvFile}')
     df = pd.read_csv(csvFile)
-    basename = csvFile[:-(len(".csv"))]
-   # myLoc=os.path.abspath(__file__)[:-(len("myrtle.py"))]  
+    basename = csvFile[:-(len("_ana.csv"))] 
+    csvFileRanked = f"{basename}_sel_{mode}.csv"
     if mode == "svrcyc":
         file = open(f'{pathlib.Path(__file__).parent.resolve()}/dispatch-8-svr.pickle', 'rb')
         svr=pickle.load(file)
         df["Predicted Kernel Time"] = df.apply(lambda y: svr.predict([y[["Microkernel Count","Regular Loads","Reused Streaming Loads","Space Needed in L1","Row Dim","Reduction Dim"]]])[0], axis=1)
         ranked = df.sort_values("Predicted Kernel Time", ascending=True)
         df = ranked
-        df.to_csv(f"{basename}-myrtle-{mode}-ranking.csv",index=False)
+        df.to_csv(csvFileRanked,index=False)
     else: 
         if mode == "scyc":
             linearApproxFilePath = f'{pathlib.Path(__file__).parent.resolve()}/linesOfBestFit.pickle'
@@ -97,9 +97,8 @@ def tileSelection(csvFile, mode):
             df["Kernel Time Estimate"] = df.apply(lambda x: get_simple_cycle_estimate(lines,x["Little N Prime"], x["Little K"],x["UnrollAndJam Loop Iters"],x["SSR Config Count"]), axis=1)
             ranked = df.sort_values("Kernel Time Estimate", ascending=True)
             df = ranked
-            df.to_csv(f"{basename}-myrtle-{mode}-ranking.csv",index=False)
+            df.to_csv(csvFileRanked,index=False)
         else:
-            myrtleRank = df
             stages=df
             stages["stage"]=0
             # minimize SSR configs performed
@@ -112,36 +111,16 @@ def tileSelection(csvFile, mode):
             filtered = labelThenTakeNBiggestX(filtered,"Space Needed in L1", 2, stages, "stage", 2) 
             filtered = labelThenTakeNSmallestX(filtered,"Regular Loads", len(filtered), stages, "stage", 3)
             print("\t",end='')
-            csvFileRanked = f"{basename}-myrtle-{mode}-ranking.csv"
             print(f'TSS: wrote ranking to file {csvFileRanked}')
-            stages.to_csv(f"{basename}-myrtle-{mode}-ranking.csv",index=False)
-            # print(filtered[["JSON Name","stage","Regular Loads"]])
-            # print(stages[["JSON Name","stage","Regular Loads"]])
-            
-            top = stages[stages["stage"] >= 2]            
-            #print(top[["JSON Name","stage","Regular Loads"]])
-            top = top.sort_values("Regular Loads", ascending=True)
-            #print(top[["JSON Name","stage","Regular Loads","Space Needed in L1"]])
-            top = top.iloc[0:5]
-            top.to_csv(f"{basename}-myrtle-{mode}-ranking-top5.csv",index=False)
-            
+            stages.to_csv(csvFileRanked,index=False)
+
+            # save supplementary search space copies, sorted by a particular metric
+            topSSRConfigs = df.sort_values("SSR Config Count", ascending=True)            
+            topSSRConfigs.to_csv(f"{basename}_ord_ssrConfigs.csv",index=False)            
             # greedy baseline
             sortedByL1=df.sort_values("Space Needed in L1", ascending=False)
-            sortedByL1.to_csv(f"{basename}-myrtle-{mode}-sorted-L1.csv",index=False)
-            topL1 = df.sort_values("Space Needed in L1", ascending=False).iloc[0:1]
-           # print(topL1[["JSON Name","Space Needed in L1","tileB_cc"]])
-            #print(df.sort_values("Space Needed in L1", ascending=False)[["JSON Name","Space Needed in L1","tileB_cc"]])
-            topL1.to_csv(f"{basename}-myrtle-{mode}-ranking-topL1.csv",index=False)
-            # topBTile = df.sort_values("tileB_cc", ascending=False)
-            # print(topBTile[["JSON Name","Space Needed in L1","tileB_cc"]])
-            # print ("NEW FILTERING ALGO!")
-            # print(df)
-            myrtleRank["myrtle"]=400
-            filtered = labelThenTakeNSmallestX(df,"L3 Loads", 2, myrtleRank, "myrtle", 300) 
-            filtered = labelThenTakeNSmallestX(filtered,"SSR Config Count", 3, myrtleRank, "myrtle", 200)           
-            # filtered = labelThenTakeNBiggestX(filtered,"Space Needed in L1", 2, myrtleRank, "stage", 2) 
-            filtered = labelThenTakeNSmallestX(filtered,"Regular Loads", len(filtered), myrtleRank, "myrtle", -1)
-            myrtleRank.to_csv(f"{basename}-myrtle-{mode}-new-ranking.csv",index=False)
+            sortedByL1.to_csv(f"{basename}_ord_L1.csv",index=False)
+        
             
            
            
