@@ -34,11 +34,14 @@ def main():
     inputSizes = sys.argv[1]
     outputFolder = sys.argv[2]
     fullSuffix = "_c_ana"
+    sortedL1Suffix = "_c_ord_L1"
     top10Suffix = "_top10_c_L1"
     suffix = top10Suffix # by default
     if len(sys.argv) == 4:
         if sys.argv[3] == "all":
             suffix = fullSuffix
+        elif sys.argv[3] == "pad":
+            suffix = "_ss_c_pad_ana"
         else:
             suffix = sys.argv[3]
             
@@ -55,21 +58,22 @@ def main():
         M_str, N_str, K_str = expNameRegex.search(line).groups()
         kernelName=f"matmul_{M_str}x{N_str}x{K_str}_f64"
         fullSS=f"./myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k_ss{fullSuffix}.csv"
+        sortedL1SS=f"./myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k_ss{sortedL1Suffix}.csv"
         top10File=f"./myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k{top10Suffix}.csv"
         requestedFile=f"./myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k{suffix}.csv"
         basenames.append(f"{M_str}x{N_str}x{K_str}wm-n-k")
         kernelNames.append(kernelName)
         outputFiles.append(fullSS)
-        topTenFiles.append(top10File)
+       # topTenFiles.append(top10File)
         requestedFiles.append(requestedFile)
         subprocess.call(['python3', 'myrtle/myrtle.py', kernelName, "sflt", "placeholder.json"])
         f = open(top10File, "w")
-        subprocess.call(['head', fullSS, "-n", "11"],stdout=f)
+        subprocess.call(['head', sortedL1SS, "-n", "11"],stdout=f)
         f.close()
         #FakeNN JSON Name,M,N,K,m,n,k,JSON Name,Space Needed in L1
-        fewerCols = pd.read_csv(top10File)
-        fewerCols = fewerCols[["FakeNN JSON Name","M","N","K","m","n","k","JSON Name","Space Needed in L1"]]
-        fewerCols.to_csv(top10File)
+        # fewerCols = pd.read_csv(top10File)
+        # fewerCols = fewerCols[["FakeNN JSON Name","M","N","K","m","n","k","JSON Name","Space Needed in L1"]]
+        # fewerCols.to_csv(f"./{outputFolder}/{M_str}x{N_str}x{K_str}wm-n-k{top10Suffix}.csv",index=False)
 
     for (a,b) in zip(kernelNames,outputFiles):
         print(f'Generated SS for {a}')
@@ -90,7 +94,7 @@ def main():
 
     for basename in basenames:
         theTop = f"./{outputFolder}/{basename}{suffix}.csv"
-        print("Top 10 output file is ...")
+        print("Search Space to run with scripts is ...")
         subprocess.call(['ls', theTop])
         ss = theTop
         # create compile script

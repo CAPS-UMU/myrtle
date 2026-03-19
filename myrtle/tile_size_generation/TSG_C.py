@@ -116,12 +116,12 @@ class TSG_C(TSG_Quidditch):
         # filter out tile sizes that do not fit within 8 banks
         eb = 8 * self.bankSizeBytes # eb stands for "eight banks"
         valid_options_8_banks = list(
-            filter(lambda d: max(d["tileA"],d["tileB"],d["tileC"]) <= eb, annotated_options)
+            filter(lambda d: max(d["tileA"],d["tileB"],d["tileC"]) <= eb, valid_options_l1)
         )
 
         # mark each of these tiling schemes with padding info
         valid_options_8_banks_no_pad = list(
-            map(lambda d: self.annnotatePaddingStatus(d), annotated_options)
+            map(lambda d: self.annnotatePaddingStatus(d), valid_options_8_banks)
         )
 
         if debug:

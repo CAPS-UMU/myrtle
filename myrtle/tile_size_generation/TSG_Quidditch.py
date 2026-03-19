@@ -564,7 +564,7 @@ class TSG_C(TSG_Quidditch):
 
     # export annotated options to CSV
     def exportOptionsToCSV(self, dispatchNickName, df):
-        filename = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_searchSpace_c.csv"
+        filename = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_gen.csv"
         df.to_csv(
             filename,
             index=False,

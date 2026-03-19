@@ -108,17 +108,17 @@ class TSG_C_Padding(TSG_C):
         # filter for m's, n's and k's that DO NOT divide evenly into M,N,K respectively
         little_m_pad = list(filter(lambda x: not self.dividesIntoM(x), little_m_options))
         if len(little_m_pad) < 1:  # prime M dimension
-            raise Exception(
+            print(
                 f"TSG: Cannot find a tile size that DOESN'T divide evenly into dimension M = {self.me.m}!"
             )
         little_n_pad = list(filter(lambda x: not self.dividesIntoN(x), little_n_options))
         if len(little_n_pad) < 1:  # prime N dimension
-            raise Exception(
+            print(
                 f"TSG: Cannot find a tile size that DOESN'T divide evenly into dimension N = {self.me.n}!"
             )
         little_k_pad = list(filter(lambda x: not self.dividesIntoK(x), little_k_options))
         if len(little_k_pad) < 1:  # prime K dimension
-            raise Exception(
+            print(
                 f"TSG: Cannot find a tile size that DOESN'T divide evenly into dimension K = {self.me.k}!"
             )
         # enumerate all padding possibilities
@@ -211,16 +211,17 @@ class TSG_C_Padding(TSG_C):
             kPadType = "K"
             kPad = k - kRem
         paddingType = f"{mPadType}{nPadType}{kPadType}"
-        d.update({"padding": paddingType, "Mpad": mPad,"Npad": nPad,"Kpad": kPad, "FakeNN JSON Name":f"{self.me.m+mPad}x{self.me.n+nPad}x{self.me.k+kPad}w{m}-{n}-{k}"})
+        #naive padding: "FakeNN JSON Name":f"{self.me.m+mPad}x{self.me.n+nPad}x{self.me.k+kPad}w{m}-{n}-{k}"
+        d.update({"padding": paddingType, "Mpad": mPad,"Npad": nPad,"Kpad": kPad,"FakeNN JSON Name": f"{self.me.m}x{self.me.n}x{self.me.k}w{m}-{n}-{k}"})
         return d
     
     # flatten dictionary + add more information
     def convertAnnotationToFlatDict(self, d):
         tup = d["id"]
-        fakeName = d["FakeNN JSON Name"]
+       # fakeName = d["FakeNN JSON Name"]
         return {
             "JSON Name": f"{tup[0]}-{tup[1]}-{tup[2]}",
-            "FakeNN JSON Name":fakeName,
+            "FakeNN JSON Name":d["FakeNN JSON Name"],
             "m Dim":tup[0],
             "Row Dim":tup[1],
             "Reduction Dim":tup[2],
@@ -243,7 +244,7 @@ class TSG_C_Padding(TSG_C):
             "Mpad":d["Mpad"],
             "Npad":d["Npad"],
             "Kpad":d["Kpad"],
-            "Original Name" : f"{self.me.m}x{self.me.n}x{self.me.k}w{tup[0]}-{tup[1]}-{tup[2]}"
+           # "Original Name" : f"{self.me.m}x{self.me.n}x{self.me.k}w{tup[0]}-{tup[1]}-{tup[2]}"
         }
 
     # regular matmul: A : MxK, B : KxN, C : MxN
@@ -344,20 +345,20 @@ class TSG_C_Padding(TSG_C):
         )
 
     def exportOptionsToCSV(self, dispatchNickName, df):
-        filename = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_pad.csv"
+        filename = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_pad_gen.csv"
         df.to_csv(
             filename,
             index=False,
         )
-        filenameSorted = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_pad_ord_L1.csv"
-        sortedByL1=df.sort_values("Space Needed in L1", ascending=False)
-        sortedByL1.to_csv(filenameSorted,index=False)
-        filenameNoK = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_padded_c_no_K.csv"
-        noK = df[df["Kpad"] == 0 ]
-        noK.to_csv(filenameNoK,index=False)
-        filenameOnlyK = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_padded_c_only_K.csv"
-        noK = df[df["padding"] == "00K" ]
-        noK.to_csv(filenameOnlyK,index=False)
+        # filenameSorted = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_pad_ord_L1.csv"
+        # sortedByL1=df.sort_values("Space Needed in L1", ascending=False)
+        # sortedByL1.to_csv(filenameSorted,index=False)
+        # filenameNoK = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_padded_c_no_K.csv"
+        # noK = df[df["Kpad"] == 0 ]
+        # noK.to_csv(filenameNoK,index=False)
+        # filenameOnlyK = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_padded_c_only_K.csv"
+        # noK = df[df["padding"] == "00K" ]
+        # noK.to_csv(filenameOnlyK,index=False)
         print("\t", end="")
         print(f"TSG: wrote padded search space to {filename}")
         return filename
