@@ -145,7 +145,6 @@ class TSG_C_Padding(TSG_C):
     def pruneForSizeConstraints(self, options_as_triples, debug = False):
         options_as_dicts = list(map(lambda tup: {"id":tup}, options_as_triples))
 
-        # mark that none of these tiling schemes require padding
         annotated_options = list(
             map(lambda d: self.annnotatePaddingStatus(d), options_as_dicts)
         )
