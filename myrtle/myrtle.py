@@ -5,7 +5,7 @@ from tile_size_generation.TSG_C import TSG_C
 from tile_size_generation.TSG_C_Padding import TSG_C_Padding
 from tile_static_analysis.TSA_Quidditch import TSA_Quidditch
 # from tile_static_analysis.TSA_Manual_C_Code_deprecated import TSA_C
-from tile_static_analysis.TSA_Manual_C_Code_Check import TSA_C_Check
+from tile_static_analysis.TSA_Manual_C_Code import TSA_C
 from tile_static_analysis.TSA_C_Padding import TSA_C_Padding
 import tile_sel.tile_selection as tss
 import re
@@ -54,7 +54,7 @@ def main():
         searchSpaceCSVName = jen.exportOptionsToCSV(dispatchNickName, options_as_df)
     
     # analyze tiling options
-    ann=TSA_Quidditch() if quidditch else TSA_C_Check()
+    ann=TSA_Quidditch() if quidditch else TSA_C()
     analyzed = ann.analyze_options(options_as_df)
     analyzedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
 

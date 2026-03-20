@@ -1,11 +1,11 @@
 from tile_static_analysis.utils import roundUpToNearestMultipleOf, MatmulInputs, TileSizes, HardwareLoop, EnclosingSCFLoop, LoadCounts, sumLoadCounts, multByInt, givenLoopsCreateLoadCount, ComputeCoreTiles, LoadCounter, add
 import pandas as pd
 import pathlib
-from tile_static_analysis.TSA_Manual_C_Code_Check import TSA_C_Check
+from myrtle.tile_static_analysis.TSA_Manual_C_Code import TSA_C
 
 
 
-class TSA_C_Padding(TSA_C_Check):
+class TSA_C_Padding(TSA_C):
     def __init__(
         self,
         unrollAndJamFactor = 8,
