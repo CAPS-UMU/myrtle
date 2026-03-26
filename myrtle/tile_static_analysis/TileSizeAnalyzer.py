@@ -21,8 +21,4 @@ class TileSizeAnalyzer(ABC):
     @abstractmethod
     def unrollAndJamFactor(self):
         pass
-        
-    @abstractmethod
-    def unrollAndJamOuterLoops(self):
-        pass
 

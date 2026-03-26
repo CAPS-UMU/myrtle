@@ -45,9 +45,9 @@ class TSA_C(TSA_Quidditch):
         loweringInfo = self.getLoweringInfo(l1TileSizes,ccTileSizes)
         d.update(loweringInfo)
         # add L3 load counting
-        d["m_tiles"] = d["M"]/ d["m"]
-        d["n_tiles"] = d["N"]/ d["n"]
-        d["k_tiles"] = d["K"]/ d["k"]
+        d["m_tiles"] = d["M"]// d["m"]
+        d["n_tiles"] = d["N"]// d["n"]
+        d["k_tiles"] = d["K"]// d["k"]
         d["L3 Loads"] = (d["m_tiles"]*d["n_tiles"]*d["k_tiles"])*(d["m"]*d["k"]+d["k"]*d["n"]) + (d["m_tiles"]*d["n_tiles"])*(d["m"]*d["n"])
     
         return d
@@ -212,9 +212,9 @@ class TSA_C(TSA_Quidditch):
     def getStreamingLoadsPerClusterTile(self, cc: ComputeCoreTiles):
         regSizeLoadCounting =self.getStreamingLoadsPerCoreTile(cc.mPrime)
         remSizeLoadCounting =self.getStreamingLoadsPerCoreTile(cc.mHat)
-        #print(f"regular: {regSizeLoadCounting}")
+        # print(f"regular: {regSizeLoadCounting}")
         
-        # print(regSizeLoadCounting)
+        #print(regSizeLoadCounting)
         reg = regSizeLoadCounting.mapMult(cc.mPrime.m_count).mapMult(cc.mPrime.n_count).mapMult(cc.mPrime.k_count)
         rem = remSizeLoadCounting.mapMult(cc.mHat.m_count).mapMult(cc.mHat.n_count).mapMult(cc.mHat.k_count)
         # print(f"regular * m' * n * k = * {cc.mPrime.m_count} * {cc.mPrime.n_count} * {cc.mPrime.k_count}: {reg}")
@@ -252,7 +252,7 @@ class TSA_C(TSA_Quidditch):
             info["Total SSR Loads"]=allTiles.a_ssr + allTiles.b_ssr
             info["A Not Reused SSR Loads"]=allTiles.a_ssr - allTiles.a_ssr_reuse
             info["A SSR Reuse Loads"]=allTiles.a_ssr_reuse
-            info["A SSR Start Reuse Loads"]=int(allTiles.a_ssr_reuse / 7)
+            info["A SSR Start Reuse Loads"]=allTiles.a_ssr_reuse / 7
             info["B SSR Loads"]=allTiles.b_ssr
             info["Little K"]=cc.mPrime.k
             assert(allTiles.a_ssr_reuse % 7 == 0)
