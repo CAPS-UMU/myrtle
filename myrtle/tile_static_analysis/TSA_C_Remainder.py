@@ -1,16 +1,18 @@
-from tile_static_analysis.utils import roundUpToNearestMultipleOf, MatmulInputs, TileSizes, HardwareLoop, EnclosingSCFLoop, LoadCounts, sumLoadCounts, multByInt, givenLoopsCreateLoadCount, ComputeCoreTiles, LoadCounter, add
+from tile_static_analysis.utils import TilingScheme, MatmulInputs, TileSizes, HardwareLoop, EnclosingSCFLoop, LoadCounts, sumLoadCounts, multByInt, givenLoopsCreateLoadCount, ComputeCoreTiles, LoadCounter, add
 import pandas as pd
 import pathlib
-from myrtle.tile_static_analysis.TSA_Manual_C_Code import TSA_C
+# from tile_static_analysis.TSA_Manual_C_Code import TSA_C
+# from tile_static_analysis.TSA_Quidditch import TSA_Quidditch
+from tile_static_analysis.TileSizeAnalyzer import TileSizeAnalyzer
 
-
-
-class TSA_C_Padding(TSA_C):
+class TSA_C_Remainder(TileSizeAnalyzer):
     def __init__(
         self,
         unrollAndJamFactor = 8,
+        degreeOfParallelism = 8
     ):
         self.UaJF = unrollAndJamFactor
+        self.DoP = degreeOfParallelism
 
     def analyze_options(self, df):
         options_as_dicts = list(df.to_dict('records'))
@@ -20,11 +22,16 @@ class TSA_C_Padding(TSA_C):
         cols = analyzed[0].keys()
         # print(cols)
         df = pd.DataFrame(analyzed, columns=cols)  
-        # print(df)
+        #print(df)
         return df
 
     def analyze_option(self, d):
         # ['FakeNN JSON Name','M','N','K','m','n','k','JSON Name']
+        ts = TilingScheme(int(d["M"]),int(d["N"]),int(d["K"]),int(d["m"]),int(d["n"]),int(d["k"]),self.UaJF,self.DoP)
+        #print(ts.myClusterTiles().values())
+        for x in ts.myClusterTiles().values():
+            print(x)
+        print(self.computeTilingSchemeMetrics(ts))
         inputSizes = MatmulInputs(m=d["M"], n=d["N"], k=d["K"])
         m_num = int(d["M"] / d["m"])
         n_num = int(d["N"] / d["n"])
@@ -46,7 +53,6 @@ class TSA_C_Padding(TSA_C):
         d["n_tiles"] = d["N"]/ d["n"]
         d["k_tiles"] = d["K"]/ d["k"]
         d["L3 Loads"] = (d["m_tiles"]*d["n_tiles"]*d["k_tiles"])*(d["m"]*d["k"]+d["k"]*d["n"]) + (d["m_tiles"]*d["n_tiles"])*(d["m"]*d["n"])
-    
         return d
     
     """Given a tile with parallel dim of sz, what is the compute core's dim when there are 8 cores?"""
@@ -167,7 +173,7 @@ class TSA_C_Padding(TSA_C):
     #     return info
 
     def exportAnalysisToCSV(self, dispatchNickName, df):
-        filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_pad_ana.csv"
+        filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_rem_ana.csv"
         df.to_csv(
             filename,
             index=False,
@@ -223,6 +229,65 @@ class TSA_C_Padding(TSA_C):
         # reg = regSizeLoadCounting * cc.regularSize.m_count
         # rem = remSizeLoadCounting * cc.remainderSize.m_count
         # return LoadCounter(a_ssr=a_ssr_loads, b_ssr=b_ssr_loads, c_regular=c_regular_loads)
+    
+    def legacyMetrics(self,ts):
+        info = {}
+        clusterTiles = ts.myClusterTiles()
+        if (ts.M%ts.m == 0) and (ts.N % ts.n == 0) and (ts.K % ts.k == 0):
+            onlyKey = next(iter(clusterTiles))
+            tile = clusterTiles[onlyKey]
+            info["mPrime Little VecMat Runs"]=tile.cctls[0].m_prime_sz
+            info["mPrime UnrollAndJam Loop Iters"]=int(tile.n_sz / self.UaJF)
+            info["mPrime HW Loop Iters"]=tile.k_sz
+            info["mPrime HW Loop Body Size"]=self.UaJF
+            info["mPrime"]=tile.cctls[0].m_prime_sz
+            info["Little K"]=tile.k_sz
+            if len(tile.cctls) == 2:
+                info["mHat Little VecMat Runs"]=tile.cctls[1].m_prime_size
+                info["mHat UnrollAndJam Loop Iters"]=int(tile.n_sz / self.UaJF)
+                info["mHat HW Loop Iters"]=tile.k_sz
+                info["mHat HW Loop Body Size"]=self.UaJF
+                info["mHat"]=tile.cctls[1].m_prime_sz
+            else: # we assume the first cc tile is m', not m hat
+                info["mHat Little VecMat Runs"]=tile.cctls[0].m_prime_size+1
+                info["mHat UnrollAndJam Loop Iters"]=int(tile.n_sz / self.UaJF)
+                info["mHat HW Loop Iters"]=tile.k_sz
+                info["mHat HW Loop Body Size"]=self.UaJF
+                info["mHat"]=tile.cctls[0].m_prime_sz+1
+        else:
+            info["mPrime Little VecMat Runs"]=-1
+            info["mPrime UnrollAndJam Loop Iters"]=-1
+            info["mPrime HW Loop Iters"]=-1
+            info["mPrime HW Loop Body Size"]=-1
+            info["mPrime"]=-1
+            info["mHat Little VecMat Runs"]=-1
+            info["mHat UnrollAndJam Loop Iters"]=-1
+            info["mHat HW Loop Iters"]=-1
+            info["mHat HW Loop Body Size"]=-1
+            info["mHat"]=-1
+        return info
+    
+    # def computeClusterTileMetrics(self,ts):
+    #     info = {}
+    #     clusterTiles = ts.myClusterTiles()
+    #     for (key,val) clusterTiles.items():
+
+    #     return info
+
+    def computeTilingSchemeMetrics(self,ts):
+        cc_tile_count = ts.m_tiles * ts.n_tiles * ts.k_tiles * ts.m_prime_tiles
+        info ={
+                "SSR Config Count":cc_tile_count
+        }
+        info.update(self.legacyMetrics(ts))    
+        info["Regular Loads"]= 0
+        
+        # info["Total SSR Loads"]=allTiles.a_ssr + allTiles.b_ssr
+        # info["A Not Reused SSR Loads"]=allTiles.a_ssr - allTiles.a_ssr_reuse
+        # info["A SSR Reuse Loads"]=allTiles.a_ssr_reuse
+        # info["A SSR Start Reuse Loads"]=int(allTiles.a_ssr_reuse / 7)
+        # info["B SSR Loads"]=allTiles.b_ssr    
+        return info
 
     def getLoweringInfo(self, l1Tiles: TileSizes, cc : ComputeCoreTiles):
             #print(f"{l1Tiles.m_count} {l1Tiles.n_count} {l1Tiles.m_count} {8} {cc.mPrime.n_count} {cc.mPrime.k_count}")

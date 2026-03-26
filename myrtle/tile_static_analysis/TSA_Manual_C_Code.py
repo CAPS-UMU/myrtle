@@ -10,8 +10,10 @@ class TSA_C(TSA_Quidditch):
     def __init__(
         self,
         unrollAndJamFactor = 8,
+        degreeOfParallelism = 8
     ):
         self.UaJF = unrollAndJamFactor
+        self.DoP = degreeOfParallelism
 
     def analyze_options(self, df):
         options_as_dicts = list(df.to_dict('records'))
@@ -176,8 +178,10 @@ class TSA_C(TSA_Quidditch):
         print("\t",end='')
         print(
             
-            f"TSA: wrote analyzed search space to {filename}"
+            "TSA: wrote analyzed search space to"
         )
+        print("\t", end="")
+        print(f"     {filename}")
         return filename
 
     def getComputeCoreTileSizes(self, l1: TileSizes):

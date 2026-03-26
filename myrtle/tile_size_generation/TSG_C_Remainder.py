@@ -5,6 +5,7 @@ from itertools import product, chain
 from tile_static_analysis.utils import MatmulInputs, TileSizes, roundUpToNearestMultipleOf
 import pathlib
 from tile_size_generation.TSG_C import TSG_C
+from tile_size_generation.TileSizeGenerator import TileSizeGenerator
 
 # Manual C Code Tile Constraints
 # m, n, and k must all divide evenly into corresponding M,N,K input sizes
@@ -23,47 +24,56 @@ from tile_size_generation.TSG_C import TSG_C
 # m is the parallel dimension but does NOT need to be a multiple of 8
 # TCDM size in bytes: TCDM_HEAP_SIZE = 112 * 1024
 
-# class Shape:
-#     def __init__(self, shapename, **kwds):
-#         self.shapename = shapename
-#         super().__init__(**kwds)        
-
-# class ColoredShape(Shape):
-#     def __init__(self, color, **kwds):
-#         self.color = color
-#         super().__init__(**kwds)
-# def __init__(self, other):
-# cs = ColoredShape(color='red', shapename='circle')
-
-class TSG_C_Padding(TSG_C):
+class TSG_C_Remainder(TileSizeGenerator):
     def hello(self):
-        print("I am a tile size generator for the manual C backend, and I consider padding.")
-    def __init__(self, other):
-        self.me = other.me
-        self.l1MemoryBytes = other.l1MemoryBytes
-        self.kernelName = other.kernelName
-        self.bankSizeBytes = other.bankSizeBytes
-        self.dualBuff = other.dualBuff
+        print("I am a tile size generator for the manual C backend, and I consider remainder tiles.")
+    def __init__(
+        self,
+        M_dim,
+        N_dim,
+        K_dim,
+        dispatchName="",
+        l1MemoryBytes=100000,
+        bank_size=1024,
+        dualBuff=True,
+    ):
+        self.M=M_dim
+        self.N=N_dim
+        self.K=K_dim
+        self.l1MemoryBytes = l1MemoryBytes
+        self.kernelName = dispatchName
+        self.bankSizeBytes = bank_size
+        self.dualBuff = dualBuff
+
+    def dividesIntoM(self, num):
+        return self.M % num == 0
+
+    def dividesIntoN(self, num):
+        return self.N % num == 0
+
+    def dividesIntoK(self, num):
+        return self.K % num == 0   
+    
 #          
     def mDimOptions(self):
-        max = self.me.m
-        min = 8 if self.me.m >= 8 else 1
+        max = self.M
+        min = 8 if self.M >= 8 else 1
         exhaustive = list(range(min, max + 1))
-        if (self.me.m % 2) != 0:
-            print(f"WARNING: M = {self.me.m} is NOT divisible by 2!")
+        if (self.M % 2) != 0:
+            print(f"WARNING: M = {self.M} is NOT divisible by 2!")
         return exhaustive
     
     def kDimOptions(self):
-        max = self.me.k
-        min = 8 if self.me.k >= 8 else 1
+        max = self.K
+        min = 8 if self.K >= 8 else 1
         exhaustive = list(range(min, max + 1))
-        if (self.me.n % 2) != 0:
-            print(f"WARNING: K = {self.me.k} is NOT divisible by 2!")
+        if (self.N % 2) != 0:
+            print(f"WARNING: K = {self.K} is NOT divisible by 2!")
         return exhaustive
 
     def nDimOptions(self):
         hardware_loop_body_options = [8]  # extend to 8,5 later
-        max = self.me.n  # hides built-in max function
+        max = self.N  # hides built-in max function
         # ASSUMES hardware loop body options are listed LEAST to GREATEST
         if max < hardware_loop_body_options[0]:
             raise Exception("input dimension N is smaller than smallest unroll and jam factor")
@@ -75,8 +85,8 @@ class TSG_C_Padding(TSG_C):
         # first convert to set to remove duplicates, then convert to list
         exhaustive = list(set(chain.from_iterable(multiples)))
         # print(exhaustive) # debugging only
-        if (self.me.n % 2) != 0:
-            print(f"WARNING: N = {self.me.n} is NOT divisible by 2!")
+        if (self.N % 2) != 0:
+            print(f"WARNING: N = {self.N} is NOT divisible by 2!")
         return exhaustive
 
     def validOptions(self, debug=False):
@@ -90,38 +100,38 @@ class TSG_C_Padding(TSG_C):
         m_options = little_m_no_pad
         if len(little_m_no_pad) < 1:  # prime M dimension
             raise Exception(
-                f"TSG: Cannot find a tile size that divides evenly into dimension M = {self.me.m}!"
+                f"TSG: Cannot find a tile size that divides evenly into dimension M = {self.M}!"
             )
         little_n_no_pad = list(filter(lambda x: self.dividesIntoN(x), little_n_options))
         n_options = little_n_no_pad
         if len(little_n_no_pad) < 1:  # prime N dimension
             raise Exception(
-                f"TSG: Cannot find a tile size that divides evenly into dimension N = {self.me.n}!"
+                f"TSG: Cannot find a tile size that divides evenly into dimension N = {self.N}!"
             )
         little_k_no_pad = list(filter(lambda x: self.dividesIntoK(x), little_k_options))
         k_options = little_k_no_pad
         if len(little_k_no_pad) < 1:  # prime K dimension
             raise Exception(
-                f"TSG: Cannot find a tile size that divides evenly into dimension K = {self.me.k}!"
+                f"TSG: Cannot find a tile size that divides evenly into dimension K = {self.K}!"
             )
         
         # filter for m's, n's and k's that DO NOT divide evenly into M,N,K respectively
         little_m_pad = list(filter(lambda x: not self.dividesIntoM(x), little_m_options))
         if len(little_m_pad) < 1:  # prime M dimension
             print(
-                f"TSG: Cannot find a tile size that DOESN'T divide evenly into dimension M = {self.me.m}!"
+                f"TSG: Cannot find a tile size that DOESN'T divide evenly into dimension M = {self.M}!"
             )
         little_n_pad = list(filter(lambda x: not self.dividesIntoN(x), little_n_options))
         if len(little_n_pad) < 1:  # prime N dimension
             print(
-                f"TSG: Cannot find a tile size that DOESN'T divide evenly into dimension N = {self.me.n}!"
+                f"TSG: Cannot find a tile size that DOESN'T divide evenly into dimension N = {self.N}!"
             )
         little_k_pad = list(filter(lambda x: not self.dividesIntoK(x), little_k_options))
         if len(little_k_pad) < 1:  # prime K dimension
             print(
-                f"TSG: Cannot find a tile size that DOESN'T divide evenly into dimension K = {self.me.k}!"
+                f"TSG: Cannot find a tile size that DOESN'T divide evenly into dimension K = {self.K}!"
             )
-        # enumerate all padding possibilities
+        # enumerate all remainder tile possibilities
         mnk = list(product(little_m_pad, little_n_pad, little_k_pad))     # M, N, K :)
         only_m = list(product(little_m_pad, n_options, k_options))        # only M
         only_mn = list(product(little_m_pad, little_n_pad, k_options))    # only M, N
@@ -129,6 +139,7 @@ class TSG_C_Padding(TSG_C):
         only_n = list(product(m_options, little_n_pad, k_options))        # only N
         only_nk = list(product(m_options, little_n_pad, little_k_pad))    # only N, K
         only_k = list(product(m_options, n_options, little_k_pad))        # only K
+        
         # remove duplicates
         options = set(mnk)
         options.update(only_m)
@@ -146,7 +157,7 @@ class TSG_C_Padding(TSG_C):
         options_as_dicts = list(map(lambda tup: {"id":tup}, options_as_triples))
 
         annotated_options = list(
-            map(lambda d: self.annnotatePaddingStatus(d), options_as_dicts)
+            map(lambda d: self.annnotateRemainderTileStatus(d), options_as_dicts)
         )
 
         annotated_options = list(
@@ -181,13 +192,13 @@ class TSG_C_Padding(TSG_C):
             raise Exception("Cannot find a valid tiling scheme!")
         return valid_options_8_banks
 
-    def annnotatePaddingStatus(self, d):
+    def annnotateRemainderTileStatus(self, d):
         m = d["id"][0]
         n = d["id"][1]
         k = d["id"][2]
-        mRem = self.me.m % m
-        nRem = self.me.n % n
-        kRem = self.me.k % k
+        mRem = self.M % m
+        nRem = self.N % n
+        kRem = self.K % k
         # padding in M dim?
         if mRem == 0:
             mPadType = 0
@@ -202,7 +213,7 @@ class TSG_C_Padding(TSG_C):
         else:
             nPadType = "N"
             nPad = n - nRem
-            # padding in K dim?
+        # padding in K dim?
         if kRem == 0:
             kPadType = "0"
             kPad = 0
@@ -210,23 +221,21 @@ class TSG_C_Padding(TSG_C):
             kPadType = "K"
             kPad = k - kRem
         paddingType = f"{mPadType}{nPadType}{kPadType}"
-        #naive padding: "FakeNN JSON Name":f"{self.me.m+mPad}x{self.me.n+nPad}x{self.me.k+kPad}w{m}-{n}-{k}"
-        d.update({"padding": paddingType, "Mpad": mPad,"Npad": nPad,"Kpad": kPad,"FakeNN JSON Name": f"{self.me.m}x{self.me.n}x{self.me.k}w{m}-{n}-{k}"})
+        d.update({"remainderTiles": paddingType, "remainderM": mPad,"remainderN": nPad,"remainderK": kPad,"FakeNN JSON Name": f"{self.M}x{self.N}x{self.K}w{m}-{n}-{k}"})
         return d
     
     # flatten dictionary + add more information
     def convertAnnotationToFlatDict(self, d):
         tup = d["id"]
-       # fakeName = d["FakeNN JSON Name"]
         return {
             "JSON Name": f"{tup[0]}-{tup[1]}-{tup[2]}",
             "FakeNN JSON Name":d["FakeNN JSON Name"],
             "m Dim":tup[0],
             "Row Dim":tup[1],
             "Reduction Dim":tup[2],
-            "M":self.me.m,
-            "N":self.me.n,
-            "K":self.me.k,
+            "M":self.M,
+            "N":self.N,
+            "K":self.K,
             "m":tup[0],
             "n":tup[1],
             "k":tup[2],
@@ -239,11 +248,10 @@ class TSG_C_Padding(TSG_C):
             "tileA_cc": d["tileA_cc"],
             "tileB_cc": d["tileB_cc"],
             "tileC_cc": d["tileC_cc"],
-            "padding" : d["padding"],
-            "Mpad":d["Mpad"],
-            "Npad":d["Npad"],
-            "Kpad":d["Kpad"],
-           # "Original Name" : f"{self.me.m}x{self.me.n}x{self.me.k}w{tup[0]}-{tup[1]}-{tup[2]}"
+            "remainderTiles" : d["remainderTiles"],
+            "remainderM":d["remainderM"],
+            "remainderN":d["remainderN"],
+            "remainderK":d["remainderK"],
         }
 
     # regular matmul: A : MxK, B : KxN, C : MxN
@@ -266,7 +274,7 @@ class TSG_C_Padding(TSG_C):
 
         if debug:
             print("\n")
-            print(f"Regular Matmul {self.me.m}-{self.me.n}-{self.me.k}:")
+            print(f"Regular Matmul {self.M}-{self.N}-{self.K}:")
             print(f"Tiling Scheme {m}-{n}-{k}:")
             print(f"Allocate A tile: {m}x{k}")
             if self.dualBuff:
@@ -277,8 +285,6 @@ class TSG_C_Padding(TSG_C):
             print(f"Allocate C tile: {m}x{n}")
             if self.dualBuff:
                 print(f"Allocate C2 tile: {m}x{n}")
-
-        # NO PADDING EVER
 
         total = 2 * (tileA + tileB + tileC) if self.dualBuff else tileA + tileB + tileC
 
@@ -316,23 +322,16 @@ class TSG_C_Padding(TSG_C):
         tileSpace, weightMatTileSpace, totalUsage, tileA, tileB, tileC, tileA_cc, tileB_cc, tileC_cc = self.computeL1Usage(
             d
         )
-        return {
-            "id": d["id"],
-            "Space Needed in L1": totalUsage * 8,
-            "Weight Matrix Tile Size": weightMatTileSpace * 8,
-            "Space Remaining": self.l1MemoryBytes - totalUsage * 8,
-            "tileA": tileA * 8,
-            "tileB": tileB * 8,
-            "tileC": tileC * 8,
-            "tileA_cc": tileA_cc *8,
-            "tileB_cc": tileB_cc * 8,
-            "tileC_cc": tileC_cc * 8,
-            "padding" : d["padding"],
-            "Mpad":d["Mpad"],
-            "Npad":d["Npad"],
-            "Kpad":d["Kpad"],
-            "FakeNN JSON Name":d["FakeNN JSON Name"]
-        }
+        d["Space Needed in L1"]= totalUsage * 8
+        d["Weight Matrix Tile Size"]= weightMatTileSpace * 8
+        d["Space Remaining"]= self.l1MemoryBytes - totalUsage * 8
+        d["tileA"]= tileA * 8
+        d["tileB"]= tileB * 8
+        d["tileC"]= tileC * 8
+        d["tileA_cc"]= tileA_cc *8
+        d["tileB_cc"]= tileB_cc * 8
+        d["tileC_cc"]= tileC_cc * 8
+        return d
 
     # convert dictionary to simpler, more readable, annotated triple
     def dictToTuple(self, d):
@@ -343,8 +342,28 @@ class TSG_C_Padding(TSG_C):
             d["Space Remaining"]
         )
 
+    def convertOptionsToDF(self, dispatchNickName, options):
+        flat = list(map(lambda ann: self.convertAnnotationToFlatDict(ann).values(), options))
+        cols = self.convertAnnotationToFlatDict(options[0]).keys()
+        df = pd.DataFrame(flat, columns=cols)        
+        preferred_front_order = [
+            "FakeNN JSON Name",
+            "M",
+            "N",
+            "K",
+            "m",
+            "n",
+            "k",
+            "JSON Name",
+        ]
+        pfoSet = set(preferred_front_order)
+        wofSet = set(set(df.columns).difference(pfoSet))
+        preferred_order = preferred_front_order + list(wofSet)
+        df = df[preferred_order]
+        return df
+
     def exportOptionsToCSV(self, dispatchNickName, df):
-        filename = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_pad_gen.csv"
+        filename = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_rem_gen.csv"
         df.to_csv(
             filename,
             index=False,
@@ -359,6 +378,8 @@ class TSG_C_Padding(TSG_C):
         # noK = df[df["padding"] == "00K" ]
         # noK.to_csv(filenameOnlyK,index=False)
         print("\t", end="")
-        print(f"TSG: wrote padded search space to {filename}")
+        print("TSG: wrote remainder-tile search space to")
+        print("\t", end="")
+        print(f"     {filename}")
         return filename
 

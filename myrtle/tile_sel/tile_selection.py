@@ -75,7 +75,9 @@ def get_simple_cycle_estimate(timeEstimateFuncs, row_dim, col_dim, outerLoopIter
 
 def tileSelection(csvFile, mode):
     print("\t",end='')
-    print(f'TSS: about to read in file {csvFile}')
+    print('TSS: about to read in file')
+    print("\t", end="")
+    print(f"     {csvFile}")
     df = pd.read_csv(csvFile)
     basename = csvFile[:-(len("_ana.csv"))] 
     csvFileRanked = f"{basename}_sel_{mode}.csv"
@@ -111,7 +113,9 @@ def tileSelection(csvFile, mode):
             filtered = labelThenTakeNBiggestX(filtered,"Space Needed in L1", 2, stages, "stage", 2) 
             filtered = labelThenTakeNSmallestX(filtered,"Regular Loads", len(filtered), stages, "stage", 3)
             print("\t",end='')
-            print(f'TSS: wrote ranking to file {csvFileRanked}')
+            print('TSS: wrote ranking to file')
+            print("\t", end="")
+            print(f"     {csvFileRanked}")
             stages.to_csv(csvFileRanked,index=False)
 
             # save supplementary search space copies, sorted by a particular metric

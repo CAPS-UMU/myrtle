@@ -303,5 +303,7 @@ class TSG_C(TSG_Quidditch):
             index=False,
         )
         print("\t", end="")
-        print(f"TSG: wrote search space to {filename}")
+        print("TSG: wrote search space to")
+        print("\t", end="")
+        print(f"     {filename}")
         return filename
