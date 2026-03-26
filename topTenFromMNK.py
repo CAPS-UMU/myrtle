@@ -29,6 +29,7 @@ def get_lines_from_file(file_name):
         return f"Error: The file '{file_name}' was not found."
     
 # python topTenFromMNK.py 128x128x128-naive-padding/inputSize.txt 128x128x128-naive-padding all 
+# python topTenFromMNK.py "512x512x512-no-redundant-stores/input.txt" 512x512x512-no-redundant-stores
 def main():
     #print("Usage example: python topTenFromMNK.py \"fileWInputSizes.txt\" \"outputFolderName\" all")
     inputSizes = sys.argv[1]

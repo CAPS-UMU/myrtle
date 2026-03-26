@@ -59,15 +59,15 @@ def main():
     analyzedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
 
     # if using manual C backend, consider Remainder and generate analyzed search space for it.
-    if not quidditch:
-        gen = TSG_C_Remainder(int(M),int(N),int(K),dispatchName=dispatchName,l1MemoryBytes = 112 * 1024, bank_size=1024, dualBuff=True)
-        paddedOptions = gen.validOptions(debug=False)
-        paddedOptions_as_df = gen.convertOptionsToDF(dispatchNickName, paddedOptions)
-        paddedSearchSpaceCSVName = gen.exportOptionsToCSV(dispatchNickName, paddedOptions_as_df)
-        ann = TSA_C_Remainder(ann.UaJF,ann.DoP)
-        # analyzed = ann.analyze_options(paddedOptions_as_df)
-        analyzed = ann.analyze_options(options_as_df)
-        analyzedPaddedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
+    # if not quidditch:
+    #     gen = TSG_C_Remainder(int(M),int(N),int(K),dispatchName=dispatchName,l1MemoryBytes = 112 * 1024, bank_size=1024, dualBuff=True)
+    #     paddedOptions = gen.validOptions(debug=False)
+    #     paddedOptions_as_df = gen.convertOptionsToDF(dispatchNickName, paddedOptions)
+    #     paddedSearchSpaceCSVName = gen.exportOptionsToCSV(dispatchNickName, paddedOptions_as_df)
+    #     ann = TSA_C_Remainder(ann.UaJF,ann.DoP)
+    #     # analyzed = ann.analyze_options(paddedOptions_as_df)
+    #     analyzed = ann.analyze_options(options_as_df)
+    #     analyzedPaddedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
 
     # select best tiling scheme using mode        
     m,n,k,dualBuffer = tss.tileSelection(analyzedSearchSpaceCSVName,sys.argv[2])   
