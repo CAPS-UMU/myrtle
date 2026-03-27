@@ -12,41 +12,45 @@ def generateInteractiveGraphs(df, title, titleOfWebpage):
             "JSON Name",
             x_col,
             y_col,
-            "SSRconfigsXregPerStream",
-            "L1UsageXregPerStream",
-            "CCL1FootprintXregPerStream",
             "SSR Config Count",
             "absoluteRank",
             "L3 Loads",
-            "k/nXregPerStream",
+            "HW Loops / SSR Loads",
             "mk/n",
-            "Hardware Loops",
             "L3 Loads Timed",
             "L1 Usage",
             "CC L1 Footprint",
             "tileC",
             "regPerStream",
+            "CC L1 / L1",
             "sumSSRsRegs",
             "k/n",
             "fmaddsPerCore",
+        ]
+        small_hover_data = [
+            "JSON Name",
+            x_col,
+            y_col,
+            "HW Loops / SSR Loads",
+            "L3 Loads"
         ]
 
         # specialized graphs
         special_figs = []
         x_col = "SSR Configs"
         y_col = "Kernel Time"        
-        special_figs.append(prunedScatter(df,x_col,y_col,"SSRconfigsXregPerStream",hover_data,""))
+        special_figs.append(prunedScatter(df,x_col,y_col,"HW Loops / SSR Loads",hover_data,""))
 
         # more experiments
         more_figs = []
         x_col = "SSR Configs"
         y_col = "Kernel Time"
-        more_figs.append(scatterWithColor(df,x_col,y_col,"regPerStream",hover_data,title))
+        more_figs.append(scatterWithColor(df,x_col,y_col,"CC L1 / L1",hover_data,title))
         
-        x_col = "sumSSRsRegs"
+        x_col = "SSR Configs"
         y_col = "Kernel Time"
         myTitle=f"{title} {x_col} vs {y_col}, special title"
-        more_figs.append(scatterWithColor(df,x_col,y_col,"SSR Config Count",hover_data,myTitle))
+        more_figs.append(scatterWithColor(df,x_col,y_col,"regPerStream",hover_data,myTitle))
 
         # export to HTML
         return saveFigsInHTML(special_figs,more_figs,titleOfWebpage)
@@ -124,11 +128,13 @@ def prunedScatter(df,x_col,y_col,color,hover_data,title):
      df_mod = df
      # df_mod["color"] = df_mod["k/n"]
      # print(df_mod["L3 Loads"].values)
-     top =  max(df_mod["L3 Loads"].values)
-     bot =  min(df_mod["L3 Loads"].values)
-     mid = (top - bot) / 2.0
-     prunePointL3 = bot + mid#2686976
-     prunePoint = sorted(df_mod["SSR Configs"].values)[1]
+     # top =  max(df_mod["L3 Loads"].values)
+     # bot =  min(df_mod["L3 Loads"].values)
+     # mid = (top - bot) / 2.0
+     #prunePointL3 = bot + mid#2686976
+     unique_ssr_configs = list(set(df_mod["SSR Configs"].values.tolist())) # remove duplicates
+     unique_ssr_configs.sort() # sort least to greateset
+     prunePoint = unique_ssr_configs[1] # prune to two smallest groups of ssr_configs
      fig14 = px.scatter(
           df_mod,
           x=x_col,
@@ -136,8 +142,8 @@ def prunedScatter(df,x_col,y_col,color,hover_data,title):
           color="SSRconfigsXregPerStream",#"regPerStream",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
           hover_data=hover_data,  # Show these columns on hover
           title=f"{title} {x_col} vs {y_col} with SSR Configs > {prunePoint} pruned away.",
-          # title=f"{title} {x_col} vs {y_col} with L3 Loads > {prunePointL3} pruned away.",
      )
      fig14.add_vline(x=prunePoint, line_width=2, line_dash="dash", line_color="green")
+     # turn the pruned points gray?
      return fig14
         

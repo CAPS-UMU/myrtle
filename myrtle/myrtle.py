@@ -48,7 +48,7 @@ def main():
         searchSpaceCSVName = jen.exportOptionsToCSV(dispatchNickName, options_as_df)
     
     # analyze tiling options
-    ann=TSA_Quidditch() if quidditch else TSA_C()
+    ann=TSA_Quidditch() if quidditch else TSA_C_Remainder(8,8)#TSA_C()
     analyzed = ann.analyze_options(options_as_df)
     analyzedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
 

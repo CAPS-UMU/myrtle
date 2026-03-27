@@ -44,7 +44,6 @@ def main():
         print("TODO: HANDLE PADDED, UNTIMED DATA")
     if divisorAnalyzed != "no":
         df_ann = pd.read_csv(divisorAnalyzed)
-        print(df_ann.keys())
         df_ann = ae.addExtras(df_ann)
 
     df_sorted = df.sort_values(by="Kernel Time", ascending=True)

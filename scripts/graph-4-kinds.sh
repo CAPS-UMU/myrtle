@@ -4,13 +4,23 @@ REMAINDER_FLDR="../sensitivity-analysis/remainder-vs-divisor/rem"
 #/home/hoppip/myrtle/sensitivity-analysis/redundant-vs-no-redundant-stores/only-time/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
 #/home/hoppip/myrtle/sensitivity-analysis/redundant-vs-no-redundant-stores/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
 #/home/hoppip/myrtle/sensitivity-analysis/remainder-vs-divisor/div/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
-DIVISOR="$DIVISOR_FLDR/timed/128x128x128-padded-128x144x128wm-n-k.csv"
-HTML_NAME="out/thewebpage"
+DIVISOR="$DIVISOR_FLDR/timed/128x128x128wm-n-k_ss_c_no-redundant.csv"
+HTML_NAME="out/cube128"
 REMAINDER="no"
 REMAINDER_UT="no"
-WEBPAGE_TITLE="yodelayheeehoooooo~~~~~!!!"
+WEBPAGE_TITLE="128x128x128-No-Redundant-Stores"
 DIVISOR_UT="no"
-DIVISOR_ANALYSIS="$DIVISOR_FLDR/analysis/128x128x128-padded-128x144x128wm-n-k.csv"
+DIVISOR_ANALYSIS="$DIVISOR_FLDR/analysis/128x128x128wm-n-k_ss_c_ana.csv"
+
+python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS
+
+DIVISOR="$DIVISOR_FLDR/timed/512x512x512wm-n-k_distillbert-results.csv"
+HTML_NAME="out/cube512"
+REMAINDER="no"
+REMAINDER_UT="no"
+WEBPAGE_TITLE="512x512x512-Redundant-Stores"
+DIVISOR_UT="no"
+DIVISOR_ANALYSIS="$DIVISOR_FLDR/analysis/512x512x512wm-n-k_ss_c_ana.csv"
 
 python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS
 

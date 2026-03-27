@@ -28,7 +28,8 @@ def addExtras(df):
     df["CC L1 Footprint"] = df.apply(
         lambda y: (y["m"] * y["n"] + y["m"] * y["k"]) / 8.0 + y["k"] * y["n"], axis=1
     )
-    df["L1/CC L1"] = df["L1 Usage"] + df["CC L1 Footprint"]
+    df["CC L1 / L1"] = df["CC L1 Footprint"] / df["L1 Usage"] 
+    df["L1/CC L1"] = df["L1 Usage"] / df["CC L1 Footprint"]
     df["k/n"] = df["k"] / 1.0 / df["n"]#(df["tileA_cc"] / 1.0 / df["tileC_cc"])
     df["SSRconfigsXregPerStream"] = df["SSR Config Count"]*1.0 * df["regPerStream"]
     df["L1UsageXregPerStream"] = df["L1 Usage"]*1.0 * df["regPerStream"]
