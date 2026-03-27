@@ -1,0 +1,56 @@
+<html>
+
+<head>
+    <title>Myrtle Cost Model Results Summary</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background-color: #f7f7f7;
+        }
+
+        .dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            /* space between charts */
+        }
+
+        .plot-box {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+         .attention{
+            color: red;
+            text-decoration: underline;
+            text-align:center;
+        }
+        .center{
+          text-align:center;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 style="text-align:center;">Myrtle Cost Model Results</h1>
+    <div class="dashboard">
+        <h2>Summary</h2>
+        The cost model is WIP. Results are listed chronologicallym oldest to newest:
+        <ul>
+            <li><a href="results-beta.html">Using an SVR (CGO SRC 2026)</a></li>
+            <li><a href="results-beta-0.html">Adjusting Regular Load Count Metric</a></li>
+            <li><a href="padding-naive/results.html">Naive Padding</a></li>
+            <li><a href="redundant_vs_no_redundant_stores_report.html">Removing Redundant SPM Stores</a></li>
+            <li><a href="#">Remainder Tiles (TODO)</a></li>
+        </ul>
+        <a href="index.html">Back to Homepage</a>
+       
+    </div>
+</body>
+
+</html>

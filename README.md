@@ -49,8 +49,7 @@ python3 myrtle/myrtle.py "main\$async_dispatch_8_matmul_transpose_b_1x600x600_f6
 
 ## Work In Progress
 
-- [Analytical Model Summary](results.html)
-- [How Square is Square Enough?](How-Square-is-Square-Enough.md)
-
-- [Using an SVR to select the tile](notes-on-svr.md)
+- [Analytical Model Summary](web/results.html)
+- [How Square is Square Enough?](web/How-Square-is-Square-Enough.md)
+- [Using an SVR to select the tile](web/notes-on-svr.md)
 
