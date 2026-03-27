@@ -31,8 +31,7 @@ from sklearn.linear_model import LinearRegression
 import plotly.graph_objects as go
 from sklearn.svm import SVC, SVR
 import pickle
-import messy_graphs as mg
-import recentGraphs_2_23 as rg_2_23
+import scripts.recentGraphs_2_23 as rg_2_23
 
 # this script graphs X vs Y for the input CSV and exports an interactive version of the graph to an html file.
 # shows search space pruned for a certain X value

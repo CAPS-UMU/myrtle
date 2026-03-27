@@ -2,7 +2,7 @@ from mpl_toolkits.mplot3d.axes3d import Axes3D
 from mpl_toolkits.mplot3d import proj3d
 import sys
 import pandas as pd
-from graphing.graph_utils import graphEmAll, deriveMoreData2,addSVMPrediction,trimToTopX, Graph2D, Keys2D, CustomMarker, MySVM
+from graphing_deprecated.graph_utils import graphEmAll, deriveMoreData2, addSVMPrediction,trimToTopX, Graph2D, Keys2D, CustomMarker, MySVM
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from itertools import product, islice
@@ -12,95 +12,75 @@ from sklearn.inspection import DecisionBoundaryDisplay
 from sklearn.svm import SVC, SVR
 
 predictedKernelTime="Predicted Kernel Time"
-# from inside myrtle/myrtle, run python3 -m graphing.deliverableGraphs
-def segfault_debugging(mod):
-    print("ARRR, MATEY!")
-    disp8Path = "/home/emily/myrtle/myrtle/segfault_debugging/1x600x600wm-n-k-timed-debug-myrtle-svrcyc-ranking.csv"
-    disp7Path = "/home/emily/myrtle/myrtle/segfault_debugging/1x600x400wm-n-k-timed-debug-myrtle-svrcyc-ranking.csv"
-    dispatcheSizes = {
-        #0:(1,400,161),
-        1:(1,1200,400),
-        7:(1,600,400),
-        8:(1,600,600),
-       # 9:(1,161,600),
-    }
-    caseNos = [1] # We only graph case 1; no padding anywhere.
-    dispatchOrder = [7,8] # All dispatches will be graphed in the order 7, 8
-    title = lambda d, m, n, k: f"Dispatch {d}\nmatvec: <{m}x{k}>, <{n}x{k}> -> <{m}x{n}>"
-    titles = {}
-    for d in dispatchOrder:
-        m,n,k = dispatcheSizes[d]
-        titles[d] = title(d,m,n,k)
-    mode = mod
-    #load dispatch data
-    myPath = lambda d, m, c: disp7Path if d == 7 else disp8Path
+
+def loadDFsDispatchNo(dispatchNos, caseNos, inputSizes, paths, mode):
     dfs = {}
-    for d in dispatchOrder:
+    for d in dispatchNos:
         for c in caseNos:
-            m,n,k = dispatcheSizes[d]
-            print(f'reading from {myPath(d,mode,c)}')
-            pred = pd.read_csv(myPath(d,mode,c))
+            m,n,k = inputSizes[d]
+            myPath = paths[d]
+            print(f'reading from {myPath}')
+            df = pd.read_csv(myPath)
             if mode == "svrcyc":
                 # print(pred["JSON Name"])
                 # print(pred[pred.columns[len(pred.columns)-1]])
                 # print(pred["Predicted Kernel Time"])
-                print(pred)
-                print(f'svrcyc case: pred.columns[len(pred.columns)-1] is {pred.columns[len(pred.columns)-1]}')
-                predictedKernelTime=pred.columns[len(pred.columns)-1]
-            dfs[(d, c)] = pred
-    # derive more data about each dispatch
-    deriveMoreData2(dfs,dispatchOrder,caseNos,mode)
-    tup=dfs,dispatchOrder,caseNos,titles
-    graphActualVsPredictedTime(mode,f'graphing/out/ActualVsPredTime-2-dispatches-DEBUG-{mode}.png',tup)
-    print("YOHOHO")
-    
+                predictedKernelTime=df.columns[len(df.columns)-1]
+            dfs[(d,c)] = df
+    return dfs
+
 # python3 predictVsActual.py /home/hoppip/myrtle/accuracy /home/hoppip/myrtle/sensitivity-analysis/holistic-data
 def main():
+    #  #1x400x161wm-n-k-padding-k-graphing.csv
     args = sys.argv[1:]
     if len(args) != 2:
       print("USAGE: python3 deliverableGraphs.py  <predicted-actual> <predictionMode>")
-      print("\twhere <predicted-actual> is the directory containing csv files")
-      print("\tand <predictionMode> is either \"svrcyc\", \"ssyc\", or \"sflt\"")
+      print("\twhere ")
+      print("\t<predicted-actual> is the directory containing csv files")
+      print("\t<predictionMode> is either \"svrcyc\", \"ssyc\", or \"sflt\"")
       exit(1)
-    if args[0] == "SEGFAULT_DEBUGGING":
-        segfault_debugging(args[1])
-        return
-    print("HOLA")
-    dispatcheSizes = {
-        #0:(1,400,161),
+    # map dispatch number to m,n,k value
+    dispatchSizes = {
+        0:(1,400,161),
         1:(1,1200,400),
         7:(1,600,400),
         8:(1,600,600),
        # 9:(1,161,600),
     }
-    caseNos = [1] # We only graph case 1; no padding anywhere.
-    dispatchOrder = [1,7,8] # All dispatches will be graphed in the order 1, 7, 8
+    dispatchOrder = [0,1,7,8] # All dispatches will be graphed in the order 0, 1, 7, 8
+    caseNos=[1] #legacy value
     title = lambda d, m, n, k: f"Dispatch {d}\nmatvec: <{m}x{k}>, <{n}x{k}> -> <{m}x{n}>"
+    path = lambda m, n, k: f"{args[0]}/{m}x{n}x{k}wm-n-k-graphing.csv"
     titles = {}
+    paths = {}
     for d in dispatchOrder:
-        m,n,k = dispatcheSizes[d]
+        m,n,k = dispatchSizes[d]
         titles[d] = title(d,m,n,k)
-    print(titles)
+        paths[d] = path(m,n,k)
     mode = args[1]
     #load dispatch data
-    dfs = loadDFsDispatchCaseNo(args[0], dispatchOrder, caseNos, dispatcheSizes, mode)
+    dfs = loadDFsDispatchNo(dispatchOrder, caseNos, dispatchSizes, paths, mode)
     # derive more data about each dispatch
     deriveMoreData2(dfs,dispatchOrder,caseNos,mode)
-
-    # finally stary graphing
+    for d in dispatchOrder:
+        for c in caseNos:
+            dims= dispatchSizes[d]
+            path= paths[d]
+            title = titles[d]
+    # finally start graphing
     tup=dfs,dispatchOrder,caseNos,titles
     # generate graphs of actual dispatch times
     # graphActualTime('graphing/out/ActualTime-3-dispatches-rank-x-axis.png',"rank","Rank","fastest to slowest",tup)
     # graphActualTime('graphing/out/ActualTime-3-dispatches-L1-usage-x-axis.png',"Space Needed in L1","L1 Usage","bytes",tup)
     # graphActualTime('graphing/out/ActualTime-3-dispatches-micro-runs-x-axis.png',"Microkernel Count","Microkernel Runs","microkernel count",tup)
     # graphActualTime('graphing/out/ActualTime-3-dispatches-regular-loads-axis.png',"Regular Loads","Regular Loads","from scratchpad to register",tup)
-    graphActualTime('graphing/out/ActualTotalTime-3-dispatches-rank-x-axis.png',"rank","Rank","fastest to slowest",tup)
-    graphActualTime('graphing/out/ActualTotalTime-3-dispatches-L1-usage-x-axis.png',"Space Needed in L1","L1 Usage","bytes",tup)
-    graphActualTime('graphing/out/ActualTotalTime-3-dispatches-micro-runs-x-axis.png',"Microkernel Count","Microkernel Runs","microkernel count",tup)
+    # graphActualTime('graphing/out/ActualTotalTime-3-dispatches-rank-x-axis.png',"rank","Rank","fastest to slowest",tup)
+    # graphActualTime('graphing/out/ActualTotalTime-3-dispatches-L1-usage-x-axis.png',"Space Needed in L1","L1 Usage","bytes",tup)
+    # graphActualTime('graphing/out/ActualTotalTime-3-dispatches-micro-runs-x-axis.png',"Microkernel Count","Microkernel Runs","microkernel count",tup)
     graphActualTime('graphing/out/ActualTotalTime-3-dispatches-regular-loads-axis.png',"Regular Loads","Regular Loads","from scratchpad to register",tup)
     
     # generate graph of actual vs predicted dispatch times
-    graphActualVsPredictedTime(mode,f'graphing/out/ActualVsPredTime-3-dispatches-{mode}.png',tup)
+    # graphActualVsPredictedTime(mode,f'graphing/out/ActualVsPredTime-3-dispatches-{mode}.png',tup)
     
     print("HASTA LUEGO")
 
@@ -110,12 +90,12 @@ def graphActualTime(path,x,x_label,x_unit,tup):
             x=x,
             x_label=x_label,
             x_unit=x_unit,
-            y="Total Time", #y="Kernel Time",
-            y_label="Total Time", #y_label="Kernel Time",
+            y="Kernel Time",
+            y_label="Kernel Time",
             y_unit="cycles",
         )
-    # actualTimeDispatchCase(dfs,dispatchOrder,caseNos,titles,"Kernel Time","",keysActual,"",path)
-    actualTimeDispatchCase(dfs,dispatchOrder,caseNos,titles,"Total Time","",keysActual,"",path)
+    actualTimeDispatchCase(dfs,dispatchOrder,caseNos,titles,"Kernel Time","",keysActual,"",path)
+    #actualTimeDispatchCase(dfs,dispatchOrder,caseNos,titles,"Total Time","",keysActual,"",path)
 
 def graphActualVsPredictedTime(mode,path,tup):
     dfs,dispatchOrder,caseNos,titles=tup

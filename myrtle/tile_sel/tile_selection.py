@@ -1,8 +1,6 @@
 import re
 import pickle
 import pandas as pd
-import sklearn.svm
-from graphing.graph_utils import Curve
 import pathlib
 
 def labelThenTakeNSmallestX(df, x, n, df_record, label_name, label_val):

@@ -17,3 +17,4 @@ myrtle/out/*.csv
 myrtle/out/*.json
 ./deleteLater/*
 IGNORE/*
+scripts/out/*

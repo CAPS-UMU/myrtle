@@ -1,4 +1,4 @@
-from graphing.graph_utils import Graph2D, Keys2D, CustomMarker
+from graphing_deprecated.graph_utils import Graph2D, Keys2D, CustomMarker
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 

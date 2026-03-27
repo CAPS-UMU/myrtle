@@ -36,7 +36,6 @@ def generateInteractiveGraphsTimedAndUntimedAndPadded(df, title, titleOfWebpage,
             "tileA_cc",
             "tileC_cc",
             "k",
-            "cost",
             "regPerStream",
             "sumSSRsRegs",
             "k/n",
@@ -140,7 +139,7 @@ def generateInteractiveGraphsTimedAndUntimedAndPadded(df, title, titleOfWebpage,
     # )
 
 
-        x_col = "cost"#"sumSSRsRegs"
+        x_col = "sumSSRsRegs"
         y_col = "Kernel Time"
         color = "SSR Config Count"
         fig9 = px.scatter(
@@ -284,11 +283,7 @@ def generateInteractiveGraphsTimedAndUntimedAndPadded(df, title, titleOfWebpage,
         #fig14.add_vline(x=top/2.0, line_width=3, line_dash="dash", line_color="pink")
 
 
-       # x_col = "cost"#"sumSSRsRegs"
-        #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS - (k/n)*(NUM_HW_LOOPS) - (k/n) - L1_USAGE",
-        #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS / c1 + k/n * c2/c1"
-        #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS - (k/n)*(NUM_HW_LOOPS) - (k/n) - L1_USAGE",
-        #df["cost"] = df["SSR Config Count"] - df["k/n"]*df["Hardware Loops"] - df["k/n"] - df["L1 Usage"]
+
 
        # df["MNK/m"]=df["M"] * df["N"] * df["K"] / df ["m"]
         x_col = "k/nXregPerStream"
@@ -520,7 +515,6 @@ def generateInteractiveGraphs(df, title, titleOfWebpage):
             "absoluteRank",
             x_col,
             y_col,
-            "costRank",
             "L3 Loads Timed",
             "L1 Usage",
             "CC L1 Footprint",
@@ -542,25 +536,17 @@ def generateInteractiveGraphs(df, title, titleOfWebpage):
             "CCL1FootprintXregPerStream",
             "SSR Config Count",
             "absoluteRank",
-            "costRank",
             "L3 Loads",
             "k/nXregPerStream",
             "mk/n",
-            # "B SSR Loads",
-            # "Total SSR Loads",
-            # "A SSR Reuse Loads",
-            # "A Not Reused SSR Loads",
             "Hardware Loops",
             "L3 Loads Timed",
             "L1 Usage",
             "CC L1 Footprint",
-            # "tileA",
-            # "tileB",
             "tileC",
             "tileA_cc",
             "tileC_cc",
             "k",
-            "cost",
             "regPerStream",
             "sumSSRsRegs",
             "k/n",
@@ -591,7 +577,7 @@ def generateInteractiveGraphs(df, title, titleOfWebpage):
             hover_data=hover_data,  # Show these columns on hover
             title=f"{title} {x_col} vs {y_col}",
         )
-        x_col = "cost"#"sumSSRsRegs"
+        x_col = "sumSSRsRegs"
         y_col = "Kernel Time"
         fig9 = px.scatter(
             df,
@@ -665,11 +651,6 @@ def generateInteractiveGraphs(df, title, titleOfWebpage):
         #fig14.add_vline(x=top/2.0, line_width=3, line_dash="dash", line_color="pink")
 
 
-        x_col = "cost"#"sumSSRsRegs"
-        #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS - (k/n)*(NUM_HW_LOOPS) - (k/n) - L1_USAGE",
-        #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS / c1 + k/n * c2/c1"
-        #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS - (k/n)*(NUM_HW_LOOPS) - (k/n) - L1_USAGE",
-        #df["cost"] = df["SSR Config Count"] - df["k/n"]*df["Hardware Loops"] - df["k/n"] - df["L1 Usage"]
 
         df["MNK/m"]=df["M"] * df["N"] * df["K"] / df ["m"]
         x_col = "k/nXregPerStream"
@@ -1132,7 +1113,6 @@ def generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untim
             "tileA_cc",
             "tileC_cc",
             "k",
-            "cost",
             "regPerStream",
             "sumSSRsRegs",
             "k/n",
@@ -1246,7 +1226,7 @@ def generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untim
     # )
 
 
-        x_col = "cost"#"sumSSRsRegs"
+        x_col = "sumSSRsRegs"
         y_col = "Kernel Time"
         color = "SSR Config Count"
         fig9 = px.scatter(
@@ -1346,11 +1326,6 @@ def generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untim
       
 
 
-       # x_col = "cost"#"sumSSRsRegs"
-        #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS - (k/n)*(NUM_HW_LOOPS) - (k/n) - L1_USAGE",
-        #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS / c1 + k/n * c2/c1"
-        #title=f"{title} {x_col} vs {y_col}, where c = SSR_CONFIGS - (k/n)*(NUM_HW_LOOPS) - (k/n) - L1_USAGE",
-        #df["cost"] = df["SSR Config Count"] - df["k/n"]*df["Hardware Loops"] - df["k/n"] - df["L1 Usage"]
 
        # df["MNK/m"]=df["M"] * df["N"] * df["K"] / df ["m"]
         x_col = "k/nXregPerStream"
