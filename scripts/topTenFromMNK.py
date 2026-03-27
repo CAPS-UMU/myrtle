@@ -28,8 +28,8 @@ def get_lines_from_file(file_name):
     except FileNotFoundError:
         return f"Error: The file '{file_name}' was not found."
     
-# python topTenFromMNK.py 128x128x128-naive-padding/inputSize.txt 128x128x128-naive-padding all 
-# python topTenFromMNK.py "512x512x512-no-redundant-stores/input.txt" 512x512x512-no-redundant-stores
+
+# python topTenFromMNK.py "../512x512x512/input.txt" "../512x512x512"
 def main():
     #print("Usage example: python topTenFromMNK.py \"fileWInputSizes.txt\" \"outputFolderName\" all")
     inputSizes = sys.argv[1]
@@ -58,16 +58,16 @@ def main():
     for line in lines:
         M_str, N_str, K_str = expNameRegex.search(line).groups()
         kernelName=f"matmul_{M_str}x{N_str}x{K_str}_f64"
-        fullSS=f"./myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k_ss{fullSuffix}.csv"
-        sortedL1SS=f"./myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k_ss{sortedL1Suffix}.csv"
-        top10File=f"./myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k{top10Suffix}.csv"
-        requestedFile=f"./myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k{suffix}.csv"
+        fullSS=f"../myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k_ss{fullSuffix}.csv"
+        sortedL1SS=f"../myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k_ss{sortedL1Suffix}.csv"
+        top10File=f"../myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k{top10Suffix}.csv"
+        requestedFile=f"../myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k{suffix}.csv"
         basenames.append(f"{M_str}x{N_str}x{K_str}wm-n-k")
         kernelNames.append(kernelName)
         outputFiles.append(fullSS)
        # topTenFiles.append(top10File)
         requestedFiles.append(requestedFile)
-        subprocess.call(['python3', 'myrtle/myrtle.py', kernelName, "sflt", "placeholder.json"])
+        subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json"])
         f = open(top10File, "w")
         subprocess.call(['head', sortedL1SS, "-n", "11"],stdout=f)
         f.close()
