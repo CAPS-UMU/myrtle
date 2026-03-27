@@ -1,5 +1,5 @@
 # How Square is Square Enough?
-
+[Back to landing](index.html)
 ## Generating Search Spaces (top 10, sorted by L1 Usage most to least)
 
 ```

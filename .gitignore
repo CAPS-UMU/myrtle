@@ -16,3 +16,4 @@ myrtle/*_analyzed.csv
 myrtle/out/*.csv
 myrtle/out/*.json
 ./deleteLater/*
+IGNORE/*

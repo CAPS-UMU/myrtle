@@ -1,5 +1,5 @@
 # Train on small cube, run on large cube
-[Back to homepage](index.html)
+[Back to landing](index.html)
 ## notes
 
 ```
