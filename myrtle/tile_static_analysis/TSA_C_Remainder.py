@@ -36,10 +36,13 @@ class TSA_C_Remainder(TileSizeAnalyzer):
         }
         info.update(self.legacyMetrics(ts))    
         clusterTiles = ts.myClusterTiles()
-        # scale each cluster tile's metrics by its frequency
-        scaledMetrics = map(lambda ct : applyFuncToDict(lambda x: ct.freq * x, ct.metrics()),clusterTiles.values())
-        # sum cluster tile metrics together
-        summedMetrics = reduce(lambda x, y: applyFuncToDictPair(lambda a, b: a+b,x,y), scaledMetrics, ClusterTile.emptyMetrics())
+        if len(clusterTiles.values())==1:
+            summedMetrics = next(iter(clusterTiles.values())).metrics()
+        else:
+            # scale each cluster tile's metrics by its frequency
+            scaledMetrics = map(lambda ct : applyFuncToDict(lambda x: ct.freq * x, ct.metrics()),clusterTiles.values())
+            # sum cluster tile metrics together
+            summedMetrics = reduce(lambda x, y: applyFuncToDictPair(lambda a, b: a+b,x,y), scaledMetrics, ClusterTile.emptyMetrics())
         info.update(summedMetrics)
         info["Total SSR Loads"] = info["A SSR Loads"] + info["B SSR Loads"]
         info["remainderTiles"] = ts.remainderTiles
@@ -80,18 +83,21 @@ class TSA_C_Remainder(TileSizeAnalyzer):
             info["mPrime"]=tile.cctls[0].m_prime_sz
             info["Little K"]=tile.k_sz
             if len(tile.cctls) == 2:
+                info["oldRegPerStream"]=-1
                 info["mHat Little VecMat Runs"]=tile.cctls[1].m_prime_size
                 info["mHat UnrollAndJam Loop Iters"]=int(tile.n_sz / self.UaJF)
                 info["mHat HW Loop Iters"]=tile.k_sz
                 info["mHat HW Loop Body Size"]=self.UaJF
                 info["mHat"]=tile.cctls[1].m_prime_sz
             else: # we assume the first cc tile is m', not m hat
+                info["oldRegPerStream"]=tile.m_sz * tile.n_sz / (128 * tile.k_sz)
                 info["mHat Little VecMat Runs"]=tile.cctls[0].m_prime_sz+1
                 info["mHat UnrollAndJam Loop Iters"]=int(tile.n_sz / self.UaJF)
                 info["mHat HW Loop Iters"]=tile.k_sz
                 info["mHat HW Loop Body Size"]=self.UaJF
                 info["mHat"]=tile.cctls[0].m_prime_sz+1
         else:
+            info["oldRegPerStream"]=-1
             info["mPrime Little VecMat Runs"]=-1
             info["mPrime UnrollAndJam Loop Iters"]=-1
             info["mPrime HW Loop Iters"]=-1

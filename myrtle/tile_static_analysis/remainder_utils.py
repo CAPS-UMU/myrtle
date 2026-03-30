@@ -32,8 +32,9 @@ class ComputeCoreTile():
         self.freq = frequency
         self.u = UaJF
         self.n_u = clusterTile.n_sz / UaJF # we assume n_sz % u == 0
+
     def __str__(self):
-        return f"my cluster tile: {self.l1Tile} m_prime_sz: {self.m_prime_sz}, freq: {self.freq}"
+        return f"Compute Core Tile: my l1 tile: {self.l1Tile}; m_prime_sz: {self.m_prime_sz}, freq: {self.freq}"
 
     def metrics(self):
         info = {}
@@ -41,10 +42,15 @@ class ComputeCoreTile():
         if info["SSR Loads"] == 0:
             print("HELP")
             print(self)
+            print("2 * self.u * self.n_u * self.l1Tile.k_sz * self.m_prime_sz")
+            print(f"2 * {self.u} * {self.n_u} * {self.l1Tile.k_sz} * {self.m_prime_sz}")
         info["FMADDs"] = self.u * self.l1Tile.k_sz * self.n_u * self.m_prime_sz
         info["MULs"] = self.u * self.m_prime_sz * self.n_u
         info["HW Loops"] = self.m_prime_sz * self.n_u
-        info["HW Loops / SSR Loads"] = info["HW Loops"]/info["SSR Loads"]
+        info["myRegPerStream"] =self.l1Tile.m_sz*self.l1Tile.n_sz / (128*self.l1Tile.k_sz)
+        #df["n"] * df["m"] / (128.0 * df["k"])
+        info["HW Loops / SSR Loads"] = self.m_prime_sz * self.l1Tile.n_sz / (16 * self.l1Tile.k_sz)#info["HW Loops"]/info["SSR Loads"]
+      
         # legacy values (corrected to not use k-2 iters)
         info["A Not Reused SSR Loads"]= self.n_u * self.l1Tile.k_sz * self.m_prime_sz
         info["A SSR Reuse Loads"]=7 * self.n_u * self.l1Tile.k_sz * self.m_prime_sz
@@ -59,6 +65,8 @@ class ComputeCoreTile():
         info["MULs"] = 0
         info["HW Loops"] = 0
         info["HW Loops / SSR Loads"] = 0
+        info["myRegPerStream"] = 0
+        #info["8 * HW Loops"]=0
         # legacy values
         info["A Not Reused SSR Loads"]= 0
         info["A SSR Reuse Loads"]=0
@@ -82,7 +90,12 @@ class ClusterTile():
         self.freq = frequency
         self.cctls = computeCoreTiles
     def __str__(self):
-        return f"m_sz: {self.m_sz}, n_sz: {self.n_sz}, k_sz: {self.k_sz}, freq: {self.freq}, ccts"
+        str = f"Cluster Tile: m_sz: {self.m_sz}, n_sz: {self.n_sz}, k_sz: {self.k_sz}, freq: {self.freq}"
+        str = str + "\n\t\t my compute core tiles are..."
+        for c in self.cctls:
+            str = str + "\n\t\t\t" + c.__str__()
+        return str
+    
     def metrics(self):
         info = {}
         area_a_prime = self.m_sz * self.k_sz
@@ -97,16 +110,25 @@ class ClusterTile():
             # scale all metrics by number of times its tile shape is used
             scaledLeft = applyFuncToDict(lambda x: left.freq * x,left.metrics())
             scaledRight = applyFuncToDict(lambda x: right.freq * x,right.metrics())
+            # scaledLeft["myRegPerStream"]=left.metrics()["myRegPerStream"]
+            # scaledRight["myRegPerStream"]=right.metrics()["myRegPerStream"]
             # take the sum of the scaled metrics
             cc_metrics_sum = applyFuncToDictPair(lambda x, y: x + y,scaledLeft,scaledRight)
             # we don't want to scale the ratio
-            scaledLeft["HW Loops / SSR Loads"]=left.metrics()["HW Loops / SSR Loads"]
-            scaledRight["HW Loops / SSR Loads"]=right.metrics()["HW Loops / SSR Loads"]
+            # val = left.metrics()["myRegPerStream"]
+            # print(f"myRegsPerStream is {val}")
+            # we don't want to sum our regPerStream:
+           # cc_metrics_sum["myRegPerStream"] = left.metrics()["myRegPerStream"] # only keep m' regPerStream val
+            # val = cc_metrics_sum["myRegPerStream"]
+            # print(f"NOW myRegsPerStream is {val}")
+            #scaledLeft["HW Loops / SSR Loads"]=left.metrics()["HW Loops / SSR Loads"]
+            #scaledRight["HW Loops / SSR Loads"]=right.metrics()["HW Loops / SSR Loads"]
         else:
             only = self.cctls[0]    
             cc_metrics_sum = applyFuncToDict(lambda x: only.freq * x,only.metrics())
             # we don't want to scale the ratio
-            cc_metrics_sum["HW Loops / SSR Loads"]=only.metrics()["HW Loops / SSR Loads"]
+           # cc_metrics_sum["myRegPerStream"]=only.metrics()["myRegPerStream"]
+            #cc_metrics_sum["HW Loops / SSR Loads"]=only.metrics()["HW Loops / SSR Loads"]
             
         info.update(cc_metrics_sum)
         return info
@@ -147,8 +169,17 @@ class TilingScheme():
         self.u = u
         self.remainderTiles = remainderTiles
 
+    def __str__(self):
+        str = f"Tiling Scheme: {self.M}x{self.N}x{self.K}w{self.m}-{self.n}-{self.k} and remainder tiles {self.remainderTiles}"
+        str = str + "\n\tmy cluster tiles are..."
+        cts = self.myClusterTiles()
+        for k in cts.keys():
+            str = str + "\n\t" + cts[k].__str__()
+            print(cts[k])
+        return str
     def remainderTiles(self):
         return not ((self.m_rem==0) and (self.n_rem==0) and (self.k_rem==0))
+    
     # returns cluster tiles used by this tiling scheme, 
     # and their associated compute core tiles wrapped in classes.
     def myClusterTiles(self):
@@ -192,7 +223,10 @@ class TilingScheme():
         if rem == 0:
             return [(cluster_tile_shape, m_prime, self.p)]
         else:
-            return [(cluster_tile_shape, m_prime, self.p-rem),(cluster_tile_shape, m_hat,rem )]
+            if m_prime == 0:
+                return [(cluster_tile_shape, m_hat,rem )]
+            else:
+                return [(cluster_tile_shape, m_prime, self.p-rem),(cluster_tile_shape, m_hat,rem )]
 
     def clusterTileShapes(self):
         m_sizes = (self.m, self.m_rem)

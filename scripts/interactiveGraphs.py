@@ -5,6 +5,125 @@ import numpy as np
 import plotly.graph_objects as go
 from sklearn.linear_model import LinearRegression
 
+def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
+           
+        if divisors[1] is not None:
+                print("I can't handle timed AND untimed divisor tiles right now!")
+        if remainders[0] is not None:
+                print("I can't handle timed remainder tiles right now!")
+        df = divisors[0]
+        rm_ut = remainders[1]
+        rm_ut["symbolMarker"] = 'x'
+        rm_ut["flatColor"] = 'default' 
+       # print(rm_ut[["FakeNN JSON Name","symbolMarker"]])
+        x_col = "Regular Loads"
+        y_col = "Kernel Time"
+        hover_data = [
+            "JSON Name",
+            x_col,
+            y_col,
+            "SSR Config Count",
+            "absoluteRank",
+            "L3 Loads",
+            "HW Loops / SSR Loads",
+            "mk/n",
+            "L3 Loads Timed",
+            "L1 Usage",
+            "CC L1 Footprint",
+            "tileC",
+            "oldRegPerStream",
+            "regPerStream",
+            "myRegPerStream",
+            "CC L1 / L1",
+            "k/n",
+            "fmaddsPerCore",
+        ]
+        small_hover_data = [
+            "JSON Name",
+            x_col,
+            y_col,
+            "HW Loops / SSR Loads",
+            "L3 Loads"
+        ]
+
+        # specialized graphs
+        special_figs = []
+        x_col = "SSR Configs"
+        y_col = "Kernel Time"        
+        special_figs.append(prunedScatter(df,x_col,y_col,"regPerStream",hover_data,"timed divisors and untimed remainders"))
+        addScatterFlatColorMarker(special_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
+        
+        dfPruned = df[df["SSR Configs"]<= 1024]
+        dfPrunedPoints = dfPruned["SSR Configs"].values.tolist()
+        print(f"there are {len(dfPrunedPoints)} timed, pruned points to graph are: {dfPrunedPoints}")
+        rm_utPruned=rm_ut[rm_ut["SSR Configs"]<= 1024]
+        rm_utPruned.to_csv("./out/remaindertilesWithFewerThan1024.csv",index=False)
+        fewerPoints = rm_utPruned["SSR Configs"].values.tolist()
+        unique_ssr_configs = list(set(rm_ut["SSR Configs"].values.tolist()))
+        unique_ssr_configs.sort()
+        print(f"There are {len(fewerPoints)} points with fewer than 1024 SSR configs: {fewerPoints}")
+        
+        x_col = "SSR Configs"
+        y_col = "Kernel Time"  
+        special_figs.append(scatterWithColor(rm_utPruned,x_col,y_col,"regPerStream",hover_data,"timed divisors and untimed remainders"))
+        special_figs[-1].update_traces(marker_symbol='triangle-up')
+        addScatterFlatColorMarker(special_figs[-1],dfPruned,x_col,y_col,"black","circle",hover_data,"divisors timed")
+
+        x_col = "SSR Configs"
+        y_col = "regPerStream"
+     #    special_figs.append(scatterWithColor(dfPruned,x_col,y_col,"Kernel Time",hover_data,"timed divisors and untimed remainders"))
+     #    addScatterFlatColorMarker(special_figs[-1],rm_utPruned,x_col,y_col,"lightpink","triangle-up",hover_data,"remainders untimed")
+
+        special_figs.append(scatterWithColor(rm_utPruned,x_col,y_col,"regPerStream",hover_data,"untimed remainders"))
+        special_figs[-1].update_traces(marker_symbol='triangle-up')
+        addScatterFlatColorMarker(special_figs[-1],dfPruned,x_col,y_col,"black","circle",hover_data,"divisors timed")
+        # more experiments
+        more_figs = []
+        x_col = "SSR Configs"
+        y_col = "regPerStream"
+        more_figs.append(scatterWithColor(rm_ut,x_col,y_col,"HW Loops / SSR Loads",hover_data,"untimed remainders"))
+
+     
+        x_col = "regPerStream"
+        y_col = "HW Loops / SSR Loads"
+     #    more_figs.append(scatterWithColor(rm_ut,x_col,y_col,"Kernel Time",hover_data,"untimed remainders"))
+     #    more_figs[-1].update_traces(marker_symbol='triangle-up')
+        more_figs.append(scatterWithColor(df,x_col,y_col,"Kernel Time",hover_data,"divisors timed"))
+     #   more_figs[-1].add_traces(list(fig.data))
+        addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"remainder untimed")
+        
+       
+        x_col = "HW Loops / SSR Loads"
+        y_col = "oldRegPerStream"
+        more_figs.append(scatterWithColor(df,x_col,y_col,"Kernel Time",hover_data,"divisors timed"))
+
+        x_col = "SSR Configs"
+        y_col = "Kernel Time"
+        more_figs.append(scatterWithColor(df,x_col,y_col,"HW Loops / SSR Loads",hover_data,"divisors timed"))
+
+        x_col = "m"
+        y_col = "SSR Configs"
+        more_figs.append(scatterWithColor(rm_ut,x_col,y_col,"m",hover_data,"untimed remainders"))
+
+        x_col = "n"
+        y_col = "SSR Configs"
+        more_figs.append(scatterWithColor(rm_ut,x_col,y_col,"n",hover_data,"untimed remainders"))
+
+        x_col = "k"
+        y_col = "SSR Configs"
+        more_figs.append(scatterWithColor(rm_ut,x_col,y_col,"k",hover_data,"untimed remainders"))
+
+        x_col = "SSR Configs"
+        y_col = "Kernel Time"
+        more_figs.append(scatterWithColor(df,x_col,y_col,"CC L1 / L1",hover_data,"divisors timed"))
+        
+        x_col = "SSR Configs"
+        y_col = "Kernel Time"
+        more_figs.append(scatterWithColor(df,x_col,y_col,"regPerStream",hover_data,f"{title} (using old metric regPerStream)"))
+
+        # export to HTML
+        return saveFigsInHTML(special_figs,more_figs,titleOfWebpage)
+
 def generateInteractiveGraphs(df, title, titleOfWebpage):
         x_col = "Regular Loads"
         y_col = "Kernel Time"
@@ -49,8 +168,7 @@ def generateInteractiveGraphs(df, title, titleOfWebpage):
         
         x_col = "SSR Configs"
         y_col = "Kernel Time"
-        myTitle=f"{title} {x_col} vs {y_col}, special title"
-        more_figs.append(scatterWithColor(df,x_col,y_col,"regPerStream",hover_data,myTitle))
+        more_figs.append(scatterWithColor(df,x_col,y_col,"regPerStream",hover_data,f"{title} (using old metric regPerStream)"))
 
         # export to HTML
         return saveFigsInHTML(special_figs,more_figs,titleOfWebpage)
@@ -111,16 +229,59 @@ def saveFigsInHTML(special_figs,more_figs,titleOfWebpage):
      return html
        
 
-def scatterWithColor(df,x_col,y_col,color,hover_data,title):
+def scatterWithColor(df,x_col,y_col,color,hover_data,title,marker=""):
      fig8 = px.scatter(
           df,
           x=x_col,
           y=y_col,
           color=color,
           hover_data=hover_data,  # Show these columns on hover
-          title=f"{title} {x_col} vs {y_col}",
+          title=f"{title} <b>{x_col} vs {y_col}</b>",
      )
+     if(marker!= ""):
+             fig8 = px.scatter(
+          df,
+          x=x_col,
+          y=y_col,
+          color=color,
+          symbol=marker,
+          hover_data=hover_data,  # Show these columns on hover
+          title=f"{title} <b>{x_col} vs {y_col}</b>",
+     )
+             
      return fig8
+
+def addScatterWithColor(fig, df,x_col,y_col,color,hover_data):
+     fig.add_scatter(
+          df,
+          x=x_col,
+          y=y_col,
+          color=color,
+          hover_data=hover_data,  # Show these columns on hover
+     )
+
+def hoverTemplateString(df,hover_data,title):
+        idx = {col: i for i, col in enumerate(df[hover_data].columns.values)}
+        str = f"{title} "
+        for k in hover_data:
+                str = str + "<br>" +f"{k}"+ ": %{" + "customdata"+ f"[{idx[k]}]" +"}"
+        str = str + "<extra></extra>" 
+        return str
+
+def addScatterFlatColorMarker(fig,df, x_col, y_col, color, marker, hover_data, title):
+        customData=df[hover_data].to_numpy()
+        fig.add_scatter(
+            x=df[x_col],
+            y=df[y_col],
+            mode='markers',
+            marker=dict(color=color,symbol=marker),
+            showlegend=False,
+            name = title,
+            customdata=customData,
+            hovertemplate=(hoverTemplateString(df,hover_data,title) 
+            ),
+        )
+        #mark
      
 def prunedScatter(df,x_col,y_col,color,hover_data,title):
      x_col = "SSR Configs"
@@ -139,9 +300,9 @@ def prunedScatter(df,x_col,y_col,color,hover_data,title):
           df_mod,
           x=x_col,
           y=y_col,
-          color="SSRconfigsXregPerStream",#"regPerStream",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
+          color=color,#"regPerStream",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
           hover_data=hover_data,  # Show these columns on hover
-          title=f"{title} {x_col} vs {y_col} with SSR Configs > {prunePoint} pruned away.",
+          title=f"{title} <b>{x_col} vs {y_col}</b> with SSR Configs > {prunePoint} pruned away.",
      )
      fig14.add_vline(x=prunePoint, line_width=2, line_dash="dash", line_color="green")
      # turn the pruned points gray?

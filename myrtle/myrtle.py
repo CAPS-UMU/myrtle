@@ -61,10 +61,10 @@ def main():
         paddedSearchSpaceCSVName = gen.exportOptionsToCSV(dispatchNickName, paddedOptions_as_df)
         # modify TSG to not allow remainder tiles in m dimension with size less than 8, right???
         # no, need to update TSA to make sure m with dimension size less than 8 WORKS (FIX the div by zero error)
-        # ann = TSA_C_Remainder(ann.UaJF,ann.DoP)
-        # analyzed = ann.analyze_options(paddedOptions_as_df)
-        # #analyzed = ann.analyze_options(options_as_df)
-        # analyzedPaddedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
+        ann = TSA_C_Remainder(ann.UaJF,ann.DoP)
+        analyzed = ann.analyze_options(paddedOptions_as_df)
+       # analyzed = ann.analyze_options(options_as_df)
+        analyzedPaddedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
 
     # select best tiling scheme using mode        
     m,n,k,dualBuffer = tss.tileSelection(analyzedSearchSpaceCSVName,sys.argv[2])   

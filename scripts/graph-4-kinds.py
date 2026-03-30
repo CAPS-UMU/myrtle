@@ -42,6 +42,9 @@ def main():
         df_padded = ae.addExtras(df_padded)
     if inputPaddedUntimed != "no":
         print("TODO: HANDLE PADDED, UNTIMED DATA")
+        df_padded_ut = pd.read_csv(inputPaddedUntimed)
+        df_padded_ut = ae.addExtras(df_padded_ut)
+        df_padded_ut = ae.addFakeKernelTime(df_padded_ut,df)
     if divisorAnalyzed != "no":
         df_ann = pd.read_csv(divisorAnalyzed)
         df_ann = ae.addExtras(df_ann)
@@ -53,7 +56,10 @@ def main():
     if inputUntimed == "no":    # Create interactive scatter plots
         df_merged = df.merge(df_ann,how="outer",on="FakeNN JSON Name")
         df_merged.to_csv("out/merged.csv",index=False)
-        html = ig.generateInteractiveGraphs(df_merged, title, titleOfWebpage)
+        if inputPaddedUntimed != "no":            
+            html = ig.generateInteractiveGraphsTuples((df_merged,None),(None,df_padded_ut), title, titleOfWebpage)
+        else:
+            html = ig.generateInteractiveGraphs(df_merged, title, titleOfWebpage)
     else:
         if inputPadded != "no":
             print("TODO")
