@@ -33,11 +33,14 @@ class ComputeCoreTile():
         self.u = UaJF
         self.n_u = clusterTile.n_sz / UaJF # we assume n_sz % u == 0
     def __str__(self):
-        return f"m_prime_sz: {self.m_prime_sz}, freq: {self.freq}"
+        return f"my cluster tile: {self.l1Tile} m_prime_sz: {self.m_prime_sz}, freq: {self.freq}"
 
     def metrics(self):
         info = {}
         info["SSR Loads"] = 2 * self.u * self.n_u * self.l1Tile.k_sz * self.m_prime_sz
+        if info["SSR Loads"] == 0:
+            print("HELP")
+            print(self)
         info["FMADDs"] = self.u * self.l1Tile.k_sz * self.n_u * self.m_prime_sz
         info["MULs"] = self.u * self.m_prime_sz * self.n_u
         info["HW Loops"] = self.m_prime_sz * self.n_u
@@ -124,7 +127,8 @@ class TilingScheme():
         n : int,
         k : int,
         u : int,
-        p : int
+        p : int,
+        remainderTiles : str
     ):
         self.M = M
         self.N = N
@@ -141,7 +145,10 @@ class TilingScheme():
         self.k_rem = K % k
         self.p = p
         self.u = u
+        self.remainderTiles = remainderTiles
 
+    def remainderTiles(self):
+        return not ((self.m_rem==0) and (self.n_rem==0) and (self.k_rem==0))
     # returns cluster tiles used by this tiling scheme, 
     # and their associated compute core tiles wrapped in classes.
     def myClusterTiles(self):

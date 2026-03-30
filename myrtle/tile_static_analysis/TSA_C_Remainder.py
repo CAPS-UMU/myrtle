@@ -21,7 +21,7 @@ class TSA_C_Remainder(TileSizeAnalyzer):
         return df
 
     def analyze_option(self, d):
-        ts = TilingScheme(int(d["M"]),int(d["N"]),int(d["K"]),int(d["m"]),int(d["n"]),int(d["k"]),self.UaJF,self.DoP)
+        ts = TilingScheme(int(d["M"]),int(d["N"]),int(d["K"]),int(d["m"]),int(d["n"]),int(d["k"]),self.UaJF,self.DoP,d["remainderTiles"])
         d.update(self.tilingSchemeMetrics(ts))
         return d
 
@@ -42,13 +42,20 @@ class TSA_C_Remainder(TileSizeAnalyzer):
         summedMetrics = reduce(lambda x, y: applyFuncToDictPair(lambda a, b: a+b,x,y), scaledMetrics, ClusterTile.emptyMetrics())
         info.update(summedMetrics)
         info["Total SSR Loads"] = info["A SSR Loads"] + info["B SSR Loads"]
+        info["remainderTiles"] = ts.remainderTiles
         return info
 
     def unrollAndJamFactor(self, rowDim):
             return self.UaJF # fixed unroll and jam factor
 
     def exportAnalysisToCSV(self, dispatchNickName, df):
-        filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_rem_ana.csv"
+        if (df['remainderTiles'] == "000").all():
+            suffix = "_c_ana"
+        else:
+            suffix = "_c_rem_ana"
+
+        #print ((df['remainderTiles'] == df['remainderTiles'][0]).all())
+        filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss{suffix}.csv"
         df.to_csv(
             filename,
             index=False,

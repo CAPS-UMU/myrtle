@@ -5,6 +5,7 @@ from tile_size_generation.TSG_C import TSG_C
 from tile_static_analysis.TSA_Quidditch import TSA_Quidditch
 from tile_static_analysis.TSA_Manual_C_Code import TSA_C
 from tile_static_analysis.TSA_C_Remainder import TSA_C_Remainder
+from tile_size_generation.TSG_C_Remainder import TSG_C_Remainder
 import tile_sel.tile_selection as tss
 import re
 import pandas as pd
@@ -53,15 +54,17 @@ def main():
     analyzedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
 
     # if using manual C backend, consider Remainder and generate analyzed search space for it.
-    # if not quidditch:
-    #     gen = TSG_C_Remainder(int(M),int(N),int(K),dispatchName=dispatchName,l1MemoryBytes = 112 * 1024, bank_size=1024, dualBuff=True)
-    #     paddedOptions = gen.validOptions(debug=False)
-    #     paddedOptions_as_df = gen.convertOptionsToDF(dispatchNickName, paddedOptions)
-    #     paddedSearchSpaceCSVName = gen.exportOptionsToCSV(dispatchNickName, paddedOptions_as_df)
-    #     ann = TSA_C_Remainder(ann.UaJF,ann.DoP)
-    #     # analyzed = ann.analyze_options(paddedOptions_as_df)
-    #     analyzed = ann.analyze_options(options_as_df)
-    #     analyzedPaddedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
+    if not quidditch:
+        gen = TSG_C_Remainder(int(M),int(N),int(K),dispatchName=dispatchName,l1MemoryBytes = 112 * 1024, bank_size=1024, dualBuff=True)
+        paddedOptions = gen.validOptions(debug=False)
+        paddedOptions_as_df = gen.convertOptionsToDF(dispatchNickName, paddedOptions)
+        paddedSearchSpaceCSVName = gen.exportOptionsToCSV(dispatchNickName, paddedOptions_as_df)
+        # modify TSG to not allow remainder tiles in m dimension with size less than 8, right???
+        # no, need to update TSA to make sure m with dimension size less than 8 WORKS (FIX the div by zero error)
+        # ann = TSA_C_Remainder(ann.UaJF,ann.DoP)
+        # analyzed = ann.analyze_options(paddedOptions_as_df)
+        # #analyzed = ann.analyze_options(options_as_df)
+        # analyzedPaddedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
 
     # select best tiling scheme using mode        
     m,n,k,dualBuffer = tss.tileSelection(analyzedSearchSpaceCSVName,sys.argv[2])   

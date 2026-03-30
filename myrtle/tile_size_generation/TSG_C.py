@@ -220,7 +220,7 @@ class TSG_C(TSG_Quidditch):
         }
     
     def annnotatePaddingStatus(self, d):
-        d.update({"padding": "000", "Mpad": 0,"Npad": 0,"Kpad": 0})
+        d.update({"remainderTiles": "000", "Mpad": 0,"Npad": 0,"Kpad": 0})
         return d
 
     # convert dictionary to simpler, more readable, annotated triple
@@ -257,7 +257,7 @@ class TSG_C(TSG_Quidditch):
             "tileA_cc": d["tileA_cc"],
             "tileB_cc": d["tileB_cc"],
             "tileC_cc": d["tileC_cc"],
-            "padding" : d["padding"],
+            "remainderTiles" : d["remainderTiles"],
             "Mpad":d["Mpad"],
             "Npad":d["Npad"],
             "Kpad":d["Kpad"],
@@ -297,6 +297,7 @@ class TSG_C(TSG_Quidditch):
         return df
 
     def exportOptionsToCSV(self, dispatchNickName, df):
+
         filename = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_gen.csv"
         df.to_csv(
             filename,
