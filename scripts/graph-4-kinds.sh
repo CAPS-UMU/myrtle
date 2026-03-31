@@ -1,6 +1,6 @@
 DIVISOR_FLDR="../sensitivity-analysis/remainder-vs-divisor/div"
 REMAINDER_FLDR="../sensitivity-analysis/remainder-vs-divisor/rem"
-
+WEBPAGES=""
 #/home/hoppip/myrtle/sensitivity-analysis/redundant-vs-no-redundant-stores/only-time/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
 #/home/hoppip/myrtle/sensitivity-analysis/redundant-vs-no-redundant-stores/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
 #/home/hoppip/myrtle/sensitivity-analysis/remainder-vs-divisor/div/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
@@ -15,6 +15,8 @@ DIVISOR_ANALYSIS="/home/hoppip/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_ana.csv"
 
 python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS
 
+WEBPAGES+=" $HTML_NAME.html"
+
 DIVISOR="$DIVISOR_FLDR/timed/512x512x512wm-n-k_distillbert-results.csv"
 HTML_NAME="out/cube512"
 REMAINDER="no"
@@ -25,7 +27,10 @@ DIVISOR_UT="no"
 DIVISOR_ANALYSIS="/home/hoppip/myrtle/myrtle/out/512x512x512wm-n-k_ss_c_ana.csv"
 
 python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS
+WEBPAGES+=" $HTML_NAME.html"
 
+
+python generate-html-index.py "./128-cube-remainders" $WEBPAGES
 #python padding-graph.py "$FOLDER/512x512x512wm-n-k_distillbert-results.csv" "padding-naive/Cube512x512x512-svr" "" "" "512x512x512" ""
 
 # python padding-graph.py "$FOLDER/128x128x128wm-n-k_top10_l1.csv" "padding-naive/Cube128x128x128-svr" "$FOLDER/128x128x128-padded-128x144x128wm-n-k_searchSpace_some-padded-results.csv" "" "128x128x128" "$FOLDER/128x128x128wm-n-k_searchSpace_c_analyzed-untimed.csv"

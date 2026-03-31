@@ -64,19 +64,19 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
         print(f"There are {len(fewerPoints)} points with fewer than 1024 SSR configs: {fewerPoints}")
         
         x_col = "SSR Configs"
-        y_col = "Kernel Time"  
-        special_figs.append(scatterWithColor(rm_utPruned,x_col,y_col,"regPerStream",hover_data,"timed divisors and untimed remainders"))
+        y_col = "regPerStream"
+     #    special_figs.append(scatterWithColor(dfPruned,x_col,y_col,"Kernel Time",hover_data,"timed divisors and untimed remainders"))
+     #    addScatterFlatColorMarker(special_figs[-1],rm_utPruned,x_col,y_col,"lightpink","triangle-up",hover_data,"remainders untimed")
+        special_figs.append(scatterWithColor(rm_utPruned,x_col,y_col,"regPerStream",hover_data,"untimed remainders and timed divisors with SSR Configs <= 1024"))
         special_figs[-1].update_traces(marker_symbol='triangle-up')
         addScatterFlatColorMarker(special_figs[-1],dfPruned,x_col,y_col,"black","circle",hover_data,"divisors timed")
 
         x_col = "SSR Configs"
-        y_col = "regPerStream"
-     #    special_figs.append(scatterWithColor(dfPruned,x_col,y_col,"Kernel Time",hover_data,"timed divisors and untimed remainders"))
-     #    addScatterFlatColorMarker(special_figs[-1],rm_utPruned,x_col,y_col,"lightpink","triangle-up",hover_data,"remainders untimed")
-
-        special_figs.append(scatterWithColor(rm_utPruned,x_col,y_col,"regPerStream",hover_data,"untimed remainders"))
+        y_col = "Kernel Time"  
+        special_figs.append(scatterWithColor(rm_utPruned,x_col,y_col,"regPerStream",hover_data,"untimed remainders and timed divisors with SSR Configs <= 1024"))
         special_figs[-1].update_traces(marker_symbol='triangle-up')
         addScatterFlatColorMarker(special_figs[-1],dfPruned,x_col,y_col,"black","circle",hover_data,"divisors timed")
+
         # more experiments
         more_figs = []
         x_col = "SSR Configs"
@@ -88,7 +88,7 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
         y_col = "HW Loops / SSR Loads"
      #    more_figs.append(scatterWithColor(rm_ut,x_col,y_col,"Kernel Time",hover_data,"untimed remainders"))
      #    more_figs[-1].update_traces(marker_symbol='triangle-up')
-        more_figs.append(scatterWithColor(df,x_col,y_col,"Kernel Time",hover_data,"divisors timed"))
+        more_figs.append(scatterWithColor(df,x_col,y_col,"Kernel Time",hover_data,"divisors timed and remainders untimed"))
      #   more_figs[-1].add_traces(list(fig.data))
         addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"remainder untimed")
         
@@ -217,7 +217,7 @@ def saveFigsInHTML(special_figs,more_figs,titleOfWebpage):
     </head>
     <body>
     <h1 style="text-align:center;">{titleOfWebpage}</h1>
-    <a href="results.html" >Back to Landing Page</a>
+    <a href="index.html" >Back to Landing Page</a>
     <div class="dashboard">
       {specialDivsAsHTML} 
         {"<div>More Experiments</div>"}
@@ -302,7 +302,7 @@ def prunedScatter(df,x_col,y_col,color,hover_data,title):
           y=y_col,
           color=color,#"regPerStream",#"Hardware Loops",  # "Regular Loads",  # Optional: color points by a category column
           hover_data=hover_data,  # Show these columns on hover
-          title=f"{title} <b>{x_col} vs {y_col}</b> with SSR Configs > {prunePoint} pruned away.",
+          title=f"{title} <b>{x_col} vs {y_col}</b> with SSR Configs >= {prunePoint} separated with vertical dotted line.",
      )
      fig14.add_vline(x=prunePoint, line_width=2, line_dash="dash", line_color="green")
      # turn the pruned points gray?
