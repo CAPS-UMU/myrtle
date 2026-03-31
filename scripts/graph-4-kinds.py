@@ -41,7 +41,6 @@ def main():
         df_padded = pd.read_csv(inputPadded)
         df_padded = ae.addExtras(df_padded)
     if inputPaddedUntimed != "no":
-        print("TODO: HANDLE PADDED, UNTIMED DATA")
         df_padded_ut = pd.read_csv(inputPaddedUntimed)
         df_padded_ut = ae.addExtras(df_padded_ut)
         df_padded_ut = ae.addFakeKernelTime(df_padded_ut,df)

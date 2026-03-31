@@ -55,13 +55,13 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
         
         dfPruned = df[df["SSR Configs"]<= 1024]
         dfPrunedPoints = dfPruned["SSR Configs"].values.tolist()
-        print(f"there are {len(dfPrunedPoints)} timed, pruned points to graph are: {dfPrunedPoints}")
+      #  print(f"there are {len(dfPrunedPoints)} timed, pruned points to graph are: {dfPrunedPoints}")
         rm_utPruned=rm_ut[rm_ut["SSR Configs"]<= 1024]
         rm_utPruned.to_csv("./out/remaindertilesWithFewerThan1024.csv",index=False)
         fewerPoints = rm_utPruned["SSR Configs"].values.tolist()
         unique_ssr_configs = list(set(rm_ut["SSR Configs"].values.tolist()))
         unique_ssr_configs.sort()
-        print(f"There are {len(fewerPoints)} points with fewer than 1024 SSR configs: {fewerPoints}")
+       # print(f"There are {len(fewerPoints)} points with fewer than 1024 SSR configs: {fewerPoints}")
         
         x_col = "SSR Configs"
         y_col = "regPerStream"

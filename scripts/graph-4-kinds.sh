@@ -33,7 +33,8 @@ INDEX_TITLE="128 Cube Remainder Tile Results"
 INDEX_SUMMARY="In-progress results timing tiled matmul on snitch using remainder tiles."
 echo $INDEX_TITLE > tempTitle.txt
 echo $INDEX_SUMMARY > tempSummary.txt
-python generate-html-index.py "./128-cube-remainders" $WEBPAGES tempTitle.txt tempSummary.txt
+python generate-html-index.py "./out/128-cube-remainders" $WEBPAGES tempTitle.txt tempSummary.txt
+rm -rf tempTitle.txt tempSummary.txt
 #python padding-graph.py "$FOLDER/512x512x512wm-n-k_distillbert-results.csv" "padding-naive/Cube512x512x512-svr" "" "" "512x512x512" ""
 
 # python padding-graph.py "$FOLDER/128x128x128wm-n-k_top10_l1.csv" "padding-naive/Cube128x128x128-svr" "$FOLDER/128x128x128-padded-128x144x128wm-n-k_searchSpace_some-padded-results.csv" "" "128x128x128" "$FOLDER/128x128x128wm-n-k_searchSpace_c_analyzed-untimed.csv"
