@@ -17,9 +17,18 @@ import subprocess
 
 def main():
     # first argument is output folder name
-    # each subsequent argument is a webpage to add to the index
+    # subsequent arguments (until the final 2) are webpages to add to the index
+    # the final two arguments are the title and summary of the webpage
     outputFolder = sys.argv[1]
-    pages = sys.argv[2:]
+    pages = sys.argv[2:-2]
+    title_path = sys.argv[-2]
+    content_path = sys.argv[-1]
+    # extract index title
+    with open(title_path, 'r') as file:
+        title = file.read()
+    # extract index summary
+    with open(content_path, 'r') as file:
+        content = file.read()
     # destroy and then create the output folder
     subprocess.call(["rm", "-rf", outputFolder])
     subprocess.call(["mkdir", outputFolder])
@@ -34,10 +43,10 @@ def main():
     for page in pageBases:
         toc = toc + f'<li><a href="{page}">{page}</a></li>'
     toc = f"<ul>{toc}</ul>"
-    # wrap the ToC in a customized homepage
+    # wrap the ToC in a customized homepage    
     html = defaultHomePage(
-        "128 Cube Remainder Tile Results",
-        "In-progress results timing tiled matmul on snitch using remainder tiles.",
+        title,
+        content,
         toc,
     )
     # write everything to an index.html file in the output folder
@@ -87,7 +96,7 @@ def defaultHomePage(title, customIntro, ToC):
     <h1 style="text-align:center;">{title}</h1>
     <div class="dashboard">
         <h2>Summary</h2>
-        <a href="index.html">Back to Landing</a>
+        <a href="https://caps-umu.github.io/myrtle/web/index.html">Back to Landing</a>
         <p>{customIntro}</p>
         <h2>Index of Pages</h2>
         {ToC}
