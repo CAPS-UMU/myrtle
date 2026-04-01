@@ -17,7 +17,7 @@ def addFakeKernelTime(df_ut, df_t):
     df_ut["absoluteRank"] = -1
     return df_ut
 def addExtras(df):
-    df["Hardware Loops"] = df["M"] * df["N"] * df["K"] / (8 * df["k"])
+   # df["Hardware Loops"] = df["M"] * df["N"] * df["K"] / (8 * df["k"])
     df["SSR Configs"] = df["SSR Config Count"]
     df["L1 Usage"] = df["Space Needed in L1"]
     df["m-n-k"] = df["JSON Name"]

@@ -132,8 +132,8 @@ class TSG_C_Remainder(TileSizeGenerator):
                 f"TSG: Cannot find a tile size that DOESN'T divide evenly into dimension K = {self.K}!"
             )
 
-        print(f"little_m_pad is {little_m_pad}")
-        print(f"little_m_options is {little_m_options}")
+        # print(f"little_m_pad is {little_m_pad}")
+        # print(f"little_m_options is {little_m_options}")
         # enumerate all remainder tile possibilities
         mnk = list(product(little_m_pad, little_n_pad, little_k_pad))     # M, N, K :)
         only_m = list(product(little_m_pad, n_options, k_options))        # only M

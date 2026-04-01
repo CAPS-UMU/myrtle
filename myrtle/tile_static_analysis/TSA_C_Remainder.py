@@ -37,7 +37,9 @@ class TSA_C_Remainder(TileSizeAnalyzer):
         info.update(self.legacyMetrics(ts))    
         clusterTiles = ts.myClusterTiles()
         if len(clusterTiles.values())==1:
-            summedMetrics = next(iter(clusterTiles.values())).metrics()
+            oneTile = next(iter(clusterTiles.values()))
+            # print(f"onetile is {oneTile} with metrics {oneTile.metrics()}")
+            summedMetrics = applyFuncToDict(lambda x: oneTile.freq * x, oneTile.metrics())#'map(lambda ct : applyFuncToDict(lambda x: ct.freq * x, ct.metrics()),clusterTiles.values())
         else:
             # scale each cluster tile's metrics by its frequency
             scaledMetrics = map(lambda ct : applyFuncToDict(lambda x: ct.freq * x, ct.metrics()),clusterTiles.values())

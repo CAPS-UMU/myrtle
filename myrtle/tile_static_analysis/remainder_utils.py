@@ -131,6 +131,7 @@ class ClusterTile():
             #cc_metrics_sum["HW Loops / SSR Loads"]=only.metrics()["HW Loops / SSR Loads"]
             
         info.update(cc_metrics_sum)
+     #   print(f"info right before I return from metrics is {info}")
         return info
     def emptyMetrics():
         info = {}

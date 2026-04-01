@@ -38,8 +38,10 @@ def main():
         df_untimed = ae.addExtras(df_untimed)    
     if inputPadded != "no":
         print("TODO: HANDLE PADDED DATA")
-        df_padded = pd.read_csv(inputPadded)
-        df_padded = ae.addExtras(df_padded)
+        df_remainders = pd.read_csv(inputPadded)
+        df_padded_ut = pd.read_csv(inputPaddedUntimed)
+        df_remainders_ann = pd.merge(df_padded_ut, df_remainders, on='FakeNN JSON Name', how='right')
+        df_remainders = ae.addExtras(df_remainders_ann)
     if inputPaddedUntimed != "no":
         df_padded_ut = pd.read_csv(inputPaddedUntimed)
         df_padded_ut = ae.addExtras(df_padded_ut)
@@ -57,12 +59,18 @@ def main():
         df_merged.to_csv("out/merged.csv",index=False)
         if inputPaddedUntimed != "no":            
             html = ig.generateInteractiveGraphsTuples((df_merged,None),(None,df_padded_ut), title, titleOfWebpage)
+            html = ig.generateInteractiveGraphsTuples((df_merged,None),(df_remainders,df_padded_ut), title, titleOfWebpage)
+        # elif inputPadded != "no":
+            # df_merged = df.merge(df_ann,how="outer",on="FakeNN JSON Name")
+
+            # html = ig.generateInteractiveGraphsTuples((df_merged,None),(df_remainders,df_padded_ut), title, titleOfWebpage)
         else:
             html = ig.generateInteractiveGraphs(df_merged, title, titleOfWebpage)
     else:
         if inputPadded != "no":
             print("TODO")
-            html = rg_2_23.generateInteractiveGraphsTimedAndUntimedAndPadded(df, title, titleOfWebpage, df_untimed, df_padded)
+            html = ig.generateInteractiveGraphsTuples((df_merged,None),(df_remainders,df_padded_ut), title, titleOfWebpage)
+           # html = rg_2_23.generateInteractiveGraphsTimedAndUntimedAndPadded(df, title, titleOfWebpage, df_untimed, df_padded)
         else:
             print("TODO")
             html = rg_2_23.generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untimed)
