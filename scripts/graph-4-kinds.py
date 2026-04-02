@@ -50,7 +50,7 @@ def main():
         df_ann = pd.read_csv(divisorAnalyzed)
         df_ann = ae.addExtras(df_ann)
 
-    df_sorted = df.sort_values(by="Kernel Time", ascending=True)
+    df_sorted = df.sort_values(by="dma", ascending=True)
     df_sorted["absoluteRank"] = range(1, int(df_sorted.shape[0] + 1))
     df = df_sorted   
 

@@ -29,7 +29,7 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
             "L3 Loads Timed",
             "L1 Usage",
             "CC L1 Footprint",
-          #  "tileC",
+            "dma",
           #  "oldRegPerStream",
             "regPerStream",
         #     "myRegPerStream",
@@ -58,19 +58,19 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
                 rm_ut = rm_ut[~rm_ut['FakeNN JSON Name'].isin(rm['FakeNN JSON Name'])]
                 # combine timed points into single DF, then create absolute rank
                 timed = pd.concat([df, rm], join='inner', ignore_index=True)   
-                timed_sorted = timed.sort_values(by="Kernel Time", ascending=True)
+                timed_sorted = timed.sort_values(by="dma", ascending=True)
                 timed_sorted["absoluteRank"] = range(1, int(timed_sorted.shape[0] + 1))
                 timed = timed_sorted.sort_values(by="symbolMarker", ascending=True) 
                 timed ["flatColor"] = "pink" 
                 # special figures
                 special_figs = []
                 x_col = "SSR Configs"
-                y_col = "Kernel Time"   
+                y_col = "dma"   
                 special_figs.append(prunedScatter(timed,x_col,y_col,"regPerStream",hover_data,"OLD RATIO: timed divisors and (some) timed remainders","symbolMarker"))
                 addScatterFlatColorMarker(special_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"timed divisors and (some) timed remainders")
                 
                 x_col = "SSR Configs"
-                y_col = "Kernel Time" 
+                y_col = "dma" 
                 color = "HW Loops / SSR Loads"
                 special_figs.append(prunedScatter(timed,x_col,y_col,color,hover_data,"UPDATED, SCALED SUMMATION OF RATIO: timed divisors and (some) timed remainders <b>(overcounting??!)</b>","symbolMarker"))
                 addScatterFlatColorMarker(special_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")

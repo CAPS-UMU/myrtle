@@ -14,6 +14,7 @@ import recentGraphs_2_23 as rg_2_23
 def addFakeKernelTime(df_ut, df_t):
     avgTime = sum(df_t["Kernel Time"].values) / len(df_t["Kernel Time"].values)
     df_ut["Kernel Time"] = avgTime
+    df_ut["dma"] = avgTime
     df_ut["absoluteRank"] = -1
     return df_ut
 def addExtras(df):
