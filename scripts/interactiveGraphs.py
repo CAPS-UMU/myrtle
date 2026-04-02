@@ -15,7 +15,7 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
         rm_ut["divisorRank"] = -1
         rm_ut["remainderTiles"] = rm_ut["remainderTiles"].apply(lambda x: f"{x}")
         x_col = "Regular Loads"
-        y_col = "Kernel Time"
+        y_col = "dma"
         hover_data = [
             "JSON Name",
             x_col,
@@ -69,6 +69,14 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
                 special_figs.append(prunedScatter(timed,x_col,y_col,"regPerStream",hover_data,"OLD RATIO: timed divisors and (some) timed remainders","symbolMarker"))
                 addScatterFlatColorMarker(special_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"timed divisors and (some) timed remainders")
                 
+                x_col = "regPerStream"
+                y_col = "dma"
+                timed_pruned = timed[timed["SSR Config Count"]<=1024]   
+                rm_ut_pruned = rm_ut[rm_ut["SSR Config Count"]<=1024]
+                special_figs.append(prunedScatter(timed_pruned,x_col,y_col,"dma",hover_data,"OLD RATIO + pruned to SSR Config s<= 1024","symbolMarker"))
+                addScatterFlatColorMarker(special_figs[-1],rm_ut_pruned,x_col,y_col,"gray","triangle-up",hover_data,"timed divisors and (some) timed remainders")
+                
+
                 x_col = "SSR Configs"
                 y_col = "dma" 
                 color = "HW Loops / SSR Loads"
@@ -77,7 +85,7 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
                 
                 # more figures
                 more_figs = []
-                x_col = "Kernel Time" 
+                x_col = "dma" 
                 y_col = "A SSR Reuse Loads"
                 color = "A SSR Reuse Loads"
                # color = "HW Loops / SSR Loads"
@@ -89,16 +97,16 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
                 # fig = px.bar(
                 #         timed, 
                 #         x="remainderTiles", 
-                #         y="Kernel Time", 
+                #         y="dma", 
                 #         color="remainderTiles",
                 #         barmode="group", # Use "group" for side-by-side, or "relative" for stacked
                 #         title="dimensions with remainder tiles vs. kernel execution time",
-                #         labels={"remainderTiles": "MNK dimensions", "Kernel Time": "cycles"},
+                #         labels={"remainderTiles": "MNK dimensions", "dma": "cycles"},
                 #         template="plotly_white"
                 #         )
                 # more_figs.append(fig)
                 x_col = "remainderTiles" 
-                y_col = "Kernel Time"
+                y_col = "dma"
                 color = "remainderTiles"
                # color = "HW Loops / SSR Loads"
                 more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"effect of dimensions using remainder tiles","symbolMarker"))
@@ -121,19 +129,19 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
                 
                 x_col = "remainderTiles" 
                 y_col = "L1 Usage"
-                color = "Kernel Time"
+                color = "dma"
                 more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"which remainder tiles have I timed, wrt L1 Usage?","symbolMarker"))
                 #addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
                 
                 x_col = "remainderTiles" 
                 y_col = "L1 Usage"
-                color = "Kernel Time"
+                color = "dma"
                 more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"which remainder tiles have I timed, wrt L1 Usage?","symbolMarker"))
                 addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
                 
 
                 x_col = "L1 Usage" 
-                y_col = "Kernel Time"
+                y_col = "dma"
                 color = "SSR Configs"
                # color = "HW Loops / SSR Loads"
                 more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"timed divisors and (some) timed remainders","symbolMarker"))
@@ -142,12 +150,12 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
 
                 x_col = "L1 Usage" 
                 y_col = "L3 Loads"
-                color = "Kernel Time"
+                color = "dma"
                # color = "HW Loops / SSR Loads"
                 more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"timed divisors and (some) timed remainders","symbolMarker"))
                 addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
                 
-                y_col = "Kernel Time" 
+                y_col = "dma" 
                 x_col = "L3 Loads"
                 color = "A SSR Reuse Loads"
                # color = "HW Loops / SSR Loads"
@@ -155,20 +163,20 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
                 addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
 
 
-                x_col = "Kernel Time" 
+                x_col = "dma" 
                 y_col = "regPerStream"
                 color = "SSR Configs"
                 more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"timed divisors and (some) timed remainders","symbolMarker"))
                 addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
                 
 
-                x_col = "Kernel Time" 
+                x_col = "dma" 
                 y_col = "HW Loops / SSR Loads"
                 color = "SSR Configs"
                 more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"timed divisors and (some) timed remainders","symbolMarker"))
                 addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
                 
-                x_col = "Kernel Time" 
+                x_col = "dma" 
                 y_col = "A SSR Reuse Loads"
                 color = "HW Loops / SSR Loads"
                 more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"timed divisors and (some) timed remainders","symbolMarker"))
@@ -180,7 +188,7 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
         # specialized graphs
         special_figs = []
         x_col = "SSR Configs"
-        y_col = "Kernel Time"        
+        y_col = "dma"        
         special_figs.append(prunedScatter(df,x_col,y_col,"regPerStream",hover_data,"timed divisors and untimed remainders"))
         addScatterFlatColorMarker(special_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
         
@@ -197,14 +205,14 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
         x_col = "SSR Configs"
         y_col = "regPerStream"
     
-     #    special_figs.append(scatterWithColor(dfPruned,x_col,y_col,"Kernel Time",hover_data,"timed divisors and untimed remainders"))
+     #    special_figs.append(scatterWithColor(dfPruned,x_col,y_col,"dma",hover_data,"timed divisors and untimed remainders"))
      #    addScatterFlatColorMarker(special_figs[-1],rm_utPruned,x_col,y_col,"lightpink","triangle-up",hover_data,"remainders untimed")
         special_figs.append(scatterWithColor(rm_utPruned,x_col,y_col,"regPerStream",hover_data,"untimed remainders and timed divisors with SSR Configs <= 1024"))
         special_figs[-1].update_traces(marker_symbol='triangle-up')
         addScatterFlatColorMarker(special_figs[-1],dfPruned,x_col,y_col,"black","circle",hover_data,"divisors timed")
 
         x_col = "SSR Configs"
-        y_col = "Kernel Time"  
+        y_col = "dma"  
         special_figs.append(scatterWithColor(rm_utPruned,x_col,y_col,"regPerStream",hover_data,"untimed remainders and timed divisors with SSR Configs <= 1024"))
         special_figs[-1].update_traces(marker_symbol='triangle-up')
         addScatterFlatColorMarker(special_figs[-1],dfPruned,x_col,y_col,"black","circle",hover_data,"divisors timed")
@@ -218,19 +226,19 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
      
         x_col = "regPerStream"
         y_col = "HW Loops / SSR Loads"
-     #    more_figs.append(scatterWithColor(rm_ut,x_col,y_col,"Kernel Time",hover_data,"untimed remainders"))
+     #    more_figs.append(scatterWithColor(rm_ut,x_col,y_col,"dma",hover_data,"untimed remainders"))
      #    more_figs[-1].update_traces(marker_symbol='triangle-up')
-        more_figs.append(scatterWithColor(df,x_col,y_col,"Kernel Time",hover_data,"divisors timed and remainders untimed"))
+        more_figs.append(scatterWithColor(df,x_col,y_col,"dma",hover_data,"divisors timed and remainders untimed"))
      #   more_figs[-1].add_traces(list(fig.data))
         addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"remainder untimed")
         
        
         x_col = "HW Loops / SSR Loads"
         y_col = "oldRegPerStream"
-        more_figs.append(scatterWithColor(df,x_col,y_col,"Kernel Time",hover_data,"divisors timed"))
+        more_figs.append(scatterWithColor(df,x_col,y_col,"dma",hover_data,"divisors timed"))
 
         x_col = "SSR Configs"
-        y_col = "Kernel Time"
+        y_col = "dma"
         more_figs.append(scatterWithColor(df,x_col,y_col,"HW Loops / SSR Loads",hover_data,"divisors timed"))
 
         x_col = "m"
@@ -246,11 +254,11 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
         more_figs.append(scatterWithColor(rm_ut,x_col,y_col,"k",hover_data,"untimed remainders"))
 
         x_col = "SSR Configs"
-        y_col = "Kernel Time"
+        y_col = "dma"
         more_figs.append(scatterWithColor(df,x_col,y_col,"CC L1 / L1",hover_data,"divisors timed"))
         
         x_col = "SSR Configs"
-        y_col = "Kernel Time"
+        y_col = "dma"
         more_figs.append(scatterWithColor(df,x_col,y_col,"regPerStream",hover_data,f"{title} (using old metric regPerStream)"))
 
         # export to HTML
