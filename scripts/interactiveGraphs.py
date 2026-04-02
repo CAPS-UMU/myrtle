@@ -71,17 +71,22 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
                 special_figs.append(scatterWithColor(timed_pruned,x_col,y_col,"dma",hover_data,"OLD RATIO + pruned to SSR Configs <= 1024","symbolMarker"))
                 addScatterFlatColorMarker(special_figs[-1],rm_ut_pruned,x_col,y_col,"gray","triangle-up",hover_data,"timed divisors and (some) timed remainders")
                 
-                y_col = "HW Loops / SSR Loads" 
-                x_col = "regPerStream"
-                color = "dma"
-                special_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"OLD RATIO vs. UPDATED SUMMATION OF RATIOS (untimed points omitted)","symbolMarker"))
-                #addScatterFlatColorMarker(special_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
-                
+                # y_col = "HW Loops / SSR Loads" 
+                # x_col = "regPerStream"
+                # color = "dma"
+                # special_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"OLD RATIO vs. UPDATED SUMMATION OF RATIOS (untimed points omitted)","symbolMarker"))
+                # #addScatterFlatColorMarker(special_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
 
                 x_col = "SSR Configs"
                 y_col = "dma" 
                 color = "HW Loops / SSR Loads"
                 special_figs.append(prunedScatter(timed,x_col,y_col,color,hover_data,"UPDATED, SCALED SUMMATION OF RATIO: timed divisors and (some) timed remainders ","symbolMarker"))
+                addScatterFlatColorMarker(special_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
+                
+                x_col = "HW Loops / SSR Loads"
+                y_col = "dma" 
+                color = "dma"
+                special_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"UPDATED, SCALED SUMMATION OF RATIO: timed divisors and (some) timed remainders ","symbolMarker"))
                 addScatterFlatColorMarker(special_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
                 
                 # more figures
