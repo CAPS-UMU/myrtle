@@ -20,6 +20,7 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
             "JSON Name",
             x_col,
             y_col,
+            "Reused / Total SSR Loads",
             "SSR Config Count",
             "absoluteRank",
             "divisorRank",
@@ -33,16 +34,10 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
           #  "oldRegPerStream",
             "regPerStream",
         #     "myRegPerStream",
+                "FMADDsPerCore",
             "CC L1 / L1",
             "k/n",
             "fmaddsPerCore",
-        ]
-        small_hover_data = [
-            "JSON Name",
-            x_col,
-            y_col,
-            "HW Loops / SSR Loads",
-            "L3 Loads"
         ]
            
         if divisors[1] is not None:
@@ -73,14 +68,20 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
                 y_col = "dma"
                 timed_pruned = timed[timed["SSR Config Count"]<=1024]   
                 rm_ut_pruned = rm_ut[rm_ut["SSR Config Count"]<=1024]
-                special_figs.append(prunedScatter(timed_pruned,x_col,y_col,"dma",hover_data,"OLD RATIO + pruned to SSR Config s<= 1024","symbolMarker"))
+                special_figs.append(scatterWithColor(timed_pruned,x_col,y_col,"dma",hover_data,"OLD RATIO + pruned to SSR Configs <= 1024","symbolMarker"))
                 addScatterFlatColorMarker(special_figs[-1],rm_ut_pruned,x_col,y_col,"gray","triangle-up",hover_data,"timed divisors and (some) timed remainders")
+                
+                y_col = "HW Loops / SSR Loads" 
+                x_col = "regPerStream"
+                color = "dma"
+                special_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"OLD RATIO vs. UPDATED SUMMATION OF RATIOS (untimed points omitted)","symbolMarker"))
+                #addScatterFlatColorMarker(special_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
                 
 
                 x_col = "SSR Configs"
                 y_col = "dma" 
                 color = "HW Loops / SSR Loads"
-                special_figs.append(prunedScatter(timed,x_col,y_col,color,hover_data,"UPDATED, SCALED SUMMATION OF RATIO: timed divisors and (some) timed remainders <b>(overcounting??!)</b>","symbolMarker"))
+                special_figs.append(prunedScatter(timed,x_col,y_col,color,hover_data,"UPDATED, SCALED SUMMATION OF RATIO: timed divisors and (some) timed remainders ","symbolMarker"))
                 addScatterFlatColorMarker(special_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
                 
                 # more figures
@@ -89,10 +90,18 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
                 y_col = "A SSR Reuse Loads"
                 color = "A SSR Reuse Loads"
                # color = "HW Loops / SSR Loads"
-                more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"timed divisors and (some) timed remainders <b>(overcounting??!)</b>","symbolMarker"))
+                more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"timed divisors and (some) timed remainders","symbolMarker"))
                 addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
                # timed["remainderTiles"] = "" + timed["remainderTiles"]
                 
+                 
+                x_col = "FMADDsPerCore"
+                y_col = "dma"
+                color = "L3 Loads"
+               # color = "HW Loops / SSR Loads"
+                more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"timed divisors and (some) timed remainders","symbolMarker"))
+                addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
+               # timed["remainderTiles"] = "" + timed["remainderTiles"]
                 
                 # fig = px.bar(
                 #         timed, 
@@ -105,44 +114,44 @@ def generateInteractiveGraphsTuples(divisors,remainders, title, titleOfWebpage):
                 #         template="plotly_white"
                 #         )
                 # more_figs.append(fig)
-                x_col = "remainderTiles" 
-                y_col = "dma"
-                color = "remainderTiles"
-               # color = "HW Loops / SSR Loads"
-                more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"effect of dimensions using remainder tiles","symbolMarker"))
-                #
+        #         x_col = "remainderTiles" 
+        #         y_col = "dma"
+        #         color = "remainderTiles"
+        #        # color = "HW Loops / SSR Loads"
+        #         more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"effect of dimensions using remainder tiles","symbolMarker"))
+        #         #
 
 
-                x_col = "remainderTiles" 
-                y_col = "A SSR Reuse Loads"
-                color = "remainderTiles"
-               # color = "HW Loops / SSR Loads"
-                more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"effect of dimensions using remainder tiles <b>(overcounting??!)</b>","symbolMarker"))
-                #addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
+        #         x_col = "remainderTiles" 
+        #         y_col = "A SSR Reuse Loads"
+        #         color = "remainderTiles"
+        #        # color = "HW Loops / SSR Loads"
+        #         more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"effect of dimensions using remainder tiles <b>(overcounting??!)</b>","symbolMarker"))
+        #         #addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
                 
-                x_col = "remainderTiles" 
-                y_col = "HW Loops / SSR Loads"
-                color = "remainderTiles"
-               # color = "HW Loops / SSR Loads"
-                more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"effect of dimensions using remainder tiles <b>(overcounting??!)</b>","symbolMarker"))
-                #addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
+        #         x_col = "remainderTiles" 
+        #         y_col = "HW Loops / SSR Loads"
+        #         color = "remainderTiles"
+        #        # color = "HW Loops / SSR Loads"
+        #         more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"effect of dimensions using remainder tiles <b>(overcounting??!)</b>","symbolMarker"))
+        #         #addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
                 
-                x_col = "remainderTiles" 
-                y_col = "L1 Usage"
-                color = "dma"
-                more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"which remainder tiles have I timed, wrt L1 Usage?","symbolMarker"))
-                #addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
+        #         x_col = "remainderTiles" 
+        #         y_col = "L1 Usage"
+        #         color = "dma"
+        #         more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"which remainder tiles have I timed, wrt L1 Usage?","symbolMarker"))
+        #         #addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
                 
-                x_col = "remainderTiles" 
-                y_col = "L1 Usage"
-                color = "dma"
-                more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"which remainder tiles have I timed, wrt L1 Usage?","symbolMarker"))
-                addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
+        #         x_col = "remainderTiles" 
+        #         y_col = "L1 Usage"
+        #         color = "dma"
+        #         more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"which remainder tiles have I timed, wrt L1 Usage?","symbolMarker"))
+        #         addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
                 
 
                 x_col = "L1 Usage" 
                 y_col = "dma"
-                color = "SSR Configs"
+                color = "FMADDsPerCore"
                # color = "HW Loops / SSR Loads"
                 more_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"timed divisors and (some) timed remainders","symbolMarker"))
                 addScatterFlatColorMarker(more_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")

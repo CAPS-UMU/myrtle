@@ -45,7 +45,10 @@ class ComputeCoreTile():
             print("2 * self.u * self.n_u * self.l1Tile.k_sz * self.m_prime_sz")
             print(f"2 * {self.u} * {self.n_u} * {self.l1Tile.k_sz} * {self.m_prime_sz}")
         info["FMADDs"] = self.u * self.l1Tile.k_sz * self.n_u * self.m_prime_sz
+        info["FMADDsPerCore"] = 1/info["FMADDs"]
         info["MULs"] = self.u * self.m_prime_sz * self.n_u
+        info["FMADDsMULs"] = info["FMADDs"] + info["MULs"]
+        info["FMADDsMULsPerCore"] = 1/ info["FMADDsMULs"]
         info["HW Loops"] = self.m_prime_sz * self.n_u
         info["myRegPerStream"] =self.l1Tile.m_sz*self.l1Tile.n_sz / (128*self.l1Tile.k_sz)
         #df["n"] * df["m"] / (128.0 * df["k"])
@@ -57,11 +60,17 @@ class ComputeCoreTile():
         info["A SSR Start Reuse Loads"]= info["A Not Reused SSR Loads"]
         info["B SSR Loads"]= self.u * self.n_u * self.l1Tile.k_sz * self.m_prime_sz 
         info["A SSR Loads"] =  info["A Not Reused SSR Loads"] + info["A SSR Reuse Loads"]
+        # TODO: redo these using m_sz, n_sz, k_sz instead of l1 tile sizes!
+        info["Reused / Total SSR Loads"] = info["A SSR Reuse Loads"] / (info["A SSR Loads"] + info["B SSR Loads"])
+        info["Core : A SSR Reuse Loads"] = 1/info["A SSR Reuse Loads"]
         return info
     def emptyMetrics():
         info = {}
         info["SSR Loads"] = 0
+        info["FMADDsPerCore"] = 0
         info["FMADDs"] = 0
+        info["FMADDsMULs"] = 0
+        info["FMADDsMULsPerCore"] = 0
         info["MULs"] = 0
         info["HW Loops"] = 0
         info["HW Loops / SSR Loads"] = 0
@@ -73,6 +82,8 @@ class ComputeCoreTile():
         info["A SSR Start Reuse Loads"]= 0
         info["B SSR Loads"]=0 
         info["A SSR Loads"] = 0
+        info["Core : A SSR Reuse Loads"] = 0
+        info["Reused / Total SSR Loads"] = 0
         return info
 
 class ClusterTile():
@@ -201,7 +212,7 @@ class TilingScheme():
                 d_count = D // d 
                 d_rem_count = 0
             else:
-                d_count = d - 1
+                d_count = D // d 
                 d_rem_count = 1
             return d_count if d == d_size else d_rem_count
         all = self.clusterTileShapes()
@@ -211,8 +222,21 @@ class TilingScheme():
             n_iters = count(self.N,self.n,n_sz)
             k_iters = count(self.K,self.k,k_sz)
             freq = m_iters * n_iters * k_iters
+           # print(f"{m_sz} {n_sz} {k_sz} has num_tiles {m_iters} * {n_iters} * {k_iters} = {freq}")
             if freq != 0:
                 mine[(m_sz,n_sz,k_sz,freq)]=self.myComputeCoreTileShapes((m_sz,n_sz,k_sz))
+        # the sum of the frequencies of all L1 tile shapes should be equal to m*n*k - right??
+    #     f = 0
+    #     num_tiles = (self.m_tiles) *(self.n_tiles) *(self.k_tiles)
+    #  #   print(f"num_tiles = ({self.m_tiles}) *({self.n_tiles}) *({self.k_tiles}) = {num_tiles}")
+    #     for k in mine.keys(): 
+    #         print(f"k is {k} and k[1] is {k[3]}")
+    #         f = f + k[3]
+       # print(f"{self.M} {self.N} {self.K} {self.m} {self.n} {self.k}: freqSum: {f} num_tiles: {num_tiles}")
+      #  print(mine.keys())
+      #  print(mine)
+        #assert f == num_tiles
+
         return mine
 
     # returns compute core tile shapes with a non-zero frequency  
@@ -237,7 +261,8 @@ class TilingScheme():
         for m in m_sizes:
              for n in n_sizes:
                 for k in k_sizes:
-                    all_imaginable.append((m,n,k))
+                    if m != 0 and n != 0 and k != 0:
+                        all_imaginable.append((m,n,k))
         #assert len(all_imaginable) == 8 # debugging only
         return all_imaginable
 
