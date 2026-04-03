@@ -50,7 +50,7 @@ class TSG_C(TSG_Quidditch):
     
     def kDimOptions(self):
         max = self.me.k
-        min = 8 if self.me.k >= 8 else 1
+        min = 8 if self.me.k >= 8 else 3  # min is 3 due to prologue and epilogue of HW Loop in assembly
         exhaustive = list(range(min, max + 1))
         if (self.me.n % 2) != 0:
             print(f"WARNING: K = {self.me.k} is NOT divisible by 2!")

@@ -58,8 +58,16 @@ class TSA_C_Remainder(TileSizeAnalyzer):
             suffix = "_c_ana"
         else:
             suffix = "_c_rem_ana"
+            nextBunch = df[df["SSR Config Count"].between(1025,2048)]
+            # filenameSorted = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_pad_ord_L1.csv"
+            nextBunch=nextBunch.sort_values("SSR Config Count", ascending=True)
+        
+            print(nextBunch[["FakeNN JSON Name","SSR Config Count"]])
+            filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss{suffix}_pruned.csv"
+            nextBunch.to_csv(filename, index=False)
 
         #print ((df['remainderTiles'] == df['remainderTiles'][0]).all())
+   
         filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss{suffix}.csv"
         df.to_csv(
             filename,

@@ -65,11 +65,16 @@ class TSG_C_Remainder(TileSizeGenerator):
     
     def kDimOptions(self):
         max = self.K
-        min = 8 if self.K >= 8 else 1
+        min = 8 if self.K >= 8 else 3 # min is 3 due to prologue and epilogue of HW Loop in assembly
         exhaustive = list(range(min, max + 1))
         if (self.N % 2) != 0:
             print(f"WARNING: K = {self.K} is NOT divisible by 2!")
         return exhaustive
+    
+    def remainderKGreaterThanTwo(self, num):
+        rem_k = self.K % num
+        return rem_k >= 3
+
 
     def nDimOptions(self):
         hardware_loop_body_options = [8]  # extend to 8,5 later
@@ -117,20 +122,23 @@ class TSG_C_Remainder(TileSizeGenerator):
         
         # filter for m's, n's and k's that DO NOT divide evenly into M,N,K respectively
         little_m_pad = list(filter(lambda x: not self.dividesIntoM(x), little_m_options))
-        if len(little_m_pad) < 1:  # prime M dimension
+        if len(little_m_pad) < 1:  
             print(
                 f"TSG: Cannot find a tile size that DOESN'T divide evenly into dimension M = {self.M}!"
             )
         little_n_pad = list(filter(lambda x: not self.dividesIntoN(x), little_n_options))
-        if len(little_n_pad) < 1:  # prime N dimension
+        if len(little_n_pad) < 1:  
             print(
                 f"TSG: Cannot find a tile size that DOESN'T divide evenly into dimension N = {self.N}!"
             )
         little_k_pad = list(filter(lambda x: not self.dividesIntoK(x), little_k_options))
-        if len(little_k_pad) < 1:  # prime K dimension
+        if len(little_k_pad) < 1:  
             print(
                 f"TSG: Cannot find a tile size that DOESN'T divide evenly into dimension K = {self.K}!"
             )
+        else:
+            # since we DO have some remainder tile options, make sure the remainder tile in the k dim is >= 3
+            little_k_pad = list(filter(lambda x: self.remainderKGreaterThanTwo(x), little_k_options))
 
         # print(f"little_m_pad is {little_m_pad}")
         # print(f"little_m_options is {little_m_options}")

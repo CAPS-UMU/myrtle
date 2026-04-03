@@ -27,7 +27,8 @@ def get_lines_from_file(file_name):
             return file.read().splitlines()
     except FileNotFoundError:
         return f"Error: The file '{file_name}' was not found."
-    
+
+# python topTenFromMNK.py "../16x16x16-debug/input.txt" "../16x16x16-debug"    
 # python topTenFromMNK.py "../128x128x128-pruned/input.txt" "../128x128x128-pruned"
 # python topTenFromMNK.py "../512x512x512/input.txt" "../512x512x512"
 # python topTenFromMNK.py "../32x32x32/input.txt" "../32x32x32" _ss_c_rem_gen
