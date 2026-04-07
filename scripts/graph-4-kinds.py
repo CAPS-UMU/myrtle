@@ -30,12 +30,32 @@ def main():
     start = len("../sensitivity-analysis/remainder-vs-divisor/div/")
     title = f"{input[start:-4]}"
 
+    if(len(sys.argv)==9):
+        remainderInputRetimed = sys.argv[8]
+        df_remainders = pd.read_csv(inputPadded)
+        df_rm_rt = pd.read_csv(remainderInputRetimed)
+        df_padded_ut = pd.read_csv(inputPaddedUntimed)
+        df_remainders_ann = pd.merge(df_padded_ut, df_remainders, on='FakeNN JSON Name', how='right')
+        df_remainders = ae.addExtras(df_remainders_ann)
+        df_rm_rt_ann = pd.merge(df_padded_ut, df_rm_rt, on='FakeNN JSON Name', how='right')
+        df_rm_rt = ae.addExtras(df_rm_rt_ann)
+        html = ig.generateInteractiveGraphsKernelVsDMA(df_remainders,df_rm_rt, title, titleOfWebpage)
+        with open(f"{output}.html", "w") as f:
+            f.write(html)
+            print(f":) Saved as {output} — open it in your browser.")
+        return 0
+
     # Read in the divisor CSV file
     df = pd.read_csv(input)
-
-    if inputUntimed != "no":    # load and further annotate untimed data
-        df_untimed = pd.read_csv(inputUntimed)
-        df_untimed = ae.addExtras(df_untimed)    
+    if divisorAnalyzed != "no":
+        df_ann = pd.read_csv(divisorAnalyzed)
+        df_ann = ae.addExtras(df_ann)
+    # if inputUntimed != "no":    # load and further annotate untimed data
+    #     df_untimed = pd.read_csv(inputUntimed)
+    #     df_merged2 = df_untimed.merge(df_ann,how="outer",on="FakeNN JSON Name")
+    #     df_untimed = ae.addExtras(df_merged2) 
+    #     df_untimed.to_csv("out/merged2.csv",index=False)
+           
     if inputPadded != "no":
         print("TODO: HANDLE PADDED DATA")
         df_remainders = pd.read_csv(inputPadded)
@@ -46,9 +66,7 @@ def main():
         df_padded_ut = pd.read_csv(inputPaddedUntimed)
         df_padded_ut = ae.addExtras(df_padded_ut)
         df_padded_ut = ae.addFakeKernelTime(df_padded_ut,df)
-    if divisorAnalyzed != "no":
-        df_ann = pd.read_csv(divisorAnalyzed)
-        df_ann = ae.addExtras(df_ann)
+
 
     df_sorted = df.sort_values(by="dma", ascending=True)
     df_sorted["absoluteRank"] = range(1, int(df_sorted.shape[0] + 1))
@@ -67,13 +85,27 @@ def main():
         else:
             html = ig.generateInteractiveGraphs(df_merged, title, titleOfWebpage)
     else:
-        if inputPadded != "no":
-            print("TODO")
-            html = ig.generateInteractiveGraphsTuples((df_merged,None),(df_remainders,df_padded_ut), title, titleOfWebpage)
-           # html = rg_2_23.generateInteractiveGraphsTimedAndUntimedAndPadded(df, title, titleOfWebpage, df_untimed, df_padded)
-        else:
-            print("TODO")
-            html = rg_2_23.generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untimed)
+        print("HELLO TODO")
+        # df_merged = df.merge(df_ann,how="outer",on="FakeNN JSON Name")
+        # df_merged.to_csv("out/merged.csv",index=False)
+        # rm_retimed = pd.read_csv(inputUntimed)
+        # # print(rm_retimed)
+        # # print(rm_retimed.keys())
+        # # print(rm_retimed[["FakeNN JSON Name","dma"]])
+        # df_padded_ut = pd.read_csv(inputPaddedUntimed)
+        # df_padded_ut = ae.addExtras(df_padded_ut)
+        # df_merged2 = rm_retimed.merge(df_padded_ut,how="outer",on="FakeNN JSON Name")
+        # rm_retimed = ae.addExtras(df_merged2) 
+        # rm_retimed.to_csv("out/merged2.csv",index=False)
+        # # print(rm_retimed[["FakeNN JSON Name","dma"]])
+        # html = ig.generateInteractiveGraphsKernelVsDMA((df_merged,rm_retimed),(df_remainders,df_padded_ut), title, titleOfWebpage)
+        # if inputPadded != "no":
+        #     print("TODO")
+        #     html = ig.generateInteractiveGraphsTuples((df_merged,None),(df_remainders,df_padded_ut), title, titleOfWebpage)
+        #    # html = rg_2_23.generateInteractiveGraphsTimedAndUntimedAndPadded(df, title, titleOfWebpage, df_untimed, df_padded)
+        # else:
+        #     print("TODO")
+        #     html = rg_2_23.generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untimed)
     
     # --- Write to file ---
     with open(f"{output}.html", "w") as f:

@@ -457,3 +457,74 @@ def prunedScatter(df,x_col,y_col,color,hover_data,title,marker=""):
      # turn the pruned points gray?
      return fig14
         
+
+def generateInteractiveGraphsKernelVsDMA(rem_timed,rem_retimed, title, titleOfWebpage):
+        # convert remainderTiles to string
+        # rank points by dma time
+        rem_timed["remainderTiles"] = rem_timed["remainderTiles"].apply(lambda x: f"{x}")
+        rem_timed= rem_timed.sort_values(by="dma", ascending=True)
+        rem_timed["absoluteRank"] = range(1, int(rem_timed.shape[0] + 1))
+
+        rem_retimed["remainderTiles"] = rem_retimed["remainderTiles"].apply(lambda x: f"{x}")
+        rem_retimed= rem_retimed.sort_values(by="dma", ascending=True)
+        rem_retimed["absoluteRank"] = range(1, int(rem_retimed.shape[0] + 1))
+        
+        x_col = "Regular Loads"
+        y_col = "dma"
+        hover_data = [
+            "JSON Name",
+            x_col,
+            y_col,
+            "Reused / Total SSR Loads",
+            "SSR Config Count",
+            "absoluteRank",
+            "divisorRank",
+            "L3 Loads",
+            "HW Loops / SSR Loads",
+            "mk/n",
+            "L3 Loads Timed",
+            "L1 Usage",
+            "CC L1 Footprint",
+            "Kernel Time",
+            "dma",
+          #  "oldRegPerStream",
+            "regPerStream",
+        #     "myRegPerStream",
+                "FMADDsPerCore",
+            "CC L1 / L1",
+            "k/n",
+            "fmaddsPerCore",
+        ]
+           
+
+        special_figs = []
+        more_figs = []
+#         x_col = "dma" 
+#         y_col = "A SSR Reuse Loads"
+#         
+        df_merged = pd.merge(rem_timed, rem_retimed, on='FakeNN JSON Name', how="inner", suffixes=('_withBug', '_noBug'))
+        df_merged['Kernel Time Difference'] = df_merged['Kernel Time_withBug'] - df_merged['Kernel Time_noBug']
+        print(df_merged[['FakeNN JSON Name','Kernel Time Difference',"Kernel Time_withBug","Kernel Time_noBug"]] )
+        df_merged['% Kernel Time Change'] = (df_merged['Kernel Time Difference'] / df_merged['Kernel Time_withBug']) * 100
+        #df_merged['RankDiff'] = df_merged['absoluteRank_withBug'] - df_merged['absoluteRank_noBug']
+        # df_merged['Status'] = df_merged['Difference'].apply(
+        # lambda x: 'Slow Down' if x < 0 else 'Same or Better'
+        # )
+
+        fig2 = px.bar(df_merged, 
+        x='FakeNN JSON Name', 
+        y='Kernel Time Difference',
+        title='Fixing Kernel Time Parsing Bug',
+        color='Kernel Time Difference',
+        color_continuous_scale='RdBu', # Red for negative, Blue for positive
+        hover_name='FakeNN JSON Name',
+        hover_data={
+                'Kernel Time Difference': ':.2f',    # Format to 2 decimal places
+                'Kernel Time_withBug': True,         # Show the raw value from File A
+                'Kernel Time_noBug': True,         # Show the raw value from File B
+                'FakeNN JSON Name': False       # Hide Category if it's already on the X-axis
+        },
+        labels={'Kernel Time Difference': 'withBug - No Bug (cycles)','value': 'Kernel Time (cycles)', 'variable': 'Source File'})
+        #labels={'Difference': 'Redundant - No Redundant (cycles)','value': 'Kernel Time (cycles)', 'variable': 'Source File'})
+        special_figs.append(fig2)
+        return saveFigsInHTML(special_figs,more_figs,titleOfWebpage)
