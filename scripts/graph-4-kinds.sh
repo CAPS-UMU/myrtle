@@ -1,8 +1,8 @@
 DIVISOR_FLDR="../sensitivity-analysis/remainder-vs-divisor/div"
 REMAINDER_FLDR="../sensitivity-analysis/remainder-vs-divisor/rem"
 WEBPAGES=""
-# USER="hoppip"
-USER="emily"
+USER="hoppip"
+#USER="emily"
 #/home/hoppip/myrtle/sensitivity-analysis/redundant-vs-no-redundant-stores/only-time/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
 #/home/hoppip/myrtle/sensitivity-analysis/redundant-vs-no-redundant-stores/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
 #/home/hoppip/myrtle/sensitivity-analysis/remainder-vs-divisor/div/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
@@ -28,17 +28,16 @@ BUG_FIX="$REMAINDER_FLDR/timed/fixed-parse-bug/128x128x128wm-n-k_ss_c_ana-result
 python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS $BUG_FIX
 WEBPAGES+=" $HTML_NAME.html"
 
-# DIVISOR="$DIVISOR_FLDR/timed/512x512x512wm-n-k_distillbert-results.csv"
-# HTML_NAME="out/cube512"
-# REMAINDER="no"
-# REMAINDER_UT="no"
-# WEBPAGE_TITLE="512x512x512-Redundant-Stores"
-# DIVISOR_UT="no"
-# #DIVISOR_ANALYSIS="$DIVISOR_FLDR/analysis/512x512x512wm-n-k_ss_c_ana.csv"
-# DIVISOR_ANALYSIS="/home/$USER/myrtle/myrtle/out/512x512x512wm-n-k_ss_c_ana.csv"
+DIVISOR="$DIVISOR_FLDR/timed/512x512x512wm-n-k_distillbert-results.csv"
+HTML_NAME="out/cube512"
+REMAINDER="no"
+REMAINDER_UT="no"
+WEBPAGE_TITLE="512x512x512-Redundant-Stores"
+DIVISOR_UT="no"
+DIVISOR_ANALYSIS="/home/$USER/myrtle/myrtle/out/512x512x512wm-n-k_ss_c_ana.csv"
 
-# python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS
-# WEBPAGES+=" $HTML_NAME.html"
+python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS
+WEBPAGES+=" $HTML_NAME.html"
 
 INDEX_TITLE="128 Cube Remainder Tile Results"
 INDEX_SUMMARY="In-progress results timing tiled matmul on snitch using remainder tiles."
