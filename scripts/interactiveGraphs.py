@@ -396,14 +396,6 @@ def scatterWithColor(df,x_col,y_col,color,hover_data,title,marker=""):
      )  
      return fig8
 
-# def addScatterWithColor(fig, df,x_col,y_col,color,hover_data):
-#      fig.add_scatter(
-#           df,
-#           x=x_col,
-#           y=y_col,
-#           color=color,
-#           hover_data=hover_data,  # Show these columns on hover
-#      )
 
 def hoverTemplateString(df,hover_data,title):
         idx = {col: i for i, col in enumerate(df[hover_data].columns.values)}
@@ -506,7 +498,7 @@ def generateInteractiveGraphsKernelVsDMA(rem_timed,rem_retimed, divisors_timed, 
 #         
         df_merged = pd.merge(rem_timed, rem_retimed, on='FakeNN JSON Name', how="inner", suffixes=('_withBug', '_noBug'))
         df_merged['Kernel Time Difference'] = df_merged['Kernel Time_noBug'] -df_merged['Kernel Time_withBug']
-        print(df_merged[['FakeNN JSON Name','Kernel Time Difference',"Kernel Time_withBug","Kernel Time_noBug"]] )
+        #print(df_merged[['FakeNN JSON Name','Kernel Time Difference',"Kernel Time_withBug","Kernel Time_noBug"]] )
         df_merged['% Kernel Time Change'] = (df_merged['Kernel Time Difference'] / df_merged['Kernel Time_withBug']) * 100
         df_merged["symbolMarker"] = 'O'
         #df_merged['RankDiff'] = df_merged['absoluteRank_withBug'] - df_merged['absoluteRank_noBug']
@@ -575,9 +567,9 @@ def generateInteractiveGraphsKernelVsDMA(rem_timed,rem_retimed, divisors_timed, 
         right = df_merged[cols]
         
         df_merged = pd.concat([left, right])
-        print(df_merged.keys())
-        print(df_merged[cols])
-        print(f"left: {left.shape}, right: {right.shape}, together: {df_merged.shape}")
+       # print(df_merged.keys())
+       # print(df_merged[cols])
+       # print(f"left: {left.shape}, right: {right.shape}, together: {df_merged.shape}")
         df_sorted = df_merged.sort_values(by="dma", ascending=True)
         df_sorted["absoluteRank"] = range(1, int(df_sorted.shape[0] + 1))
         df = df_sorted   
@@ -612,4 +604,236 @@ def generateInteractiveGraphsKernelVsDMA(rem_timed,rem_retimed, divisors_timed, 
         more_figs.append(scatterWithColor(df,x_col,y_col,color,hover_data,"dma vs kernel-dma time diff, all 128 cube points","symbolMarker"))
         
 
+        return saveFigsInHTML(special_figs,more_figs,titleOfWebpage)
+
+def generateInteractiveBarGraphs(divisors,remainders, title, titleOfWebpage):
+        x_col = "Regular Loads"
+        y_col = "dma"
+        hover_data = [
+            "JSON Name",
+            x_col,
+            y_col,
+            "Reused / Total SSR Loads",
+            "SSR Config Count",
+            "absoluteRank",
+            "divisorRank",
+            "L3 Loads",
+            "HW Loops / SSR Loads",
+            "mk/n",
+            "L3 Loads Timed",
+            "L1 Usage",
+            "CC L1 Footprint",
+            "dma",
+          #  "oldRegPerStream",
+            "regPerStream",
+        #     "myRegPerStream",
+                "FMADDsPerCore",
+            "CC L1 / L1",
+            "k/n",
+            "fmaddsPerCore",
+        ]
+           
+        if divisors[1] is not None:
+                raise Exception("I can't handle timed AND untimed divisor tiles right now!")
+        if remainders[0] is None or remainders[1] is None:
+                raise Exception("I require both TIMED and UNTIMED remainder tiles!")
+        def sumProloguesEpilogues(df):
+                for cat in ["Before Computation","After Computation"]:
+                        cat_total =f"{cat} Total"
+                        df[cat_total] = 0
+                        for c in range(0,8):
+                                suffix = f"_cc_{c}"
+                                df[cat_total] = df[cat_total] + df[f"{cat}{suffix}"]
+                return df
+        def otherTime(df):
+                for cat in ["Before Computation","After Computation","Overlap Stall Time","Raw Compute Time"]:
+                        cat_total ="Time Accounted For"
+                        df[cat_total] = 0
+                for c in range(0,8):
+                        total =f"Time Accounted For_cc_{c}"
+                        df[total] = 0
+                        for cat in ["Before Computation","After Computation","Overlap Stall Time","Raw Compute Time"]:
+                                col = f"{cat}_cc_{c}"
+                                df[total] = df[total] + df[col]
+                        otherTotal =f"Time Unaccounted For_cc_{c}"
+                        df[otherTotal] = df["dma"] - df[total]
+                return df
+        def sumTimeAccountedFor(df):
+                for cat in ["Time Accounted For","Time Unaccounted For"]:
+                        cat_total =f"{cat} Total"
+                        df[cat_total] = 0
+                        for c in range(0,8):
+                                suffix = f"_cc_{c}"
+                                df[cat_total] = df[cat_total] + df[f"{cat}{suffix}"]
+                return df
+        # def otherTime(df):
+        #         df["other"] = df["dma"]-df['Overlap Stall Time Total']- df['Raw Compute Time Total'] - df['Before Computation Total'] - df['After Computation Total']
+        #         return df
+        # preprocess data
+        df = divisors[0]
+        df["divisorRank"]=df["absoluteRank"]
+        df["symbolMarker"] = 'O'
+        df["remainderTiles"] = df["remainderTiles"].apply(lambda x: f"{x}")
+        df = sumProloguesEpilogues(df)
+        df = otherTime(df)
+        df = sumTimeAccountedFor(df)
+        rm = remainders[0]
+        rm["divisorRank"] = -1
+        rm["symbolMarker"] = "^" 
+        rm["remainderTiles"] = rm["remainderTiles"].apply(lambda x: f"{x}")
+        rm = sumProloguesEpilogues(rm)
+        rm = otherTime(rm)
+        rm = sumTimeAccountedFor(rm)
+        rm_ut = remainders[1]
+        rm_ut["symbolMarker"] = '^'
+        rm_ut["divisorRank"] = -1
+        rm_ut["remainderTiles"] = rm_ut["remainderTiles"].apply(lambda x: f"{x}")
+        rm_ut["Before Computation Total"] = -1
+        rm_ut["After Computation Total"] = -1
+      
+        rm_ut = rm_ut[~rm_ut['FakeNN JSON Name'].isin(rm['FakeNN JSON Name'])]
+
+        # combine timed points into single DF, then create absolute rank
+        timed = pd.concat([df, rm], join='inner', ignore_index=True)   
+        timed_sorted = timed.sort_values(by="dma", ascending=True)
+        timed_sorted["absoluteRank"] = range(1, int(timed_sorted.shape[0] + 1))
+        timed = timed_sorted.sort_values(by="symbolMarker", ascending=True) 
+        timed ["flatColor"] = "pink" 
+        
+        # special figures
+        special_figs = []
+        x_col = "SSR Configs"
+        y_col = "dma"   
+        special_figs.append(prunedScatter(timed,x_col,y_col,"regPerStream",hover_data,"OLD RATIO: timed divisors and (some) timed remainders","symbolMarker"))
+        addScatterFlatColorMarker(special_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"timed divisors and (some) timed remainders")
+        
+        x_col = "regPerStream"
+        y_col = "dma"
+        timed_pruned = timed[timed["SSR Config Count"]<=1024]   
+        rm_ut_pruned = rm_ut[rm_ut["SSR Config Count"]<=1024]
+        special_figs.append(scatterWithColor(timed_pruned,x_col,y_col,"dma",hover_data,"OLD RATIO + pruned to SSR Configs <= 1024","symbolMarker"))
+        addScatterFlatColorMarker(special_figs[-1],rm_ut_pruned,x_col,y_col,"gray","triangle-up",hover_data,"timed divisors and (some) timed remainders")
+        
+        x_col = "SSR Configs"
+        y_col = "dma" 
+        color = "HW Loops / SSR Loads"
+        special_figs.append(prunedScatter(timed,x_col,y_col,color,hover_data,"UPDATED, SCALED SUMMATION OF RATIO: timed divisors and (some) timed remainders ","symbolMarker"))
+        addScatterFlatColorMarker(special_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
+        
+        x_col = "HW Loops / SSR Loads"
+        y_col = "dma" 
+        color = "dma"
+        special_figs.append(scatterWithColor(timed,x_col,y_col,color,hover_data,"UPDATED, SCALED SUMMATION OF RATIO: timed divisors and (some) timed remainders ","symbolMarker"))
+        addScatterFlatColorMarker(special_figs[-1],rm_ut,x_col,y_col,"gray","triangle-up",hover_data,"Remainders Untimed")
+        
+        # more figures
+        more_figs = []
+  
+
+        # df = pd.DataFrame(data)
+     #   print(timed.columns)
+      #  print(timed[['Overlap Stall Time Total', 'Raw Compute Time Total','Before Compute Time Total','After Compute Time Total']])
+        timed["8*dma"]=timed['dma']*8
+        # # 2. Create the stacked bar graph
+        fig = px.bar(
+        timed, 
+        x='absoluteRank',
+        y=['Overlap Stall Time Total', 'Raw Compute Time Total','Before Computation Total','After Computation Total'], # Each column is a trace
+        title='End-to-End Execution Time Breakdown (divisors AND remainders)',
+        barmode='stack', # This stacks the traces on top of each other
+        hover_data={
+                'FakeNN JSON Name': True,       # Hide Category if it's already on the X-axis
+                "remainderTiles" : True,
+                'dma': ':.2f',    # Format to 2 decimal places
+                'Kernel Time': True,         # Show the raw value from File B
+                "L3 Loads": True,
+                "HW Loops / SSR Loads": True,
+                "mk/n": True,
+                "L1 Usage": True,
+                "Total CC Tiles" : True,
+        },
+        labels={'value': 'Cycles', 'variable': 'Absolute Rank; smaller is faster'},
+        template='presentation'
+        )
+        more_figs.append(fig)
+
+       # pruned = timed[timed["absoluteRank"] < 5]
+        #print(pruned.columns)
+       #print(pruned[['dma', 'Raw Compute Time_cc_1',"Overlap Stall Time_cc_1"]])
+        fig = px.bar(
+        timed, 
+        x='absoluteRank',
+        y=['8*dma','Overlap Stall Time Total', 'Raw Compute Time Total'], # Each column is a trace
+        title='Reality Check: 8*(dma core end-to-end time) >=  (raw compute + overlap stall over all compute cores)',
+        barmode='group', # This stacks the traces on top of each other
+        hover_data={
+                'FakeNN JSON Name': True,       # Hide Category if it's already on the X-axis
+                "remainderTiles" : True,
+                'dma': ':.2f',    # Format to 2 decimal places
+                'Kernel Time': True,         # Show the raw value from File B
+                "L3 Loads": True,
+                "HW Loops / SSR Loads": True,
+                "mk/n": True,
+                "L1 Usage": True,
+                "Total CC Tiles" : True,
+        },
+        labels={'value': 'Cycles', 'variable': 'Absolute Rank; smaller is faster'},
+        template='presentation'
+        )
+        more_figs.append(fig)
+
+        # pruned = timed[timed["absoluteRank"] < 6]
+        # fig = px.bar(
+        # pruned, 
+        # x='absoluteRank',
+        # y=['8*dma','Time Accounted For Total'], # Each column is a trace
+        # title='Reality Check: 5 fastest points',
+        # barmode='group', # This stacks the traces on top of each other
+        # hover_data={
+        #         'FakeNN JSON Name': True,       # Hide Category if it's already on the X-axis
+        #         "remainderTiles" : True,
+        #         '8*dma': True,    # Format to 2 decimal places
+        #         'Kernel Time': True,         # Show the raw value from File B
+        #         "L3 Loads": True,
+        #         "HW Loops / SSR Loads": True,
+        #         "mk/n": True,
+        #         "L1 Usage": True,
+        #         "Total CC Tiles" : True,
+        # },
+        # labels={'value': 'Cycles', 'variable': 'Absolute Rank; smaller is faster'},
+        # template='presentation'
+        # )
+        # more_figs.append(fig)
+        
+        # print(timed[["FakeNN JSON Name","dma"]])
+        # fig = px.bar(
+        # timed, 
+        # x='absoluteRank',
+        # y=['dma','Kernel Time'], # Each column is a trace
+        # title='End-to-End Execution Time vs Compute Core Time Accounted For',
+        # barmode='stack', # This stacks the traces on top of each other
+        # hover_data={
+        #         'FakeNN JSON Name': True,       # Hide Category if it's already on the X-axis
+        #         "remainderTiles" : True,
+        #         'dma': ':.2f',    # Format to 2 decimal places
+        #         'Kernel Time': True,         # Show the raw value from File B
+        #         "L3 Loads": True,
+        #         "HW Loops / SSR Loads": True,
+        #         "mk/n": True,
+        #         "L1 Usage": True,
+        #         'Time Unaccounted For Total':True,
+        #         "Time Accounted For Total":True,
+        #         "Total CC Tiles" : True,
+        # },
+        # labels={'value': 'Cycles', 'variable': 'Absolute Rank; smaller is faster'},
+
+        # )
+        # more_figs.append(fig)
+
+        # # 3. Show the plot
+        # fig.show()
+                
+        
+        
+        # export to HTML
         return saveFigsInHTML(special_figs,more_figs,titleOfWebpage)

@@ -28,7 +28,7 @@ def get_lines_from_file(file_name):
     except FileNotFoundError:
         return f"Error: The file '{file_name}' was not found."
 
-#python topTenFromMNK.py "../16x16x16/input.txt" "../16x16x16" 
+#python topTenFromMNK.py "../16x16x16/input.txt" "../16x16x16" _ss_c_rem_gen
 # python topTenFromMNK.py "../16x16x16-debug/input.txt" "../16x16x16-debug"    
 # python topTenFromMNK.py "../128x128x128-pruned/input.txt" "../128x128x128-pruned"
 # python topTenFromMNK.py "../512x512x512/input.txt" "../512x512x512"
@@ -107,20 +107,20 @@ def main():
         ss = theTop
         # create compile script
         print(f"export experimentDir=/repo/{topLevelOutputFolder};",file=compileScript)
-        print(f"bash many_gemms.sh {ss} compile no no no > ./{topLevelOutputFolder}/compile-{basename}.txt;",file=compileScript)
+        print(f"bash myrtle-experiments/many_gemms.sh {ss} compile no no no > ./{topLevelOutputFolder}/compile-{basename}.txt;",file=compileScript)
     
         # create run script     
         print(f"export experimentDir=/repo/{topLevelOutputFolder};",file=runScript)   
-        print(f"bash many_gemms.sh {ss} check run no no > ./{topLevelOutputFolder}/run-{basename}.txt;",file=runScript)
+        print(f"bash myrtle-experiments/many_gemms.sh {ss} check run no no > ./{topLevelOutputFolder}/run-{basename}.txt;",file=runScript)
      
         # create check script
         print(f"export experimentDir=/repo/{topLevelOutputFolder};",file=checkScript)
-        print(f"bash many_gemms.sh {ss} check no no no;",file=checkScript)
+        print(f"bash myrtle-experiments/many_gemms.sh {ss} check no no no;",file=checkScript)
       
         # create extract script
         print(f"export experimentDir=/repo/{topLevelOutputFolder};",file=extractScript)
-        print(f"bash many_gemms.sh {ss} no no extract;",file=extractScript)
-        print(f"python combineKernelTimesIntoSingleCSV.py {ss} $experimentDir;",file=extractScript)
+        print(f"bash myrtle-experiments/many_gemms.sh {ss} no no extract;",file=extractScript)
+        print(f"python myrtle-experiments/combineTilingSchemeDataIntoSingleCSV.py {ss} $experimentDir;",file=extractScript)
        
     
     for s in scripts:

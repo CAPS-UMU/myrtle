@@ -6,20 +6,29 @@ USER="hoppip"
 #/home/hoppip/myrtle/sensitivity-analysis/redundant-vs-no-redundant-stores/only-time/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
 #/home/hoppip/myrtle/sensitivity-analysis/redundant-vs-no-redundant-stores/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
 #/home/hoppip/myrtle/sensitivity-analysis/remainder-vs-divisor/div/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
-DIVISOR="$DIVISOR_FLDR/timed/128x128x128wm-n-k_ss_c_no-redundant.csv"
+DIVISOR="$DIVISOR_FLDR/timed/128x128x128wm-n-k_ss_c_ana-results.csv"
 HTML_NAME="out/cube128"
-REMAINDER="/home/$USER/myrtle/sensitivity-analysis/remainder-vs-divisor/rem/timed/128x128x128wm-n-k_ss_c_ana-results-unskipped.csv"
+REMAINDER="/home/$USER/myrtle/sensitivity-analysis/remainder-vs-divisor/rem/timed/128x128x128wm-n-k_ss_c_ana-results.csv"
 REMAINDER_UT="/home/$USER/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_rem_ana.csv"
 WEBPAGE_TITLE="128x128x128-No-Redundant-Stores"
 DIVISOR_UT="no"
-# DIVISOR_ANALYSIS="$DIVISOR_FLDR/analysis/128x128x128wm-n-k_ss_c_ana.csv"
 DIVISOR_ANALYSIS="/home/$USER/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_ana.csv"
 python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS
 WEBPAGES+=" $HTML_NAME.html"
 
-DIVISOR="$DIVISOR_FLDR/timed/128x128x128wm-n-k_ss_c_no-redundant.csv"
+DIVISOR="$DIVISOR_FLDR/timed/128x128x128wm-n-k_ss_c_ana-results.csv"
+HTML_NAME="out/cube128-stall-cycles"
+REMAINDER="/home/$USER/myrtle/sensitivity-analysis/remainder-vs-divisor/rem/timed/128x128x128wm-n-k_ss_c_ana-results.csv"
+REMAINDER_UT="/home/$USER/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_rem_ana.csv"
+WEBPAGE_TITLE="128x128x128-No-Redundant-Stores"
+DIVISOR_UT="bars"
+DIVISOR_ANALYSIS="/home/$USER/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_ana.csv"
+python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS
+WEBPAGES+=" $HTML_NAME.html"
+
+DIVISOR="$DIVISOR_FLDR/timed/128x128x128wm-n-k_ss_c_no-redundant_deprecated.csv"
 HTML_NAME="out/cube128-kernel-vs-dma"
-REMAINDER="$REMAINDER_FLDR/timed/128x128x128wm-n-k_ss_c_ana-results-unskipped.csv"
+REMAINDER="$REMAINDER_FLDR/timed/128x128x128wm-n-k_ss_c_ana-results-unskipped-deprecated.csv"
 REMAINDER_UT="/home/$USER/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_rem_ana.csv"
 WEBPAGE_TITLE="128x128x128-Fixed-Kernel-Time-Parsing-Bug"
 DIVISOR_UT="no"
@@ -28,15 +37,14 @@ BUG_FIX="$REMAINDER_FLDR/timed/fixed-parse-bug/128x128x128wm-n-k_ss_c_ana-result
 python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS $BUG_FIX
 WEBPAGES+=" $HTML_NAME.html"
 
-DIVISOR="$DIVISOR_FLDR/timed/512x512x512wm-n-k_distillbert-results.csv"
+# DIVISOR="$DIVISOR_FLDR/timed/512x512x512wm-n-k_distillbert-results.csv"
 HTML_NAME="out/cube512"
-REMAINDER="no"
-REMAINDER_UT="no"
-WEBPAGE_TITLE="512x512x512-Redundant-Stores"
-DIVISOR_UT="no"
-DIVISOR_ANALYSIS="/home/$USER/myrtle/myrtle/out/512x512x512wm-n-k_ss_c_ana.csv"
-
-python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS
+# REMAINDER="no"
+# REMAINDER_UT="no"
+# WEBPAGE_TITLE="512x512x512-Redundant-Stores"
+# DIVISOR_UT="no"
+# DIVISOR_ANALYSIS="/home/$USER/myrtle/myrtle/out/512x512x512wm-n-k_ss_c_ana.csv"
+# python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS
 WEBPAGES+=" $HTML_NAME.html"
 
 INDEX_TITLE="128 Cube Remainder Tile Results"

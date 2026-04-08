@@ -56,17 +56,21 @@ def main():
 
     # Read in the divisor CSV file
     df = pd.read_csv(input)
+    df_sorted = df.sort_values(by="dma", ascending=True)
+    df_sorted["absoluteRank"] = range(1, int(df_sorted.shape[0] + 1))
+    df = df_sorted 
     if divisorAnalyzed != "no":
         df_ann = pd.read_csv(divisorAnalyzed)
         df_ann = ae.addExtras(df_ann)
-    # if inputUntimed != "no":    # load and further annotate untimed data
-    #     df_untimed = pd.read_csv(inputUntimed)
-    #     df_merged2 = df_untimed.merge(df_ann,how="outer",on="FakeNN JSON Name")
-    #     df_untimed = ae.addExtras(df_merged2) 
-    #     df_untimed.to_csv("out/merged2.csv",index=False)
+        df_merged = df.merge(df_ann,how="outer",on="FakeNN JSON Name")
+        df = df_merged
+    if inputUntimed != "no" and inputUntimed != "bars":    # load and further annotate untimed data
+        df_untimed = pd.read_csv(inputUntimed)
+        df_merged2 = df_untimed.merge(df_ann,how="outer",on="FakeNN JSON Name")
+        df_untimed = ae.addExtras(df_merged2) 
+        df_untimed.to_csv("out/merged2.csv",index=False)
            
     if inputPadded != "no":
-        print("TODO: HANDLE PADDED DATA")
         df_remainders = pd.read_csv(inputPadded)
         df_padded_ut = pd.read_csv(inputPaddedUntimed)
         df_remainders_ann = pd.merge(df_padded_ut, df_remainders, on='FakeNN JSON Name', how='right')
@@ -77,44 +81,23 @@ def main():
         df_padded_ut = ae.addFakeKernelTime(df_padded_ut,df)
 
 
-    df_sorted = df.sort_values(by="dma", ascending=True)
-    df_sorted["absoluteRank"] = range(1, int(df_sorted.shape[0] + 1))
-    df = df_sorted   
+      
 
     if inputUntimed == "no":    # Create interactive scatter plots
-        df_merged = df.merge(df_ann,how="outer",on="FakeNN JSON Name")
-        df_merged.to_csv("out/merged.csv",index=False)
         if inputPaddedUntimed != "no":            
-            html = ig.generateInteractiveGraphsTuples((df_merged,None),(None,df_padded_ut), title, titleOfWebpage)
-            html = ig.generateInteractiveGraphsTuples((df_merged,None),(df_remainders,df_padded_ut), title, titleOfWebpage)
+            #html = ig.generateInteractiveGraphsTuples((df_merged,None),(None,df_padded_ut), title, titleOfWebpage)
+            html = ig.generateInteractiveGraphsTuples((df,None),(df_remainders,df_padded_ut), title, titleOfWebpage)
         # elif inputPadded != "no":
             # df_merged = df.merge(df_ann,how="outer",on="FakeNN JSON Name")
 
             # html = ig.generateInteractiveGraphsTuples((df_merged,None),(df_remainders,df_padded_ut), title, titleOfWebpage)
         else:
-            html = ig.generateInteractiveGraphs(df_merged, title, titleOfWebpage)
+            print("only graphing timed, divisor data...")
+            html = ig.generateInteractiveGraphs(df, title, titleOfWebpage)
     else:
-        print("HELLO TODO")
-        # df_merged = df.merge(df_ann,how="outer",on="FakeNN JSON Name")
-        # df_merged.to_csv("out/merged.csv",index=False)
-        # rm_retimed = pd.read_csv(inputUntimed)
-        # # print(rm_retimed)
-        # # print(rm_retimed.keys())
-        # # print(rm_retimed[["FakeNN JSON Name","dma"]])
-        # df_padded_ut = pd.read_csv(inputPaddedUntimed)
-        # df_padded_ut = ae.addExtras(df_padded_ut)
-        # df_merged2 = rm_retimed.merge(df_padded_ut,how="outer",on="FakeNN JSON Name")
-        # rm_retimed = ae.addExtras(df_merged2) 
-        # rm_retimed.to_csv("out/merged2.csv",index=False)
-        # # print(rm_retimed[["FakeNN JSON Name","dma"]])
-        # html = ig.generateInteractiveGraphsKernelVsDMA((df_merged,rm_retimed),(df_remainders,df_padded_ut), title, titleOfWebpage)
-        # if inputPadded != "no":
-        #     print("TODO")
-        #     html = ig.generateInteractiveGraphsTuples((df_merged,None),(df_remainders,df_padded_ut), title, titleOfWebpage)
-        #    # html = rg_2_23.generateInteractiveGraphsTimedAndUntimedAndPadded(df, title, titleOfWebpage, df_untimed, df_padded)
-        # else:
-        #     print("TODO")
-        #     html = rg_2_23.generateInteractiveGraphsTimedAndUntimed(df, title, titleOfWebpage, df_untimed)
+        if inputUntimed == "bars":
+            html = ig.generateInteractiveBarGraphs((df,None),(df_remainders,df_padded_ut), title, titleOfWebpage)
+            print("HELLO TODO")
     
     # --- Write to file ---
     with open(f"{output}.html", "w") as f:
