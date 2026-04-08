@@ -39,7 +39,16 @@ def main():
         df_remainders = ae.addExtras(df_remainders_ann)
         df_rm_rt_ann = pd.merge(df_padded_ut, df_rm_rt, on='FakeNN JSON Name', how='right')
         df_rm_rt = ae.addExtras(df_rm_rt_ann)
-        html = ig.generateInteractiveGraphsKernelVsDMA(df_remainders,df_rm_rt, title, titleOfWebpage)
+        # also take in divisor data
+        df = pd.read_csv(input)
+        if divisorAnalyzed != "no":
+            df_ann = pd.read_csv(divisorAnalyzed)
+            df_ann = ae.addExtras(df_ann)
+        df_sorted = df.sort_values(by="dma", ascending=True)
+        df_sorted["absoluteRank"] = range(1, int(df_sorted.shape[0] + 1))
+        df = df_sorted 
+        df_merged = df.merge(df_ann,how="outer",on="FakeNN JSON Name")
+        html = ig.generateInteractiveGraphsKernelVsDMA(df_remainders,df_rm_rt,df_merged, title, titleOfWebpage)
         with open(f"{output}.html", "w") as f:
             f.write(html)
             print(f":) Saved as {output} — open it in your browser.")

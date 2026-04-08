@@ -458,17 +458,19 @@ def prunedScatter(df,x_col,y_col,color,hover_data,title,marker=""):
      return fig14
         
 
-def generateInteractiveGraphsKernelVsDMA(rem_timed,rem_retimed, title, titleOfWebpage):
+def generateInteractiveGraphsKernelVsDMA(rem_timed,rem_retimed, divisors_timed, title, titleOfWebpage):
         # convert remainderTiles to string
         # rank points by dma time
         rem_timed["remainderTiles"] = rem_timed["remainderTiles"].apply(lambda x: f"{x}")
         rem_timed= rem_timed.sort_values(by="dma", ascending=True)
         rem_timed["absoluteRank"] = range(1, int(rem_timed.shape[0] + 1))
+        #rem_timed["symbolMarker"] = 'O'
 
         rem_retimed["remainderTiles"] = rem_retimed["remainderTiles"].apply(lambda x: f"{x}")
         rem_retimed= rem_retimed.sort_values(by="dma", ascending=True)
         rem_retimed["absoluteRank"] = range(1, int(rem_retimed.shape[0] + 1))
-        
+       # rem_retimed["symbolMarker"] = '^'
+
         x_col = "Regular Loads"
         y_col = "dma"
         hover_data = [
@@ -503,9 +505,10 @@ def generateInteractiveGraphsKernelVsDMA(rem_timed,rem_retimed, title, titleOfWe
 #         y_col = "A SSR Reuse Loads"
 #         
         df_merged = pd.merge(rem_timed, rem_retimed, on='FakeNN JSON Name', how="inner", suffixes=('_withBug', '_noBug'))
-        df_merged['Kernel Time Difference'] = df_merged['Kernel Time_withBug'] - df_merged['Kernel Time_noBug']
+        df_merged['Kernel Time Difference'] = df_merged['Kernel Time_noBug'] -df_merged['Kernel Time_withBug']
         print(df_merged[['FakeNN JSON Name','Kernel Time Difference',"Kernel Time_withBug","Kernel Time_noBug"]] )
         df_merged['% Kernel Time Change'] = (df_merged['Kernel Time Difference'] / df_merged['Kernel Time_withBug']) * 100
+        df_merged["symbolMarker"] = 'O'
         #df_merged['RankDiff'] = df_merged['absoluteRank_withBug'] - df_merged['absoluteRank_noBug']
         # df_merged['Status'] = df_merged['Difference'].apply(
         # lambda x: 'Slow Down' if x < 0 else 'Same or Better'
@@ -514,17 +517,99 @@ def generateInteractiveGraphsKernelVsDMA(rem_timed,rem_retimed, title, titleOfWe
         fig2 = px.bar(df_merged, 
         x='FakeNN JSON Name', 
         y='Kernel Time Difference',
-        title='Fixing Kernel Time Parsing Bug',
-        color='Kernel Time Difference',
-        color_continuous_scale='RdBu', # Red for negative, Blue for positive
+        title='Change in Kernel Time After Fixing Parsing Bug',
+        color='remainderTiles_withBug',
+        #color_continuous_scale='RdBu', # Red for negative, Blue for positive
         hover_name='FakeNN JSON Name',
         hover_data={
                 'Kernel Time Difference': ':.2f',    # Format to 2 decimal places
+                '% Kernel Time Change':':.2f', 
                 'Kernel Time_withBug': True,         # Show the raw value from File A
                 'Kernel Time_noBug': True,         # Show the raw value from File B
                 'FakeNN JSON Name': False       # Hide Category if it's already on the X-axis
         },
-        labels={'Kernel Time Difference': 'withBug - No Bug (cycles)','value': 'Kernel Time (cycles)', 'variable': 'Source File'})
+        labels={'Kernel Time Difference': 'Kernel Time Diff noBug - withBug (cycles)','value': 'Kernel Time (cycles)', 'variable': 'Source File'})
         #labels={'Difference': 'Redundant - No Redundant (cycles)','value': 'Kernel Time (cycles)', 'variable': 'Source File'})
         special_figs.append(fig2)
+
+        y_col = "Kernel Time_withBug" 
+        x_col = "dma_withBug"
+        color = "dma_withBug"
+        # color = "HW Loops / SSR Loads"
+        hover_data=[
+                'Kernel Time Difference',    # Format to 2 decimal places
+                'Kernel Time_withBug',         # Show the raw value from File A
+                'Kernel Time_noBug',         # Show the raw value from File B
+                "dma_withBug",
+                "dma_noBug",
+                'FakeNN JSON Name']      # Hide Category if it's already on the X-axis
+        
+        special_figs.append(scatterWithColor(df_merged,x_col,y_col,color,hover_data,"Black Triangle = Kernel Time AFTER BUG FIXED;","symbolMarker"))
+        y_col = 'Kernel Time_noBug'
+        addScatterFlatColorMarker(special_figs[-1],df_merged,x_col,y_col,"black","triangle-up",hover_data,"No Bug")
+
+        df_merged["DMA - Kernel Time"] = df_merged["dma_noBug"] - df_merged["Kernel Time_noBug"]
+        # more_figs.append(px.bar(
+        #         df_merged, 
+        #         x='FakeNN JSON Name', 
+        #         y=['dma_noBug', 'Kernel Time_noBug'], # Pass both column names here
+        #         barmode='group',         # Keeps them side-by-side
+        #         title='DMA vs Kernel Time',
+        #        # color='remainderTiles_withBug',
+        #         labels={'value': 'Time (cycles)', 'variable': 'Metric'}, # 'value' and 'variable' are default labels for lists
+        #         #template='plotly_dark'
+        #         ))
+
+        cols = ["FakeNN JSON Name","DMA - Kernel Time","remainderTiles","symbolMarker","Kernel Time","dma"]
+        divisors_timed["DMA - Kernel Time"] = divisors_timed["dma"] - divisors_timed["Kernel Time"]
+        df = divisors_timed
+        df["symbolMarker"] = 'O'
+        df["remainderTiles"] = df["remainderTiles"].apply(lambda x: f"{x}")
+        #print(divisors_timed[["FakeNN JSON Name","DMA - Kernel Time","remainderTiles"]])
+        left = divisors_timed[cols]
+        df_merged["remainderTiles"] = df_merged["remainderTiles_withBug"]
+        df_merged["Kernel Time"] = df_merged["Kernel Time_noBug"]
+        df_merged["dma"] = df_merged["dma_noBug"]
+        #print(df_merged[["FakeNN JSON Name","DMA - Kernel Time","remainderTiles"]])
+        #print(f"{df.keys()} and then {df_merged.keys()}")
+        right = df_merged[cols]
+        
+        df_merged = pd.concat([left, right])
+        print(df_merged.keys())
+        print(df_merged[cols])
+        print(f"left: {left.shape}, right: {right.shape}, together: {df_merged.shape}")
+        df_sorted = df_merged.sort_values(by="dma", ascending=True)
+        df_sorted["absoluteRank"] = range(1, int(df_sorted.shape[0] + 1))
+        df = df_sorted   
+        more_figs.append(px.bar(
+                df, 
+                x='FakeNN JSON Name', 
+                y=['DMA - Kernel Time'], # Pass both column names here
+                #barmode='group',         # Keeps them side-by-side
+                title='Difference between End to End Execution time (dma) and Computation time (Kernel Time)',
+                color='remainderTiles',
+                labels={'value': 'Time (cycles)', 'variable': 'Metric'}, # 'value' and 'variable' are default labels for lists
+                #template='plotly_dark'
+                ))
+
+        y_col = "Kernel Time" 
+        x_col = "dma"
+        color = "remainderTiles"
+        # color = "HW Loops / SSR Loads"
+        hover_data=[
+                'DMA - Kernel Time',    # Format to 2 decimal places
+                'FakeNN JSON Name',
+                'dma',
+                'Kernel Time',
+                'absoluteRank',
+                ]      # Hide Category if it's already on the X-axis
+        
+        more_figs.append(scatterWithColor(df,x_col,y_col,color,hover_data,"dma vs kernel time, all 128 cube points","symbolMarker"))
+        
+        y_col = "DMA - Kernel Time"
+        x_col = "dma"
+        color = "remainderTiles"
+        more_figs.append(scatterWithColor(df,x_col,y_col,color,hover_data,"dma vs kernel-dma time diff, all 128 cube points","symbolMarker"))
+        
+
         return saveFigsInHTML(special_figs,more_figs,titleOfWebpage)

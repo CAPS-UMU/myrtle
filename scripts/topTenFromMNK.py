@@ -119,7 +119,7 @@ def main():
       
         # create extract script
         print(f"export experimentDir=/repo/{topLevelOutputFolder};",file=extractScript)
-        print(f"bash many_gemms.sh {ss} no no no extract;",file=extractScript)
+        print(f"bash many_gemms.sh {ss} no no extract;",file=extractScript)
         print(f"python combineKernelTimesIntoSingleCSV.py {ss} $experimentDir;",file=extractScript)
        
     
