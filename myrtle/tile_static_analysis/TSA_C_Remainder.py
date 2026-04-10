@@ -3,6 +3,7 @@ import pandas as pd
 import pathlib
 from tile_static_analysis.TileSizeAnalyzer import TileSizeAnalyzer
 from functools import reduce
+import math
 
 class TSA_C_Remainder(TileSizeAnalyzer):
     def __init__(
@@ -24,9 +25,24 @@ class TSA_C_Remainder(TileSizeAnalyzer):
         ts = TilingScheme(int(d["M"]),int(d["N"]),int(d["K"]),int(d["m"]),int(d["n"]),int(d["k"]),self.UaJF,self.DoP,d["remainderTiles"])
         d.update(self.tilingSchemeMetrics(ts))
         return d
+    
+    def computeCoreTileCount(self,M, N, K, m, n, k, idx):
+        cct_per_m_cluster_tiles = int(M / m) * math.ceil(N / n) * math.ceil(K / k)
+        # when cluster tile has an m dimension < 8, we don't use all of the cores
+        # only cores with indices less than rem_m will execute for this cluster tile
+        cct_per_m_rem_cluster_tiles = 1 * math.ceil(N / n) * math.ceil(K / k)
+        rem_m = M % m
+        if idx < rem_m:
+            tiles = cct_per_m_cluster_tiles + cct_per_m_rem_cluster_tiles
+        else:
+            tiles = cct_per_m_cluster_tiles
+        return tiles
 
     def tilingSchemeMetrics(self,ts):
-        cc_tile_count = ts.m_tiles * ts.n_tiles * ts.k_tiles * ts.m_prime_tiles
+        #cc_tile_count = ts.m_tiles * ts.n_tiles * ts.k_tiles * ts.m_prime_tiles
+        cc_tile_count = 0
+        for i in range(0,8):
+            cc_tile_count = cc_tile_count + self.computeCoreTileCount(ts.M,ts.N,ts.K,ts.m,ts.n,ts.k,i)
         info ={
                 "m_tiles":ts.m_tiles,
                 "n_tiles":ts.n_tiles,
@@ -58,11 +74,11 @@ class TSA_C_Remainder(TileSizeAnalyzer):
             suffix = "_c_ana"
         else:
             suffix = "_c_rem_ana"
-            nextBunch = df[df["SSR Config Count"].between(1025,2048)]
+            nextBunch = df[df["SSR Config Count"].between(0,24576)]
             # filenameSorted = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_pad_ord_L1.csv"
             nextBunch=nextBunch.sort_values("SSR Config Count", ascending=True)
         
-            print(nextBunch[["FakeNN JSON Name","SSR Config Count"]])
+            print(f'Pruned analyzed ss contains: {nextBunch[["FakeNN JSON Name","SSR Config Count"]]}')
             filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss{suffix}_pruned.csv"
             nextBunch.to_csv(filename, index=False)
 
@@ -94,7 +110,7 @@ class TSA_C_Remainder(TileSizeAnalyzer):
             info["Little K"]=tile.k_sz
             if len(tile.cctls) == 2:
                 info["oldRegPerStream"]=-1
-                info["mHat Little VecMat Runs"]=tile.cctls[1].m_prime_size
+                info["mHat Little VecMat Runs"]=tile.cctls[1].m_prime_sz
                 info["mHat UnrollAndJam Loop Iters"]=int(tile.n_sz / self.UaJF)
                 info["mHat HW Loop Iters"]=tile.k_sz
                 info["mHat HW Loop Body Size"]=self.UaJF

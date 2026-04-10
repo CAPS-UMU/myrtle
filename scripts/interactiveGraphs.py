@@ -734,6 +734,7 @@ def generateInteractiveBarGraphs(divisors,remainders, title, titleOfWebpage):
      #   print(timed.columns)
       #  print(timed[['Overlap Stall Time Total', 'Raw Compute Time Total','Before Compute Time Total','After Compute Time Total']])
         timed["8*dma"]=timed['dma']*8
+        timed.sort_values(by="absoluteRank",ascending=True)
         # # 2. Create the stacked bar graph
         fig = px.bar(
         timed, 
@@ -751,6 +752,32 @@ def generateInteractiveBarGraphs(divisors,remainders, title, titleOfWebpage):
                 "mk/n": True,
                 "L1 Usage": True,
                 "Total CC Tiles" : True,
+        },
+        labels={'value': 'Cycles', 'variable': 'Absolute Rank; smaller is faster'},
+        template='presentation'
+        )
+        more_figs.append(fig)
+
+        pruned = timed[timed["absoluteRank"] < 50]
+        pruned.sort_values(by='absoluteRank',ascending=True)
+        fig = px.bar(
+        pruned, 
+        x='absoluteRank',
+        y=['Overlap Stall Time Total', 'Raw Compute Time Total','Before Computation Total','After Computation Total'], # Each column is a trace
+        title='End-to-End Execution Time Breakdown (divisors AND remainders)',
+        barmode='stack', # This stacks the traces on top of each other
+        hover_data={
+                'absoluteRank':True,
+                'FakeNN JSON Name': True,       # Hide Category if it's already on the X-axis
+                "remainderTiles" : True,
+                'dma': ':.2f',    # Format to 2 decimal places
+                'Kernel Time': True,         # Show the raw value from File B
+                "L3 Loads": True,
+                "HW Loops / SSR Loads": True,
+                "mk/n": True,
+                "L1 Usage": True,
+                "Total CC Tiles" : True,
+                "SSR Config Count":True
         },
         labels={'value': 'Cycles', 'variable': 'Absolute Rank; smaller is faster'},
         template='presentation'
@@ -782,12 +809,12 @@ def generateInteractiveBarGraphs(divisors,remainders, title, titleOfWebpage):
         )
         more_figs.append(fig)
 
-        timed["Approx C'"]=timed["m"]*timed["n"]
+        
         fig = px.bar(
         timed, 
-        x="Approx C'",
-        y=['Overlap Stall Time Total'], # Each column is a trace
-        title='Stall Time vs Size of Output Tile',
+        x='absoluteRank',
+        y=['8*dma','Overlap Stall Time Total', 'Raw Compute Time Total'], # Each column is a trace
+        title='Reality Check: 8*(dma core end-to-end time) >=  (raw compute + overlap stall over all compute cores)',
         barmode='group', # This stacks the traces on top of each other
         hover_data={
                 'FakeNN JSON Name': True,       # Hide Category if it's already on the X-axis
@@ -805,7 +832,30 @@ def generateInteractiveBarGraphs(divisors,remainders, title, titleOfWebpage):
         )
         more_figs.append(fig)
 
-        checkStallTimeCorrectness(timed)
+        # timed["Approx C'"]=timed["m"]*timed["n"]
+        # fig = px.bar(
+        # timed, 
+        # x="Approx C'",
+        # y=['Overlap Stall Time Total'], # Each column is a trace
+        # title='Stall Time vs Size of Output Tile',
+        # barmode='group', # This stacks the traces on top of each other
+        # hover_data={
+        #         'FakeNN JSON Name': True,       # Hide Category if it's already on the X-axis
+        #         "remainderTiles" : True,
+        #         'dma': ':.2f',    # Format to 2 decimal places
+        #         'Kernel Time': True,         # Show the raw value from File B
+        #         "L3 Loads": True,
+        #         "HW Loops / SSR Loads": True,
+        #         "mk/n": True,
+        #         "L1 Usage": True,
+        #         "Total CC Tiles" : True,
+        # },
+        # labels={'value': 'Cycles', 'variable': 'Absolute Rank; smaller is faster'},
+        # template='presentation'
+        # )
+        # more_figs.append(fig)
+
+        #checkStallTimeCorrectness(timed)
 
         # pruned = timed[timed["absoluteRank"] < 6]
         # fig = px.bar(

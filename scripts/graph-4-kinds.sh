@@ -1,14 +1,14 @@
 DIVISOR_FLDR="../sensitivity-analysis/remainder-vs-divisor/div"
 REMAINDER_FLDR="../sensitivity-analysis/remainder-vs-divisor/rem"
 WEBPAGES=""
-#USER="hoppip"
-USER="emily"
+USER="hoppip"
+#USER="emily"
 #/home/hoppip/myrtle/sensitivity-analysis/redundant-vs-no-redundant-stores/only-time/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
 #/home/hoppip/myrtle/sensitivity-analysis/redundant-vs-no-redundant-stores/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
 #/home/hoppip/myrtle/sensitivity-analysis/remainder-vs-divisor/div/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
 DIVISOR="$DIVISOR_FLDR/timed/128x128x128wm-n-k_ss_c_ana-results.csv"
 HTML_NAME="out/cube128"
-REMAINDER="/home/$USER/myrtle/sensitivity-analysis/remainder-vs-divisor/rem/timed/128x128x128wm-n-k_ss_c_ana-results.csv"
+REMAINDER="/home/$USER/myrtle/sensitivity-analysis/remainder-vs-divisor/rem/timed/128x128x128wm-n-k_ss_c_ana-results_lessThan_1024.csv"
 REMAINDER_UT="/home/$USER/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_rem_ana.csv"
 WEBPAGE_TITLE="128x128x128-No-Redundant-Stores"
 DIVISOR_UT="no"
@@ -18,7 +18,7 @@ WEBPAGES+=" $HTML_NAME.html"
 
 DIVISOR="$DIVISOR_FLDR/timed/128x128x128wm-n-k_ss_c_ana-results.csv"
 HTML_NAME="out/cube128-stall-cycles"
-REMAINDER="/home/$USER/myrtle/sensitivity-analysis/remainder-vs-divisor/rem/timed/128x128x128wm-n-k_ss_c_ana-results.csv"
+REMAINDER="/home/$USER/myrtle/sensitivity-analysis/remainder-vs-divisor/rem/timed/128x128x128wm-n-k_ss_c_ana-results_lessThan_1024.csv"
 REMAINDER_UT="/home/$USER/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_rem_ana.csv"
 WEBPAGE_TITLE="128x128x128-No-Redundant-Stores"
 DIVISOR_UT="bars"
