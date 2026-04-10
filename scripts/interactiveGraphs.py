@@ -782,6 +782,31 @@ def generateInteractiveBarGraphs(divisors,remainders, title, titleOfWebpage):
         )
         more_figs.append(fig)
 
+        timed["Approx C'"]=timed["m"]*timed["n"]
+        fig = px.bar(
+        timed, 
+        x="Approx C'",
+        y=['Overlap Stall Time Total'], # Each column is a trace
+        title='Stall Time vs Size of Output Tile',
+        barmode='group', # This stacks the traces on top of each other
+        hover_data={
+                'FakeNN JSON Name': True,       # Hide Category if it's already on the X-axis
+                "remainderTiles" : True,
+                'dma': ':.2f',    # Format to 2 decimal places
+                'Kernel Time': True,         # Show the raw value from File B
+                "L3 Loads": True,
+                "HW Loops / SSR Loads": True,
+                "mk/n": True,
+                "L1 Usage": True,
+                "Total CC Tiles" : True,
+        },
+        labels={'value': 'Cycles', 'variable': 'Absolute Rank; smaller is faster'},
+        template='presentation'
+        )
+        more_figs.append(fig)
+
+        checkStallTimeCorrectness(timed)
+
         # pruned = timed[timed["absoluteRank"] < 6]
         # fig = px.bar(
         # pruned, 
@@ -837,3 +862,35 @@ def generateInteractiveBarGraphs(divisors,remainders, title, titleOfWebpage):
         
         # export to HTML
         return saveFigsInHTML(special_figs,more_figs,titleOfWebpage)
+
+def checkStallTimeCorrectness(df):
+        # overcounting = []
+        # undercounting = []
+        # same = []
+        df = df.reset_index()  # Make sure indexes pair with number of rows
+        for index, row in df.iterrows():
+                overcounting = []
+                undercounting = []
+                same = []
+                e2e = row["dma"]
+                for c in range(0,8):                        
+                        sum = 0
+                        for cat in ["Before Computation","After Computation","Overlap Stall Time","Raw Compute Time"]:
+                                sum = sum + row[f"{cat}_cc_{c}"]
+                        diff = e2e - sum
+                        if(diff < 0):
+                                overcounting.append(diff)
+                                #raise Exception(f"sum of times less than total time!!{e2e}-{sum}={diff}")
+                        else:
+                                if diff == 0:
+                                        same.append(diff)
+                                else:
+                                        undercounting.append(diff)
+                print(f"{row['FakeNN JSON Name']}: overcounted: {len(overcounting)} undercounted: {len(undercounting)} Exactly right: {len(same)}")
+                print("\t",end="")
+                if len(overcounting) != 0:
+                        print(f"max:min overcount:{max(overcounting)}:{min(overcounting)}")
+                if len(undercounting) != 0:
+                        print(f"max:min undercount:{max(undercounting)}:{min(undercounting)}")
+               # print(f"max overcount:{max(overcounting)} max undercount: {max(undercounting)}")
+        return True

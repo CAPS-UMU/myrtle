@@ -1,8 +1,8 @@
 DIVISOR_FLDR="../sensitivity-analysis/remainder-vs-divisor/div"
 REMAINDER_FLDR="../sensitivity-analysis/remainder-vs-divisor/rem"
 WEBPAGES=""
-USER="hoppip"
-#USER="emily"
+#USER="hoppip"
+USER="emily"
 #/home/hoppip/myrtle/sensitivity-analysis/redundant-vs-no-redundant-stores/only-time/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
 #/home/hoppip/myrtle/sensitivity-analysis/redundant-vs-no-redundant-stores/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
 #/home/hoppip/myrtle/sensitivity-analysis/remainder-vs-divisor/div/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
