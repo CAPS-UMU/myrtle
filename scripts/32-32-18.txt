@@ -1,0 +1,24 @@
+	Double Buffer Iteration 0
+	DMA OUT (skipped)
+	DMA IN
+		sntr_dma_load_2d_tile(SPM A buff[0], L3 A ptr, 0,0,	 32,18, A flat size, prec)
+		sntr_dma_load_2d_tile(SPM B buff[0], L3 B ptr, 0,0,	 18,32, B flat size, prec)
+	COMPUTE (skipped)
+
+	Double Buffer Iteration 1
+	DMA OUT (skipped)
+	DMA IN
+		sntr_dma_load_2d_tile(SPM A buff[1], L3 A ptr, 0,1,	 32,14, A flat size, prec)
+		sntr_dma_load_2d_tile(SPM B buff[1], L3 B ptr, 1,0,	 14,32, B flat size, prec)
+	COMPUTE		 sc_st_gemm(a=SPM A buff[0], lda = 18, b=SPM B buff[0], ldb = 32, c=SPM C buff[0], ldc = 32)
+
+	Double Buffer Iteration 2
+	DMA OUT 	sntr_dma_store_2d_tile(L3 C ptr, SPM C buff[0],0,0,	 32,32, C flat size, prec)
+	DMA IN (skipped)
+	COMPUTE		 sc_st_gemm(a=SPM A buff[1], lda = 14, b=SPM B buff[1], ldb = 32, c=SPM C buff[0], ldc = 32)
+
+	Double Buffer Iteration 3
+	DMA OUT 	sntr_dma_store_2d_tile(L3 C ptr, SPM C buff[0],0,0,	 32,32, C flat size, prec)
+	DMA IN (skipped)
+	COMPUTE (skipped)
+

@@ -220,7 +220,7 @@ class TSG_C(TSG_Quidditch):
         }
     
     def annnotatePaddingStatus(self, d):
-        d.update({"remainderTiles": "000", "Mpad": 0,"Npad": 0,"Kpad": 0})
+        d.update({"remainderTiles": "000"})
         return d
 
     # convert dictionary to simpler, more readable, annotated triple
@@ -238,7 +238,6 @@ class TSG_C(TSG_Quidditch):
         return {
             "JSON Name": f"{tup[0]}-{tup[1]}-{tup[2]}",
             "FakeNN JSON Name":f"{self.me.m}x{self.me.n}x{self.me.k}w{tup[0]}-{tup[1]}-{tup[2]}",
-            "Original Name":f"{self.me.m}x{self.me.n}x{self.me.k}w{tup[0]}-{tup[1]}-{tup[2]}",
             "m Dim":tup[0],
             "Row Dim":tup[1],
             "Reduction Dim":tup[2],
@@ -258,9 +257,6 @@ class TSG_C(TSG_Quidditch):
             "tileB_cc": d["tileB_cc"],
             "tileC_cc": d["tileC_cc"],
             "remainderTiles" : d["remainderTiles"],
-            "Mpad":d["Mpad"],
-            "Npad":d["Npad"],
-            "Kpad":d["Kpad"],
         }
 
     # helper for converting to CSV

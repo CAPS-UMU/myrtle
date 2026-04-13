@@ -38,22 +38,16 @@ class ComputeCoreTile():
 
     def metrics(self):
         info = {}
-        info["SSR Loads"] = 2 * self.u * self.n_u * self.l1Tile.k_sz * self.m_prime_sz
-        if info["SSR Loads"] == 0:
-            print("HELP")
-            print(self)
-            print("2 * self.u * self.n_u * self.l1Tile.k_sz * self.m_prime_sz")
-            print(f"2 * {self.u} * {self.n_u} * {self.l1Tile.k_sz} * {self.m_prime_sz}")
-        info["FMADDs"] = self.u * self.l1Tile.k_sz * self.n_u * self.m_prime_sz
-        info["FMADDsPerCore"] = 1/info["FMADDs"]
+        info["SSR Loads"] = self.m_prime_sz * self.n_u *self.u *  self.l1Tile.k_sz *2
+        info["HW Loops"] = self.m_prime_sz * self.n_u
+        info["FMADDs"] = self.m_prime_sz * self.l1Tile.n_sz * (self.l1Tile.k_sz * -1)
         info["MULs"] = self.u * self.m_prime_sz * self.n_u
         info["FMADDsMULs"] = info["FMADDs"] + info["MULs"]
-        info["FMADDsMULsPerCore"] = 1/ info["FMADDsMULs"]
-        info["HW Loops"] = self.m_prime_sz * self.n_u
-        info["myRegPerStream"] =self.l1Tile.m_sz*self.l1Tile.n_sz / (128*self.l1Tile.k_sz)
-        #df["n"] * df["m"] / (128.0 * df["k"])
-        info["HW Loops / SSR Loads"] = self.m_prime_sz * self.l1Tile.n_sz / (16 * self.l1Tile.k_sz)#info["HW Loops"]/info["SSR Loads"]
-      
+        info["SSR Loads per HW Loop"] = self.u * self.l1Tile.k_sz * 2
+        info["HW Loops / SSR Loads per HW Loop"] = self.m_prime_sz * self.l1Tile.n_sz / (128 * self.l1Tile.k_sz)#info["HW Loops"]/info["SSR Loads"]
+        info["myRegPerStream"] =self.l1Tile.m_sz*self.l1Tile.n_sz / (128*self.l1Tile.k_sz) # old reg per stream metric that didn't use CC tile shape
+        info["HW Loops / SSR Loads"] = self.m_prime_sz * self.l1Tile.n_sz / (16 * self.l1Tile.k_sz)# deprecated
+        
         # legacy values (corrected to not use k-2 iters)
         info["A Not Reused SSR Loads"]= self.n_u * self.l1Tile.k_sz * self.m_prime_sz
         info["A SSR Reuse Loads"]=7 * self.n_u * self.l1Tile.k_sz * self.m_prime_sz
@@ -64,18 +58,19 @@ class ComputeCoreTile():
         info["Reused / Total SSR Loads"] = info["A SSR Reuse Loads"] / (info["A SSR Loads"] + info["B SSR Loads"])
         info["Core : A SSR Reuse Loads"] = 1/info["A SSR Reuse Loads"]
         return info
+    
+    # return a dictionary of compute core tile metrics, with every value set to zero
     def emptyMetrics():
         info = {}
         info["SSR Loads"] = 0
-        info["FMADDsPerCore"] = 0
-        info["FMADDs"] = 0
-        info["FMADDsMULs"] = 0
-        info["FMADDsMULsPerCore"] = 0
-        info["MULs"] = 0
         info["HW Loops"] = 0
+        info["FMADDs"] = 0
+        info["MULs"] = 0
+        info["FMADDsMULs"] = info["FMADDs"] + info["MULs"]
+        info["SSR Loads per HW Loop"] = 0
+        info["HW Loops / SSR Loads per HW Loop"] =0
+        info["myRegPerStream"] =0
         info["HW Loops / SSR Loads"] = 0
-        info["myRegPerStream"] = 0
-        #info["8 * HW Loops"]=0
         # legacy values
         info["A Not Reused SSR Loads"]= 0
         info["A SSR Reuse Loads"]=0
@@ -121,29 +116,16 @@ class ClusterTile():
             # scale all metrics by number of times its tile shape is used
             scaledLeft = applyFuncToDict(lambda x: left.freq * x,left.metrics())
             scaledRight = applyFuncToDict(lambda x: right.freq * x,right.metrics())
-            # scaledLeft["myRegPerStream"]=left.metrics()["myRegPerStream"]
-            # scaledRight["myRegPerStream"]=right.metrics()["myRegPerStream"]
             # take the sum of the scaled metrics
             cc_metrics_sum = applyFuncToDictPair(lambda x, y: x + y,scaledLeft,scaledRight)
-            # we don't want to scale the ratio
-            # val = left.metrics()["myRegPerStream"]
-            # print(f"myRegsPerStream is {val}")
-            # we don't want to sum our regPerStream:
-           # cc_metrics_sum["myRegPerStream"] = left.metrics()["myRegPerStream"] # only keep m' regPerStream val
-            # val = cc_metrics_sum["myRegPerStream"]
-            # print(f"NOW myRegsPerStream is {val}")
-            #scaledLeft["HW Loops / SSR Loads"]=left.metrics()["HW Loops / SSR Loads"]
-            #scaledRight["HW Loops / SSR Loads"]=right.metrics()["HW Loops / SSR Loads"]
         else:
             only = self.cctls[0]    
             cc_metrics_sum = applyFuncToDict(lambda x: only.freq * x,only.metrics())
-            # we don't want to scale the ratio
-           # cc_metrics_sum["myRegPerStream"]=only.metrics()["myRegPerStream"]
-            #cc_metrics_sum["HW Loops / SSR Loads"]=only.metrics()["HW Loops / SSR Loads"]
-            
         info.update(cc_metrics_sum)
-     #   print(f"info right before I return from metrics is {info}")
+        
         return info
+    
+    # return a dictionary of cluster tile metrics, with every value set to zero
     def emptyMetrics():
         info = {}
         info["L3 Loads"] = 0
@@ -173,7 +155,7 @@ class TilingScheme():
         self.m_tiles = ceil(M/m)
         self.n_tiles = ceil(N/n)
         self.k_tiles = ceil(K/k)
-        self.m_prime_tiles = p
+        
         self.m_rem = M % m
         self.n_rem = N % n
         self.k_rem = K % k
@@ -184,7 +166,7 @@ class TilingScheme():
     def __str__(self):
         str = f"Tiling Scheme: {self.M}x{self.N}x{self.K}w{self.m}-{self.n}-{self.k} and remainder tiles {self.remainderTiles}"
         str = str + "\n\tmy cluster tiles are..."
-        cts = self.myClusterTiles()
+        cts = self.validClusterTiles()
         for k in cts.keys():
             str = str + "\n\t" + cts[k].__str__()
             print(cts[k])
@@ -192,11 +174,14 @@ class TilingScheme():
     def remainderTiles(self):
         return not ((self.m_rem==0) and (self.n_rem==0) and (self.k_rem==0))
     
-    # returns cluster tiles used by this tiling scheme, 
-    # and their associated compute core tiles wrapped in classes.
-    def myClusterTiles(self):
+    # returns all cluster tiles used by this tiling scheme, 
+    # including their associated compute core tiles, all wrapped in classes.
+    # tiles are returned in the form of a key-value pair map
+    # key: 3-tuple representing CL tile's m_sz, n_sz, and k_sz and frequency
+    # value: A Cluster tile object containing m_sz, n_sz, k_sz, frequency, and a list of its CC tile objects
+    def validClusterTiles(self):
         d = {}
-        shapes = self.myClusterTileShapes()
+        shapes = self.validClusterTileShapes()
         for (l1Shape, ccShapes) in shapes.items():
             ccTls = []
             for x in ccShapes: 
@@ -205,9 +190,13 @@ class TilingScheme():
         return d
 
 
-    # returns cluster tile shapes with a non-zero frequency
-    def myClusterTileShapes(self):
-        def count(D,d,d_size):
+    # Given this tiling scheme, return its
+    # cluster tile shapes with a non-zero frequency.
+    # CL tile shapes are returned in the form of a key-value pair map
+    # key: a cluster tile shape represented as a 4-tuple (m_sz,n_sz,k_sz,freq)
+    # value: list of valid compute core tile shapes (a list of 3-tuples), ex [(cl_tile, m'_size, freq)].
+    def validClusterTileShapes(self):
+        def dimFreq(D,d,d_size): # how many times do we tile (cluster level) in dimension d?
             if D % d == 0:
                 d_count = D // d 
                 d_rem_count = 0
@@ -215,32 +204,22 @@ class TilingScheme():
                 d_count = D // d 
                 d_rem_count = 1
             return d_count if d == d_size else d_rem_count
-        all = self.clusterTileShapes()
-        mine = {}
-        for (m_sz,n_sz,k_sz) in all:
-            m_iters = count(self.M,self.m,m_sz)
-            n_iters = count(self.N,self.n,n_sz)
-            k_iters = count(self.K,self.k,k_sz)
+        potentialShapes = self.potentialClusterTileShapes()
+        valid = {}
+        for (m_sz,n_sz,k_sz) in potentialShapes:
+            m_iters = dimFreq(self.M,self.m,m_sz)
+            n_iters = dimFreq(self.N,self.n,n_sz)
+            k_iters = dimFreq(self.K,self.k,k_sz)
             freq = m_iters * n_iters * k_iters
            # print(f"{m_sz} {n_sz} {k_sz} has num_tiles {m_iters} * {n_iters} * {k_iters} = {freq}")
             if freq != 0:
-                mine[(m_sz,n_sz,k_sz,freq)]=self.myComputeCoreTileShapes((m_sz,n_sz,k_sz))
-        # the sum of the frequencies of all L1 tile shapes should be equal to m*n*k - right??
-    #     f = 0
-    #     num_tiles = (self.m_tiles) *(self.n_tiles) *(self.k_tiles)
-    #  #   print(f"num_tiles = ({self.m_tiles}) *({self.n_tiles}) *({self.k_tiles}) = {num_tiles}")
-    #     for k in mine.keys(): 
-    #         print(f"k is {k} and k[1] is {k[3]}")
-    #         f = f + k[3]
-       # print(f"{self.M} {self.N} {self.K} {self.m} {self.n} {self.k}: freqSum: {f} num_tiles: {num_tiles}")
-      #  print(mine.keys())
-      #  print(mine)
-        #assert f == num_tiles
-
-        return mine
-
-    # returns compute core tile shapes with a non-zero frequency  
-    def myComputeCoreTileShapes(self,cluster_tile_shape):
+                valid[(m_sz,n_sz,k_sz,freq)]=self.validComputeCoreTileShapes((m_sz,n_sz,k_sz))
+        return valid
+    
+    # Given a cluster tile shape
+    # returns its compute core tile shapes with a non-zero frequency. 
+    # CC tile shapes are returned as a list of 3-tuples in the form (cl_tile, m'_size, freq).
+    def validComputeCoreTileShapes(self,cluster_tile_shape):
         m_size = cluster_tile_shape[0]
         m_prime = floor(m_size / self.p)
         m_hat = m_prime + 1
@@ -248,12 +227,15 @@ class TilingScheme():
         if rem == 0:
             return [(cluster_tile_shape, m_prime, self.p)]
         else:
-            if m_prime == 0:
+            if m_prime == 0: # this is the edge case when m_size = m_rem and m_rem < 8
                 return [(cluster_tile_shape, m_hat,rem )]
             else:
                 return [(cluster_tile_shape, m_prime, self.p-rem),(cluster_tile_shape, m_hat,rem )]
 
-    def clusterTileShapes(self):
+    # Given this tiling scheme's input dimensions and tile sizes, 
+    # return all potential cluster tile shapes.
+    # CL tile shapes returned as a list of tuples of the form (m_sz,n_sz,k_sz).
+    def potentialClusterTileShapes(self):
         m_sizes = (self.m, self.m_rem)
         n_sizes = (self.n, self.n_rem) 
         k_sizes = (self.k, self.k_rem)
@@ -264,12 +246,4 @@ class TilingScheme():
                     if m != 0 and n != 0 and k != 0:
                         all_imaginable.append((m,n,k))
         #assert len(all_imaginable) == 8 # debugging only
-        return all_imaginable
-
-    def computeCoreTileShapes(self,cluster_tile_shape):
-        m_size = cluster_tile_shape[0]
-        m_prime = floor(m_size / self.p)
-        m_hat = m_prime + 1
-        all_imaginable = [(cluster_tile_shape, m_prime),(cluster_tile_shape, m_hat)]
-        #assert len(list(all_imaginable)) == 2 # debugging only
         return all_imaginable

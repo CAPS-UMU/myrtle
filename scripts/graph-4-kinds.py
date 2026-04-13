@@ -97,7 +97,8 @@ def main():
     else:
         if inputUntimed == "bars":
             html = ig.generateInteractiveBarGraphs((df,None),(df_remainders,df_padded_ut), title, titleOfWebpage)
-            print("HELLO TODO")
+        elif inputUntimed == "bars-and-scatter":
+            html = ig.generateInteractiveBarGraphs((df,None),(df_remainders,df_padded_ut), title, titleOfWebpage)
     
     # --- Write to file ---
     with open(f"{output}.html", "w") as f:

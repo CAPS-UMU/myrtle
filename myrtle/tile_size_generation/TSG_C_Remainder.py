@@ -213,26 +213,21 @@ class TSG_C_Remainder(TileSizeGenerator):
         # padding in M dim?
         if mRem == 0:
             mPadType = 0
-            mPad = 0
         else:
             mPadType = "M"
             mPad = m - mRem
         # padding in N dim?
         if nRem == 0:
             nPadType = "0"
-            nPad = 0
         else:
             nPadType = "N"
-            nPad = n - nRem
         # padding in K dim?
         if kRem == 0:
             kPadType = "0"
-            kPad = 0
         else: 
             kPadType = "K"
-            kPad = k - kRem
         paddingType = f"{mPadType}{nPadType}{kPadType}"
-        d.update({"remainderTiles": paddingType, "remainderM": mPad,"remainderN": nPad,"remainderK": kPad,"FakeNN JSON Name": f"{self.M}x{self.N}x{self.K}w{m}-{n}-{k}"})
+        d.update({"remainderTiles": paddingType, "FakeNN JSON Name": f"{self.M}x{self.N}x{self.K}w{m}-{n}-{k}"})
         return d
     
     # flatten dictionary + add more information
@@ -260,9 +255,6 @@ class TSG_C_Remainder(TileSizeGenerator):
             "tileB_cc": d["tileB_cc"],
             "tileC_cc": d["tileC_cc"],
             "remainderTiles" : d["remainderTiles"],
-            "remainderM":d["remainderM"],
-            "remainderN":d["remainderN"],
-            "remainderK":d["remainderK"],
         }
 
     # regular matmul: A : MxK, B : KxN, C : MxN
@@ -366,10 +358,7 @@ class TSG_C_Remainder(TileSizeGenerator):
             "n",
             "k",
             "JSON Name",
-            "remainderTiles",
-            "remainderM",
-            "remainderN",
-            "remainderK",            
+            "remainderTiles",          
         ]
         pfoSet = set(preferred_front_order)
         wofSet = set(set(df.columns).difference(pfoSet))

@@ -51,7 +51,7 @@ class TSA_C_Remainder(TileSizeAnalyzer):
                 "Regular Loads" : 0
         }
         info.update(self.legacyMetrics(ts))    
-        clusterTiles = ts.myClusterTiles()
+        clusterTiles = ts.validClusterTiles()
         if len(clusterTiles.values())==1:
             oneTile = next(iter(clusterTiles.values()))
             # print(f"onetile is {oneTile} with metrics {oneTile.metrics()}")
@@ -63,6 +63,7 @@ class TSA_C_Remainder(TileSizeAnalyzer):
             summedMetrics = reduce(lambda x, y: applyFuncToDictPair(lambda a, b: a+b,x,y), scaledMetrics, ClusterTile.emptyMetrics())
         info.update(summedMetrics)
         info["Total SSR Loads"] = info["A SSR Loads"] + info["B SSR Loads"]
+        info["FMADDsPerCore"] = info["FMADDs"] / cc_tile_count
         info["remainderTiles"] = ts.remainderTiles
         return info
 
@@ -78,7 +79,7 @@ class TSA_C_Remainder(TileSizeAnalyzer):
             # filenameSorted = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_pad_ord_L1.csv"
             nextBunch=nextBunch.sort_values("SSR Config Count", ascending=True)
         
-            print(f'Pruned analyzed ss contains: {nextBunch[["FakeNN JSON Name","SSR Config Count"]]}')
+           # print(f'Pruned analyzed ss contains: {nextBunch[["FakeNN JSON Name","SSR Config Count"]]}')
             filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss{suffix}_pruned.csv"
             nextBunch.to_csv(filename, index=False)
 
@@ -98,7 +99,7 @@ class TSA_C_Remainder(TileSizeAnalyzer):
     
     def legacyMetrics(self,ts):
         info = {}
-        clusterTiles = ts.myClusterTiles()
+        clusterTiles = ts.validClusterTiles()
         if (ts.M%ts.m == 0) and (ts.N % ts.n == 0) and (ts.K % ts.k == 0):
             onlyKey = next(iter(clusterTiles))
             tile = clusterTiles[onlyKey]
@@ -107,7 +108,7 @@ class TSA_C_Remainder(TileSizeAnalyzer):
             info["mPrime HW Loop Iters"]=tile.k_sz
             info["mPrime HW Loop Body Size"]=self.UaJF
             info["mPrime"]=tile.cctls[0].m_prime_sz
-            info["Little K"]=tile.k_sz
+           # info["Little K"]=tile.k_sz
             if len(tile.cctls) == 2:
                 info["oldRegPerStream"]=-1
                 info["mHat Little VecMat Runs"]=tile.cctls[1].m_prime_sz
