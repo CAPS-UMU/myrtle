@@ -48,7 +48,8 @@ class TSA_C_Remainder(TileSizeAnalyzer):
                 "n_tiles":ts.n_tiles,
                 "k_tiles":ts.k_tiles,
                 "SSR Config Count":cc_tile_count,
-                "Regular Loads" : 0
+                "Regular Loads" : 0,
+                "Total CL Tiles":ts.m_tiles*ts.n_tiles*ts.k_tiles,
         }
         info.update(self.legacyMetrics(ts))    
         clusterTiles = ts.validClusterTiles()
@@ -64,6 +65,17 @@ class TSA_C_Remainder(TileSizeAnalyzer):
         info.update(summedMetrics)
         info["Total SSR Loads"] = info["A SSR Loads"] + info["B SSR Loads"]
         info["FMADDsPerCore"] = info["FMADDs"] / cc_tile_count
+        info["Avg A''"] = info["A''"] / cc_tile_count
+        info["Avg B'"] = info["B'"] / cc_tile_count
+        info["Avg C''"] = info["C''"] / cc_tile_count
+        info["Avg CC Tile Size"] = info["CC Tile Size"] / cc_tile_count
+        info["Avg (A''+ B') / C''"] = info["(A''+ B') / C''"] / cc_tile_count
+        info["Avg L3 Loads"] = info["L3 Loads"] / info["Total CL Tiles"]
+        info["Avg L3 Stores"] = info["L3 Stores"] / info["Total CL Tiles"]
+        info["Avg A''/ B'"] =  info["A''/ B'"] / cc_tile_count
+        info["Avg A'"] =  info["A'"] / info["Total CL Tiles"]
+        info["Avg m'_sz / k_size"] = info["m'_sz / k_size"] / cc_tile_count
+        info["Avg n'_sz / k_size"] = info["n'_sz / k_size"] / cc_tile_count
         info["remainderTiles"] = ts.remainderTiles
         return info
 

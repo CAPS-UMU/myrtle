@@ -11,7 +11,7 @@ from sklearn.svm import SVC, SVR
 import pickle
 import recentGraphs_2_23 as rg_2_23
 import addExtraMetrics as ae
-import interactiveGraphs as ig
+import interactiveGraphs2 as ig
 
 # this script graphs X vs Y for the input CSV and exports an interactive version of the graph to an html file.
 # shows search space pruned for a certain X value
@@ -38,14 +38,14 @@ def main():
     df_ann = pd.read_csv(analyzed)
     df_ann = ae.addExtras(df_ann)
    
-    print(df.shape)
-    print(df_ann.shape)
-    print("after merge")
+    # print(df.shape)
+    # print(df_ann.shape)
+    # print("after merge")
     # merge timed with analysis
     df_merged = df.merge(df_ann,how="left",on="FakeNN JSON Name")
     df = df_merged
     # sort merged by e2e dma execution time
-    print(df.shape)
+   # print(df.shape)
     df_sorted = df.sort_values(by="dma", ascending=True)
     df_sorted["absoluteRank"] = range(1, int(df_sorted.shape[0] + 1))
     df = df_sorted 

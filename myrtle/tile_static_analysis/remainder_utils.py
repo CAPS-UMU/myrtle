@@ -40,14 +40,22 @@ class ComputeCoreTile():
         info = {}
         info["SSR Loads"] = self.m_prime_sz * self.n_u *self.u *  self.l1Tile.k_sz *2
         info["HW Loops"] = self.m_prime_sz * self.n_u
-        info["FMADDs"] = self.m_prime_sz * self.l1Tile.n_sz * (self.l1Tile.k_sz * -1)
+        info["FMADDs"] = self.m_prime_sz * self.l1Tile.n_sz * (self.l1Tile.k_sz -1)
         info["MULs"] = self.u * self.m_prime_sz * self.n_u
         info["FMADDsMULs"] = info["FMADDs"] + info["MULs"]
         info["SSR Loads per HW Loop"] = self.u * self.l1Tile.k_sz * 2
         info["HW Loops / SSR Loads per HW Loop"] = self.m_prime_sz * self.l1Tile.n_sz / (128 * self.l1Tile.k_sz)#info["HW Loops"]/info["SSR Loads"]
+        info["A''"] = self.m_prime_sz * self.l1Tile.k_sz
+        info["B'"] = self.l1Tile.n_sz * self.l1Tile.k_sz
+        info["C''"] = self.m_prime_sz * self.l1Tile.n_sz
+        info["CC Tile Size"] = info["A''"]+info["B'"] + info["C''"]
+        info["A''/ B'"] = (info["A''"]/info["B'"] )
+        info["(A''+ B') / C''"] = (info["A''"]+info["B'"] )/ info["C''"]
+        info["m'_sz / k_size"] = self.m_prime_sz / self.l1Tile.k_sz
+        info["n'_sz / k_size"] = self.l1Tile.n_sz / self.l1Tile.k_sz
+        # not so helpful
         info["myRegPerStream"] =self.l1Tile.m_sz*self.l1Tile.n_sz / (128*self.l1Tile.k_sz) # old reg per stream metric that didn't use CC tile shape
         info["HW Loops / SSR Loads"] = self.m_prime_sz * self.l1Tile.n_sz / (16 * self.l1Tile.k_sz)# deprecated
-        
         # legacy values (corrected to not use k-2 iters)
         info["A Not Reused SSR Loads"]= self.n_u * self.l1Tile.k_sz * self.m_prime_sz
         info["A SSR Reuse Loads"]=7 * self.n_u * self.l1Tile.k_sz * self.m_prime_sz
@@ -69,6 +77,15 @@ class ComputeCoreTile():
         info["FMADDsMULs"] = info["FMADDs"] + info["MULs"]
         info["SSR Loads per HW Loop"] = 0
         info["HW Loops / SSR Loads per HW Loop"] =0
+        info["A''"] = 0
+        info["B'"] = 0
+        info["C''"] = 0
+        info["CC Tile Size"] = 0
+        info["A''/ B'"] = 0
+        info["(A''+ B') / C''"] = 0
+        info["m'_sz / k_size"] = 0
+        info["n'_sz / k_size"] = 0
+        # not as helpful
         info["myRegPerStream"] =0
         info["HW Loops / SSR Loads"] = 0
         # legacy values
@@ -109,6 +126,7 @@ class ClusterTile():
         area_c_prime = self.m_sz * self.n_sz
         info["L3 Loads"] = area_a_prime + area_b_prime
         info["L3 Stores"] = area_c_prime
+        info["A'"] = area_a_prime
         # each cluster tile has either 1 or 2 compute core tile shapes
         if len(self.cctls) == 2:
             left = self.cctls[0]
@@ -130,6 +148,7 @@ class ClusterTile():
         info = {}
         info["L3 Loads"] = 0
         info["L3 Stores"] = 0
+        info["A'"] = 0
         info.update(ComputeCoreTile.emptyMetrics())
         return info
 

@@ -717,8 +717,8 @@ def scatterWithColor(df, x_col, y_col, color, hover_data, title, marker=""):
         x=x_col,
         y=y_col,
         color=color,
-        symbol="symbolMarker",
-        symbol_sequence=["circle", "triangle-up", "triangle-up"],
+      #  symbol="symbolMarker",
+     #   symbol_sequence=["circle", "triangle-up", "triangle-up"],
         hover_data=hover_data,  # Show these columns on hover
         title=f"{title} <b>{x_col} vs {y_col}</b>",
     )
@@ -1386,35 +1386,60 @@ def checkStallTimeCorrectness(df):
 
 
 def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
+    timed["FMADDsMULsPerCore"] = timed["FMADDsMULs"] / timed["Total CC Tiles"]
+    timed["Raw Compute / Overlap Stall"] = timed["Raw Compute Time Total"] / timed["Overlap Stall Time Total"]
+    timed["(Raw Compute / Overlap Stall) Per Core"] = timed["Raw Compute Time Total"] / timed["Overlap Stall Time Total"] / timed["Total CC Tiles"]
+    timed["Overlap Stall Time Per Core"] = timed["Overlap Stall Time Total"] / timed["Total CC Tiles"]
     x_col = "SSR Config Count"
     y_col = "dma"
     hover_data = [
         "JSON Name",
         "absoluteRank",
         "dma",
-        "SSR Loads",
         "HW Loops",
-        "FMADDs",
-        "MULs",
         "FMADDsMULs",
+        "FMADDsMULsPerCore",
         "SSR Loads per HW Loop",
         "HW Loops / SSR Loads per HW Loop",
-        "myRegPerStream",
+      #  "myRegPerStream",
         "remainderTiles",
         "Overlap Stall Time Total",
         "Raw Compute Time Total",
+        "Global Sim E2E_dma",
+        "Total CC Tiles",
+        "Overlap Stall Time Per Core",
+        "Avg A''",
+        "Avg B'",
+        "Avg C''",
+        "Avg CC Tile Size",
+        "Avg A''/ B'",
+        "(A''+ B') / C''",
+        "Avg (A''+ B') / C''",
+        "Avg A'",
+        # "L3 Loads",
+        # "L3 Stores",
+        "Avg L3 Loads",
+        "Avg L3 Stores"
     ]
     analyzed["Overlap Stall Time Total"] = -1
     analyzed["Raw Compute Time Total"] = -1
-    print(analyzed.columns)
-    print(analyzed[["Overlap Stall Time Total"]])
+    analyzed["Global Sim E2E_dma"] = -1
+    analyzed["Total CC Tiles"] = analyzed["SSR Config Count"]
+    analyzed["FMADDsMULsPerCore"] = analyzed["FMADDsMULs"] / analyzed["Total CC Tiles"]
+    analyzed["Overlap Stall Time Per Core"] = -1
+    analyzed["Raw Compute / Overlap Stall"] = -1
+    analyzed["(Raw Compute / Overlap Stall) Per Core"] = -1
+    
+#     print(analyzed.columns)
+#     print(analyzed[["Overlap Stall Time Total"]])
+
     timed["remainderTiles"] = timed["remainderTiles"].apply(lambda x: "000" if x == 0 else f"{x}")
     timed["symbolMarker"] = timed["remainderTiles"].apply(lambda x: "O" if x == "000" else "^")
     timed = timed.sort_values(by="symbolMarker", ascending=True)
     timed["flatColor"] = "pink"
 
     ut = analyzed[~analyzed["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])]
-    print(ut)
+    #print(ut)
     # combine timed points into single DF, then create absolute rank
     
     
@@ -1443,7 +1468,7 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
         "gray",
         "triangle-up",
         hover_data,
-        "timed divisors and (some) timed remainders",
+        "timed divisors and (some) timed remainders timed divisors and (some) timed remainders",
     )
 
     special_figs.append(
@@ -1453,7 +1478,7 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
             y_col,
             "HW Loops / SSR Loads per HW Loop",
             hover_data,
-            "OLD RATIO: timed divisors and (some) timed remainders",
+            "Summation of new ratio: ",
             "symbolMarker",
         )
     )
@@ -1492,7 +1517,7 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
             y_col,
             "HW Loops / SSR Loads per HW Loop",
             hover_data,
-            "stall time vs e2e time",
+            "SSR Configs cs overlap stall time",
             "symbolMarker",
         )
     )
@@ -1515,5 +1540,402 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
 
     # more figures
     more_figs = []
+   # timed_pruned = timed[timed["absoluteRank"] <= 50]
+    timed_sorted = timed.sort_values(by="Overlap Stall Time Total", ascending=True)
+    timed_pruned=timed_sorted.head(50)
+    
+   # print(timed_sorted[["FakeNN JSON Name","Overlap Stall Time Total"]])
+   # print(timed_pruned[["FakeNN JSON Name","Overlap Stall Time Total"]])
+    x_col = "Overlap Stall Time Total"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "HW Loops / SSR Loads per HW Loop",
+            hover_data,
+            "pruned to 50 points w/ smallest overlap stall time",
+            "symbolMarker",
+        )
+    )
+    x_col = "FMADDsPerCore"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "HW Loops / SSR Loads per HW Loop",
+            hover_data,
+            "pruned to 50 points w/ smallest overlap stall time",
+            "symbolMarker",
+        )
+    )
+    x_col = "HW Loops / SSR Loads per HW Loop"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "FMADDsMULsPerCore",
+            hover_data,
+            "pruned to 50 points w/ smallest overlap stall time",
+            "symbolMarker",
+        )
+    )
+    x_col = "HW Loops / SSR Loads per HW Loop"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "Raw Compute / Overlap Stall",
+            hover_data,
+            "pruned to 50 points w/ smallest overlap stall time",
+            "symbolMarker",
+        )
+    )
+    x_col = "SSR Configs"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "HW Loops / SSR Loads per HW Loop",
+            hover_data,
+            "pruned to 50 points w/ smallest overlap stall time",
+            "symbolMarker",
+        )
+    )
+    x_col = "FMADDsMULsPerCore"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "HW Loops / SSR Loads per HW Loop",
+            hover_data,
+            "pruned to 50 points w/ smallest overlap stall time",
+            "symbolMarker",
+        )
+    )
+    x_col = "FMADDsMULs"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "HW Loops / SSR Loads per HW Loop",
+            hover_data,
+            "reality check",
+            "symbolMarker",
+        )
+    )
+    x_col = "Overlap Stall Time Per Core"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "HW Loops / SSR Loads per HW Loop",
+            hover_data,
+            "pruned to 50 points w/ smallest overlap stall time",
+            "symbolMarker",
+        )
+    )
+    x_col = "HW Loops / SSR Loads per HW Loop"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "SSR Configs",
+            hover_data,
+            "pruned to 50 points w/ smallest overlap stall time",
+            "symbolMarker",
+        )
+    )
+    # let's try pruning by SSR configs FIRST
+    timed_sorted = timed.sort_values(by="SSR Configs", ascending=True)
+    timed_pruned=timed_sorted[timed_sorted["SSR Configs"] <= 1024]#timed_sorted.head(50)
+    x_col = "Overlap Stall Time Total"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "HW Loops / SSR Loads per HW Loop",
+            hover_data,
+            "pruned to SSR configs <= 1024",
+            "symbolMarker",
+        )
+    )
+    x_col = "Raw Compute / Overlap Stall"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "HW Loops / SSR Loads per HW Loop",
+            hover_data,
+            "pruned to SSR configs <= 1024",
+            "symbolMarker",
+        )
+    )
+    x_col = "(Raw Compute / Overlap Stall) Per Core"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "HW Loops / SSR Loads per HW Loop",
+            hover_data,
+            "pruned to SSR configs <= 1024",
+            "symbolMarker",
+        )
+    )
+    x_col = "Overlap Stall Time Total"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "HW Loops / SSR Loads per HW Loop",
+            hover_data,
+            "no pruning",
+            "symbolMarker",
+        )
+    )
+    # let's try pruning by HW Loops / SSR Loads per HW Loop FIRST
+    timed_sorted = timed.sort_values(by="HW Loops / SSR Loads per HW Loop", ascending=True)
+    timed_pruned=timed_sorted.head(50)
+    x_col = "Overlap Stall Time Total"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "HW Loops / SSR Loads per HW Loop",
+            hover_data,
+            "pruned to 50 points w/ smallest ratio of HW Loops / SSR Loads per HW Loop",
+            "symbolMarker",
+        )
+    )
+    
+    x_col = "HW Loops / SSR Loads per HW Loop"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "HW Loops / SSR Loads per HW Loop",
+            hover_data,
+            "No pruning; how does mn/k relate to e2e time?",
+            "symbolMarker",
+        )
+    )
+    # let's try pruning by SSR configs FIRST
+    timed_sorted = timed.sort_values(by="SSR Configs", ascending=True)
+    timed_pruned=timed_sorted[timed_sorted["SSR Configs"] <= 1024]#timed_sorted.head(50)
+    x_col = "Overlap Stall Time Total"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "HW Loops / SSR Loads per HW Loop",
+            hover_data,
+            "pruned to SSR configs <= 1024",
+            "symbolMarker",
+        )
+    )
+    # THEN pruning by bottom third based on stall time
+    timed_sorted = timed_pruned.sort_values(by="Overlap Stall Time Total", ascending=True)
+    print(timed_sorted.shape)
+    print(int(timed_sorted.shape[0]/3))
+    timed_pruned=timed_sorted.head(int(timed_sorted.shape[0]/3))
+    x_col = "Overlap Stall Time Total"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "HW Loops / SSR Loads per HW Loop",
+            hover_data,
+            "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time",
+            "symbolMarker",
+        )
+    )
+    x_col = "Overlap Stall Time Total"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "Avg A''/ B'",
+            hover_data,
+            "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time",
+            "symbolMarker",
+        )
+    )
+    x_col = "Overlap Stall Time Total"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "Avg A''",
+            hover_data,
+            "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time",
+            "symbolMarker",
+        )
+    )
+    x_col = "Overlap Stall Time Total"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "Avg A'",
+            hover_data,
+            "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time",
+            "symbolMarker",
+        )
+    )
+    x_col = "Avg A''"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "HW Loops / SSR Loads per HW Loop",
+            hover_data,
+            "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time",
+            "symbolMarker",
+        )
+    )
+    x_col = "Avg A''/ B'"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "HW Loops / SSR Loads per HW Loop",
+            hover_data,
+            "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time",
+            "symbolMarker",
+        )
+    )
+    x_col = "Overlap Stall Time Total"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "Avg CC Tile Size",
+            hover_data,
+            "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time",
+            "symbolMarker",
+        )
+    )
+    x_col = "Overlap Stall Time Total"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "Avg C''",
+            hover_data,
+            "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time",
+            "symbolMarker",
+        )
+    )
+
+    x_col = "Overlap Stall Time Total"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "k",
+            hover_data,
+            "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time",
+            "symbolMarker",
+        )
+    )
+
+
+    x_col = "Avg C''"
+    y_col = "Overlap Stall Time Total"
+    more_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "Avg (A''+ B') / C''",
+            hover_data,
+            "No pruning... How does compute core output tile size affect overlap stall time?",
+            "symbolMarker",
+        )
+    )
+
+    x_col = "Avg L3 Stores"
+    y_col = "Overlap Stall Time Total"
+    more_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "Avg (A''+ B') / C''",
+            hover_data,
+            "No pruning... How does cluster output tile size affect overlap stall time?",
+            "symbolMarker",
+        )
+    )
+    # let's try pruning by Overlap Stall Cycles FIRST:
+    timed_sorted = timed.sort_values(by="Overlap Stall Time Total", ascending=True)
+    print(timed_sorted.shape)
+    print(int(timed_sorted.shape[0]/3))
+    timed_pruned=timed_sorted.head(int(timed_sorted.shape[0]/3))
+    x_col = "HW Loops / SSR Loads per HW Loop"
+    y_col = "Overlap Stall Time Total"
+    more_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "SSR Configs",
+            hover_data,
+            "Pruned to bottom third Overlap Stall Cycles",
+            "symbolMarker",
+        )
+    )
+
+
+
 
     return saveFigsInHTML(special_figs, more_figs, titleOfWebpage)
