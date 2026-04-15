@@ -136,6 +136,8 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
     timed["Raw Compute / Overlap Stall"] = timed["Raw Compute Time Total"] / timed["Overlap Stall Time Total"]
     timed["(Raw Compute / Overlap Stall) Per Core"] = timed["Raw Compute Time Total"] / timed["Overlap Stall Time Total"] / timed["Total CC Tiles"]
     timed["Overlap Stall Time Per Core"] = timed["Overlap Stall Time Total"] / timed["Total CC Tiles"]
+    timed["Y/X"]=timed["Avg n'_sz / k_size"] * timed["Avg A'"]
+    timed["mRem"] = timed["M"] % timed["m"]
     x_col = "SSR Config Count"
     y_col = "dma"
     hover_data = [
@@ -168,6 +170,7 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
         "Avg m'_sz / k_size",
         "Avg n'_sz / k_size"
     ]
+    analyzed["mRem"] = analyzed["M"] % analyzed["m"]
     analyzed["Overlap Stall Time Total"] = -1
     analyzed["Raw Compute Time Total"] = -1
     analyzed["Global Sim E2E_dma"] = -1
@@ -176,6 +179,7 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
     analyzed["Overlap Stall Time Per Core"] = -1
     analyzed["Raw Compute / Overlap Stall"] = -1
     analyzed["(Raw Compute / Overlap Stall) Per Core"] = -1
+    analyzed["Y/X"]=timed["Avg n'_sz / k_size"] * timed["Avg A'"]
     
 #     print(analyzed.columns)
 #     print(analyzed[["Overlap Stall Time Total"]])
@@ -194,7 +198,7 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
     # special figures
     special_figs = []
     x_col = "SSR Configs"
-    y_col = "dma"
+    y_col = "Global Sim E2E_dma"
     special_figs.append(
         prunedScatter(
             timed,
@@ -214,7 +218,7 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
         "gray",
         "triangle-up",
         hover_data,
-        "timed divisors and (some) timed remainders timed divisors and (some) timed remainders",
+        "untimed remainders",
     )
 
     special_figs.append(
@@ -236,11 +240,11 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
         "gray",
         "triangle-up",
         hover_data,
-        "timed divisors and (some) timed remainders",
+        "untimed remainders",
     )
 
     x_col = "Overlap Stall Time Total"
-    y_col = "dma"
+    y_col = "Global Sim E2E_dma"
     special_figs.append(
         scatterWithColor(
             timed,
@@ -252,6 +256,114 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
             "symbolMarker",
         )
     )
+
+    x_col = "Avg CC Tile Size"
+    y_col = "Global Sim E2E_dma"
+    special_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "Global Sim E2E_dma",
+            hover_data,
+            "We like to prune by SSR configs, but when we do, are we excluding many large tiles? No, because the largest tiles tend to have fewest SSR configs.",
+            "symbolMarker",
+        )
+    )
+    addScatterFlatColorMarker(
+        special_figs[-1],
+        ut,
+        x_col,
+        y_col,
+        "gray",
+        "triangle-up",
+        hover_data,
+        "untimed remainders",
+    )
+
+    x_col = "Avg n'_sz / k_size"
+    y_col = "Global Sim E2E_dma"
+    special_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "mRem",
+            hover_data,
+            "unpruned n'/k vs e2e time?",
+            "symbolMarker",
+        )
+    )
+
+    x_col = "Global Sim E2E_dma"
+    y_col = "mRem"
+    special_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "mRem",
+            hover_data,
+            "unpruned mRem vs e2e time?",
+            "symbolMarker",
+        )
+    )
+    addScatterFlatColorMarker(
+        special_figs[-1],
+        ut,
+        x_col,
+        y_col,
+        "gray",
+        "triangle-up",
+        hover_data,
+        "untimed remainders",
+    )
+
+    timed_sorted = timed.sort_values(by="Global Sim E2E_dma", ascending=True)
+    timed_pruned=timed_sorted.head(int(timed_sorted.shape[0]/5))
+
+    x_col = "Avg n'_sz / k_size"
+    y_col = "Global Sim E2E_dma"
+    special_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "mRem",
+            hover_data,
+            "Fastest points (top 20%)",
+            "symbolMarker",
+        )
+    )
+
+    x_col = "mRem"
+    y_col = "Global Sim E2E_dma"
+    special_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "mRem",
+            hover_data,
+            "Fastest points (top 20%)",
+            "symbolMarker",
+        )
+    )
+
+    x_col = "Global Sim E2E_dma"
+    y_col = "mRem"
+    special_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "mRem",
+            hover_data,
+            "Fastest points (top 20%)",
+            "symbolMarker",
+        )
+    )
+
 
 
     # more figures
@@ -273,7 +385,53 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
             "symbolMarker",
         )
     )
+
+    # THEN pruning by taking bottom third based on m remainder size
+    timed_sorted = timed_pruned.sort_values(by="mRem", ascending=True)
+    timed_pruned=timed_sorted.head(int(timed_sorted.shape[0]/4))
+    x_col = "Avg n'_sz / k_size"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "mRem",
+            hover_data,
+            "pruned to SSR configs <= 1024, THEN pruned to bottom quarter based on mRem",
+            "symbolMarker",
+        )
+    )
+    x_col = "Overlap Stall Time Total"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "mRem",
+            hover_data,
+            "pruned to SSR configs <= 1024, THEN pruned to bottom quarter based on mRem",
+            "symbolMarker",
+        )
+    )
+    x_col = "Overlap Stall Time Total"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "Avg n'_sz / k_size",
+            hover_data,
+            "pruned to SSR configs <= 1024, THEN pruned to bottom quarter based on mRem",
+            "symbolMarker",
+        )
+    )
+
     # THEN pruning by bottom third based on stall time
+    timed_sorted = timed.sort_values(by="SSR Configs", ascending=True)
+    timed_pruned=timed_sorted[timed_sorted["SSR Configs"] <= 1024]#timed_sorted.head(50)
     timed_sorted = timed_pruned.sort_values(by="Overlap Stall Time Total", ascending=True)
     print(timed_sorted.shape)
     print(int(timed_sorted.shape[0]/3))
@@ -292,14 +450,41 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
         )
     )
 
-    x_col = "Overlap Stall Time Total"
+    x_col = "Avg n'_sz / k_size"
+    y_col = "Global Sim E2E_dma"
+    fig2=scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "mRem",
+            hover_data,
+            "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time",
+            "symbolMarker",
+        )
+    
+    
+
+    x_col = "k"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "k",
+            hover_data,
+            "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time; minimize n'/k and avoid remainder tiles in the m dimension",
+            "symbolMarker",
+        ))
+    
+
+    x_col = "Avg A'"
     y_col = "Global Sim E2E_dma"
     more_figs.append(
         scatterWithColor(
             timed_pruned,
             x_col,
             y_col,
-            "Avg n'_sz / k_size",
+            "Avg A'",
             hover_data,
             "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time",
             "symbolMarker",
@@ -362,6 +547,7 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
         )
     )
 
+ 
     x_col =  "Avg A'"
     y_col = "Avg n'_sz / k_size"
     fig=scatterWithColor(
@@ -370,12 +556,61 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
             y_col,
             "Global Sim E2E_dma",
             hover_data,
-            "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time - best solution so far",
+            "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time",
             "symbolMarker",
         )
     more_figs.append(fig)
+
+    x_col =  "Y/X"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "Y/X",
+            hover_data,
+            "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time - Y/X ?",
+            "symbolMarker",
+        ))
+
+    # x_col =  "Approx C''"
+    # y_col = "Global Sim E2E_dma"
+    # beforeSpecial.append(scatterWithColor(
+    #         timed_pruned,
+    #         x_col,
+    #         y_col,
+    #         "Approx C''",
+    #         hover_data,
+    #         "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time - product of previous X and Y?",
+    #         "symbolMarker",
+    #     ))
     
-    special_figs= [fig] + special_figs
+    # x_col =  "Approx C''"
+    # y_col = "Global Sim E2E_dma"
+    # beforeSpecial.append(scatterWithColor(
+    #         timed_pruned,
+    #         x_col,
+    #         y_col,
+    #         "Global Sim E2E_dma",
+    #         hover_data,
+    #         "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time - minimize by C''???",
+    #         "symbolMarker",
+    #     ))
+    
+    x_col =  "Avg n'_sz / k_size"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "Global Sim E2E_dma",
+            hover_data,
+            "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time - only use n'/k???",
+            "symbolMarker",
+        ))
+
+
+    
 
     # pruned_out = timed[~timed["FakeNN JSON Name"].isin(timed_pruned["FakeNN JSON Name"])]
     # addScatterFlatColorMarker(
@@ -447,6 +682,6 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
     
 
 
-
+    special_figs= [fig2] + special_figs
 
     return saveFigsInHTML(special_figs, more_figs, titleOfWebpage)
