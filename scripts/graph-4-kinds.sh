@@ -49,6 +49,15 @@ HTML_NAME="out/cube128-stall-cycles-experimental-pruning"
 python graph-2-kinds.py "out/128x128x128-all-less-than-2048.csv" "out/128x128x128-div-rem-ann.csv" $WEBPAGE_TITLE $HTML_NAME
 WEBPAGES+=" $HTML_NAME.html"
 
+# graph 512 data with experimental pruning methods
+DIVISOR_ANALYSIS="/home/$USER/myrtle/myrtle/out/512x512x512wm-n-k_ss_c_ana.csv"
+DIVISOR="$DIVISOR_FLDR/timed/512x512x512wm-n-k_distillbert-results-removed-missing.csv"
+WEBPAGE_TITLE="512-cube-divisor-tiles-only-expiermental-pruning"
+HTML_NAME="out/512-cube-divisors/cube512-divisors"
+MODE="noStallCyclesTimed"
+python graph-2-kinds2.py $DIVISOR $DIVISOR_ANALYSIS $WEBPAGE_TITLE $HTML_NAME $MODE
+WEBPAGES+=" $HTML_NAME.html"
+
 # DIVISOR="$DIVISOR_FLDR/timed/128x128x128wm-n-k_ss_c_no-redundant_deprecated.csv"
 HTML_NAME="out/cube128-kernel-vs-dma"
 # REMAINDER="$REMAINDER_FLDR/timed/128x128x128wm-n-k_ss_c_ana-results-unskipped-deprecated.csv"

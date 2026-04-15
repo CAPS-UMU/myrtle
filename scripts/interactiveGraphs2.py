@@ -157,7 +157,8 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
         "absoluteRank",
         "dma",
         "HW Loops",
-        "FMADDsMULs",
+        "SSR Configs",
+        #"FMADDsMULs",
         "FMADDsMULsPerCore",
         "SSR Loads per HW Loop",
         "HW Loops / SSR Loads per HW Loop",
@@ -377,6 +378,20 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
         )
     )
 
+    x_col = "Avg (A''+ B') / C''"
+    y_col = "Overlap Stall Time Total"
+    special_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "Overlap Stall Time Total",
+            hover_data,
+            "Trying to estimate overlap stall time",
+            "symbolMarker",
+        )
+    )
+
 
 
     # more figures
@@ -411,15 +426,37 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
             "pruned to SSR configs <= 1024; take leftmost, then the tie break by first preferring circle over triangle and then secondly darker colors",
             "niceMRem",
         )
-    more_figs.append(myFig
-        
-    )
+    more_figs.append(myFig)
+    x_col = "Overlap Stall Time Per Core"
+    y_col = "Global Sim E2E_dma"
+    timed_pruned.sort_values(by="niceMRem",ascending=True)
+    myFig2 = scatterWithColorSymbol(
+            timed_pruned,
+            x_col,
+            y_col,
+            "Avg n'_sz / k_size",
+            hover_data,
+            "Examining Tie Breakers... Can we use stall cycles to break them?",
+            "niceMRem",
+        )
+    ties = timed_pruned[((timed_pruned["Avg n'_sz / k_size"] ==1) & (timed_pruned["niceMRem"]))]
+    ties.sort_values(by="Global Sim E2E_dma",ascending=True)
+    print(ties[["FakeNN JSON Name","Avg n'_sz / k_size","niceMRem","Global Sim E2E_dma","Overlap Stall Time Per Core"]])
+    addScatterFlatColorMarker(
+        myFig2,
+        ties,
+        x_col,
+        y_col,
+        "red",
+        "star",
+        hover_data,
+        "tie breakers at n'/k = 1")
+
 
     x_col = "Global Sim E2E_dma"
     y_col = "Avg n'_sz / k_size"
     timed.sort_values(by="niceMRem",ascending=True)
-    more_figs.append(
-        scatterWithColorSymbol(
+    fig3=scatterWithColorSymbol(
             timed,
             x_col,
             y_col,
@@ -428,7 +465,8 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
             "no pruning. smallest n'_sz/k_sz, the tie break by first preferring circle over triangle and then darker colors.",
             "niceMRem",
         )
-    )
+   
+    more_figs.append(fig3)
 
     x_col = "Avg n'_sz / k_size"
     y_col = "Global Sim E2E_dma"
@@ -757,6 +795,6 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
     
 
 
-    special_figs= [fig2,myFig] + special_figs
+    special_figs= [fig2,myFig,myFig2,fig3] + special_figs
 
     return saveFigsInHTML(special_figs, more_figs, titleOfWebpage)
