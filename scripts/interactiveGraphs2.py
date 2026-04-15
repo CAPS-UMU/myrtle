@@ -62,14 +62,25 @@ def saveFigsInHTML(special_figs, more_figs, titleOfWebpage):
     return html
 
 
-def scatterWithColor(df, x_col, y_col, color, hover_data, title, marker=""):
+def scatterWithColor(df, x_col, y_col, color, hover_data, title, maerker=""):
     fig8 = px.scatter(
         df,
         x=x_col,
         y=y_col,
         color=color,
-      #  symbol="symbolMarker",
-     #   symbol_sequence=["circle", "triangle-up", "triangle-up"],
+        hover_data=hover_data,  # Show these columns on hover
+        title=f"{title} <b>{x_col} vs {y_col}</b>",
+    )
+    return fig8
+
+def scatterWithColorSymbol(df, x_col, y_col, color, hover_data, title, marker=""):
+    fig8 = px.scatter(
+        df,
+        x=x_col,
+        y=y_col,
+        color=color,
+        symbol=marker,
+        symbol_sequence=["circle", "triangle-up", "triangle-up"],
         hover_data=hover_data,  # Show these columns on hover
         title=f"{title} <b>{x_col} vs {y_col}</b>",
     )
@@ -138,6 +149,7 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
     timed["Overlap Stall Time Per Core"] = timed["Overlap Stall Time Total"] / timed["Total CC Tiles"]
     timed["Y/X"]=timed["Avg n'_sz / k_size"] * timed["Avg A'"]
     timed["mRem"] = timed["M"] % timed["m"]
+    timed["niceMRem"] = timed["mRem"].apply(lambda r: True if r == 0 or r % 8 == 0 else False)
     x_col = "SSR Config Count"
     y_col = "dma"
     hover_data = [
@@ -156,9 +168,9 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
         "Global Sim E2E_dma",
         "Total CC Tiles",
         "Overlap Stall Time Per Core",
-        "Avg A''",
-        "Avg B'",
-        "Avg C''",
+        # "Avg A''",
+        # "Avg B'",
+        # "Avg C''",
         "Avg CC Tile Size",
         "Avg A''/ B'",
         "Avg (A''+ B') / C''",
@@ -171,6 +183,7 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
         "Avg n'_sz / k_size"
     ]
     analyzed["mRem"] = analyzed["M"] % analyzed["m"]
+    analyzed["niceMRem"] = analyzed["mRem"].apply(lambda r: True if r == 0 or r % 8 == 0 else False)
     analyzed["Overlap Stall Time Total"] = -1
     analyzed["Raw Compute Time Total"] = -1
     analyzed["Global Sim E2E_dma"] = -1
@@ -386,6 +399,68 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
         )
     )
 
+    x_col = "Avg n'_sz / k_size"
+    y_col = "Global Sim E2E_dma"
+    timed_pruned.sort_values(by="niceMRem",ascending=True)
+    myFig = scatterWithColorSymbol(
+            timed_pruned,
+            x_col,
+            y_col,
+            "mRem",
+            hover_data,
+            "pruned to SSR configs <= 1024; take leftmost, then the tie break by first preferring circle over triangle and then secondly darker colors",
+            "niceMRem",
+        )
+    more_figs.append(myFig
+        
+    )
+
+    x_col = "Global Sim E2E_dma"
+    y_col = "Avg n'_sz / k_size"
+    timed.sort_values(by="niceMRem",ascending=True)
+    more_figs.append(
+        scatterWithColorSymbol(
+            timed,
+            x_col,
+            y_col,
+            "mRem",
+            hover_data,
+            "no pruning. smallest n'_sz/k_sz, the tie break by first preferring circle over triangle and then darker colors.",
+            "niceMRem",
+        )
+    )
+
+    x_col = "Avg n'_sz / k_size"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned,
+            x_col,
+            y_col,
+            "mRem",
+            hover_data,
+            "pruned to SSR configs <= 1024",
+            "symbolMarker",
+        )
+    )
+
+    # THEN let's try pruning by only having m_rem of 0 or divisble by 8
+    # timed["remainderTiles"] = timed["remainderTiles"].apply(lambda x: "000" if x == 0 else f"{x}")
+    
+    timed_pruned2=timed_pruned[timed_pruned["niceMRem"]]
+    x_col = "Avg n'_sz / k_size"
+    y_col = "Global Sim E2E_dma"
+    more_figs.append(
+        scatterWithColor(
+            timed_pruned2,
+            x_col,
+            y_col,
+            "mRem",
+            hover_data,
+            "pruned to SSR configs <= 1024, THEN pruned to only mRem of 0 or 8 multiple",
+            "symbolMarker",
+        )
+    )
     # THEN pruning by taking bottom third based on m remainder size
     timed_sorted = timed_pruned.sort_values(by="mRem", ascending=True)
     timed_pruned=timed_sorted.head(int(timed_sorted.shape[0]/4))
@@ -458,7 +533,7 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
             y_col,
             "mRem",
             hover_data,
-            "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time",
+            "pruned to SSR configs <= 1024, THEN pruned to bottom third based on overlap stall time; leftmost, then darker color better",
             "symbolMarker",
         )
     
@@ -682,6 +757,6 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
     
 
 
-    special_figs= [fig2] + special_figs
+    special_figs= [fig2,myFig] + special_figs
 
     return saveFigsInHTML(special_figs, more_figs, titleOfWebpage)
