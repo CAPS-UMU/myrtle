@@ -1,6 +1,8 @@
 DIVISOR_FLDR="../sensitivity-analysis/remainder-vs-divisor/div"
 REMAINDER_FLDR="../sensitivity-analysis/remainder-vs-divisor/rem"
 WEBPAGES=""
+WEBPAGES512=""
+WEBPAGES384=""
 USER="hoppip"
 #USER="emily"
 #/home/hoppip/myrtle/sensitivity-analysis/redundant-vs-no-redundant-stores/only-time/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
@@ -52,11 +54,21 @@ WEBPAGES+=" $HTML_NAME.html"
 # graph 512 data with experimental pruning methods
 DIVISOR_ANALYSIS="/home/$USER/myrtle/myrtle/out/512x512x512wm-n-k_ss_c_ana.csv"
 DIVISOR="$DIVISOR_FLDR/timed/512x512x512wm-n-k_distillbert-results-removed-missing.csv"
-WEBPAGE_TITLE="512-cube-divisor-tiles-only-expiermental-pruning"
-HTML_NAME="out/512-cube-divisors/cube512-divisors"
+WEBPAGE_TITLE="512-cube-divisor-tiles-only-experimental-pruning"
+HTML_NAME="out/cube512-divisors-experimental-pruning"
 MODE="noStallCyclesTimed"
 python graph-2-kinds2.py $DIVISOR $DIVISOR_ANALYSIS $WEBPAGE_TITLE $HTML_NAME $MODE
-WEBPAGES+=" $HTML_NAME.html"
+WEBPAGES512+=" $HTML_NAME.html"
+
+# graph 384 data with experimental pruning methods
+DIVISOR_ANALYSIS="/home/$USER/myrtle/myrtle/out/384x384x384wm-n-k_ss_c_rem_ana.csv"
+DIVISOR="$REMAINDER_FLDR/timed/384x384x384wm-n-k-partial-results.csv"
+WEBPAGE_TITLE="384-cube-remainder-tiles-only-experimental-pruning"
+HTML_NAME="out/cube384-remainders-only-experimental-pruning"
+MODE="stallCyclesTimed"
+python graph-2-kinds2.py $DIVISOR $DIVISOR_ANALYSIS $WEBPAGE_TITLE $HTML_NAME $MODE
+WEBPAGES384+=" $HTML_NAME.html"
+
 
 # DIVISOR="$DIVISOR_FLDR/timed/128x128x128wm-n-k_ss_c_no-redundant_deprecated.csv"
 HTML_NAME="out/cube128-kernel-vs-dma"
@@ -77,7 +89,7 @@ HTML_NAME="out/cube512"
 # DIVISOR_UT="no"
 # DIVISOR_ANALYSIS="/home/$USER/myrtle/myrtle/out/512x512x512wm-n-k_ss_c_ana.csv"
 # python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS
-WEBPAGES+=" $HTML_NAME.html"
+WEBPAGES512+=" $HTML_NAME.html"
 
 INDEX_TITLE="128 Cube Remainder Tile Results"
 INDEX_SUMMARY="In-progress results timing tiled matmul on snitch using remainder tiles."
@@ -86,4 +98,16 @@ echo $INDEX_SUMMARY > tempSummary.txt
 python generate-html-index.py "./out/128-cube-remainders" $WEBPAGES tempTitle.txt tempSummary.txt
 rm -rf tempTitle.txt tempSummary.txt
 
+INDEX_TITLE="512 Cube Divisor Tiles - Experimental Pruning"
+INDEX_SUMMARY="In-progress results timing tiled matmul (no remainder tiles) on snitch."
+echo $INDEX_TITLE > tempTitle.txt
+echo $INDEX_SUMMARY > tempSummary.txt
+python generate-html-index.py "./out/512-cube-divisors" $WEBPAGES512 tempTitle.txt tempSummary.txt
+rm -rf tempTitle.txt tempSummary.txt
 
+INDEX_TITLE="384 Cube Remainder Tiles Only - Experimental Pruning"
+INDEX_SUMMARY="In-progress results timing tiled matmul (no remainder tiles) on snitch."
+echo $INDEX_TITLE > tempTitle.txt
+echo $INDEX_SUMMARY > tempSummary.txt
+python generate-html-index.py "./out/384-remainders-only" $WEBPAGES384 tempTitle.txt tempSummary.txt
+rm -rf tempTitle.txt tempSummary.txt

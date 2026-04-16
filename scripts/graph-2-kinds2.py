@@ -34,8 +34,6 @@ def main():
     htmlName = sys.argv[4]
     mode=sys.argv[5]
 
-    if mode != "noStallCyclesTimed":
-        raise Exception("Cannot graph stall cycle info right now")
     # Read in the timed CSV file
     df = pd.read_csv(timed)
     # read in the analysis csv file
@@ -55,7 +53,11 @@ def main():
     df = df_sorted 
     df_ann = ae.addFakeKernelTime(df_ann, df)
   #  print(df["remainderTiles"])
-    html = ig.generateExperimentalPruningGraphs(df, df_ann, titleOfWebpage)
+    if mode == "stallCyclesTimed":
+         #html = ig.generateExperimentalPruningGraphs(df, df_ann, titleOfWebpage)
+         html="hoodle"
+    else:
+        html = ig.generateExperimentalPruningGraphs(df, df_ann, titleOfWebpage)
     
     # --- Write to file ---
     with open(f"{htmlName}.html", "w") as f:
