@@ -48,15 +48,19 @@ def main():
     df = df_merged
     # sort merged by e2e dma execution time
    # print(df.shape)
-    df_sorted = df.sort_values(by="dma", ascending=True)
-    df_sorted["absoluteRank"] = range(1, int(df_sorted.shape[0] + 1))
-    df = df_sorted 
-    df_ann = ae.addFakeKernelTime(df_ann, df)
+    
   #  print(df["remainderTiles"])
     if mode == "stallCyclesTimed":
-         #html = ig.generateExperimentalPruningGraphs(df, df_ann, titleOfWebpage)
-         html="hoodle"
+        df_sorted = df.sort_values(by="Global Sim E2E_dma", ascending=True)
+        df_sorted["absoluteRank"] = range(1, int(df_sorted.shape[0] + 1))
+        df = df_sorted 
+        df_ann = ae.addFakeKernelTime(df_ann, df)
+        html = ig.generateExperimentalPruningGraphsStalls(df, df_ann, titleOfWebpage)
     else:
+        df_sorted = df.sort_values(by="dma", ascending=True)
+        df_sorted["absoluteRank"] = range(1, int(df_sorted.shape[0] + 1))
+        df = df_sorted 
+        df_ann = ae.addFakeKernelTime(df_ann, df)
         html = ig.generateExperimentalPruningGraphs(df, df_ann, titleOfWebpage)
     
     # --- Write to file ---
