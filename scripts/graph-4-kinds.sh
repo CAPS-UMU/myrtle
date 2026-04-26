@@ -19,14 +19,14 @@ HTML_NAME="out/cube128"
 # python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS
 WEBPAGES+=" $HTML_NAME.html"
 
-# DIVISOR="$DIVISOR_FLDR/timed/128x128x128wm-n-k_ss_c_ana-results.csv"
+DIVISOR="$DIVISOR_FLDR/timed/128x128x128wm-n-k_ss_c_ana-results.csv"
 HTML_NAME="out/cube128-stall-cycles"
-# REMAINDER="/home/$USER/myrtle/sensitivity-analysis/remainder-vs-divisor/rem/timed/128x128x128wm-n-k_ss_c_ana-results_lessThan_1024.csv"
-# REMAINDER_UT="/home/$USER/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_rem_ana.csv"
-# WEBPAGE_TITLE="128x128x128-No-Redundant-Stores"
-# DIVISOR_UT="bars"
-# DIVISOR_ANALYSIS="/home/$USER/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_ana.csv"
-# python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS
+REMAINDER="/home/$USER/myrtle/sensitivity-analysis/remainder-vs-divisor/rem/timed/128x128x128wm-n-k_ss_c_ana-results_lessThan_1024.csv"
+REMAINDER_UT="/home/$USER/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_rem_ana.csv"
+WEBPAGE_TITLE="128x128x128-No-Redundant-Stores"
+DIVISOR_UT="bars"
+DIVISOR_ANALYSIS="/home/$USER/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_ana.csv"
+python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS
 WEBPAGES+=" $HTML_NAME.html"
 
 DIVISOR="$DIVISOR_FLDR/timed/128x128x128wm-n-k_ss_c_ana-results.csv"
@@ -61,24 +61,41 @@ python graph-2-kinds2.py $DIVISOR $DIVISOR_ANALYSIS $WEBPAGE_TITLE $HTML_NAME $M
 WEBPAGES512+=" $HTML_NAME.html"
 
 # graph 384 data with experimental pruning methods
-DIVISOR_ANALYSIS="/home/$USER/myrtle/myrtle/out/384x384x384wm-n-k_ss_c_rem_ana.csv"
-DIVISOR="$REMAINDER_FLDR/timed/384x384x384wm-n-k-partial-results.csv"
-WEBPAGE_TITLE="384-cube-remainder-tiles-only-experimental-pruning"
+ANALYZED="/home/$USER/myrtle/myrtle/out/384x384x384wm-n-k_ss_c_rem_ana.csv"
+TIMED="$REMAINDER_FLDR/timed/384x384x384wm-n-k-partial-results.csv"
+WEBPAGE_TITLE="cube384-remainders-only-experimental-pruning"
 HTML_NAME="out/cube384-remainders-only-experimental-pruning"
 MODE="stallCyclesTimed"
-python graph-2-kinds2.py $DIVISOR $DIVISOR_ANALYSIS $WEBPAGE_TITLE $HTML_NAME $MODE
+python graph-2-kinds2.py $TIMED $ANALYZED $WEBPAGE_TITLE $HTML_NAME $MODE
+WEBPAGES384+=" $HTML_NAME.html"
+
+# concat the timed data
+REMAINDER="$REMAINDER_FLDR/timed/384x384x384wm-n-k-partial-results.csv"
+DIVISOR="$DIVISOR_FLDR/timed/384x384x384wm-n-k-partial-results.csv"
+python concatCSVs.py $REMAINDER $DIVISOR "out/384x384x384-div-rem.csv"
+# concat the analysis data
+REMAINDER_ANALYZED="/home/$USER/myrtle/myrtle/out/384x384x384wm-n-k_ss_c_rem_ana.csv"
+DIVISOR_ANALYZED="/home/$USER/myrtle/myrtle/out/384x384x384wm-n-k_ss_c_ana.csv"
+python concatCSVs.py $REMAINDER_ANALYZED $DIVISOR_ANALYZED "out/384x384x384-div-rem-ann.csv"
+
+ANALYZED="out/384x384x384-div-rem-ann.csv"
+TIMED="out/384x384x384-div-rem.csv"
+WEBPAGE_TITLE="384-cube-remainder-and-divisor-tiles-experimental-pruning"
+HTML_NAME="out/cube384-remainders-and-divisors-experimental-pruning"
+MODE="stallCyclesTimed"
+python graph-2-kinds2.py $TIMED $ANALYZED $WEBPAGE_TITLE $HTML_NAME $MODE
 WEBPAGES384+=" $HTML_NAME.html"
 
 
-# DIVISOR="$DIVISOR_FLDR/timed/128x128x128wm-n-k_ss_c_no-redundant_deprecated.csv"
 HTML_NAME="out/cube128-kernel-vs-dma"
-# REMAINDER="$REMAINDER_FLDR/timed/128x128x128wm-n-k_ss_c_ana-results-unskipped-deprecated.csv"
-# REMAINDER_UT="/home/$USER/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_rem_ana.csv"
-# WEBPAGE_TITLE="128x128x128-Fixed-Kernel-Time-Parsing-Bug"
-# DIVISOR_UT="no"
-# DIVISOR_ANALYSIS="/home/$USER/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_ana.csv"
-# BUG_FIX="$REMAINDER_FLDR/timed/fixed-parse-bug/128x128x128wm-n-k_ss_c_ana-results.csv"
-# python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS $BUG_FIX
+DIVISOR="$DIVISOR_FLDR/timed/128x128x128wm-n-k_ss_c_no-redundant_deprecated.csv"
+REMAINDER="$REMAINDER_FLDR/timed/128x128x128wm-n-k_ss_c_ana-results-unskipped-deprecated.csv"
+REMAINDER_UT="/home/$USER/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_rem_ana.csv"
+WEBPAGE_TITLE="128x128x128-Fixed-Kernel-Time-Parsing-Bug"
+DIVISOR_UT="no"
+DIVISOR_ANALYSIS="/home/$USER/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_ana.csv"
+BUG_FIX="$REMAINDER_FLDR/timed/fixed-parse-bug/128x128x128wm-n-k_ss_c_ana-results.csv"
+python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS $BUG_FIX
 WEBPAGES+=" $HTML_NAME.html"
 
 # DIVISOR="$DIVISOR_FLDR/timed/512x512x512wm-n-k_distillbert-results.csv"

@@ -26,7 +26,8 @@ def get_lines_from_file(file_name):
             # automatically strips the '\n' from each string.
             return file.read().splitlines()
     except FileNotFoundError:
-        return f"Error: The file '{file_name}' was not found."
+        raise Exception(f"Error: The file '{file_name}' was not found.")
+# python topTenFromMNK.py "../32x32x32/input.txt" "../32x32x32"
 # python topTenFromMNK.py "../384x384x384/input.txt" "../384x384x384" _ss_c_rem_gen
 #python topTenFromMNK.py "../16x16x16/input.txt" "../16x16x16" _ss_c_rem_gen
 # python topTenFromMNK.py "../16x16x16-debug/input.txt" "../16x16x16-debug"    
@@ -49,7 +50,7 @@ def main():
             suffix = "_ss_c_pad_ana"
         else:
             suffix = sys.argv[3]
-            
+     
     lines = get_lines_from_file(inputSizes)
     expNameRegex = re.compile(
             r"(\d+)x(\d+)x(\d+)"
@@ -119,7 +120,7 @@ def main():
       
         # create extract script
         print(f"export experimentDir=/repo/{topLevelOutputFolder};",file=extractScript)
-        print(f"bash myrtle-experiments/many_gemms.sh {ss} no no extract;",file=extractScript)
+        print(f"#bash myrtle-experiments/many_gemms.sh {ss} no no extract;",file=extractScript)
         print(f"python myrtle-experiments/combineTilingSchemeDataIntoSingleCSV.py {ss} $experimentDir;",file=extractScript)
        
     

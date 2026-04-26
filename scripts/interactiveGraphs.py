@@ -717,8 +717,8 @@ def scatterWithColor(df, x_col, y_col, color, hover_data, title, marker=""):
         x=x_col,
         y=y_col,
         color=color,
-      #  symbol="symbolMarker",
-     #   symbol_sequence=["circle", "triangle-up", "triangle-up"],
+        symbol="symbolMarker",
+        symbol_sequence=["circle", "triangle-up", "triangle-up"],
         hover_data=hover_data,  # Show these columns on hover
         title=f"{title} <b>{x_col} vs {y_col}</b>",
     )
@@ -929,7 +929,7 @@ def generateInteractiveGraphsKernelVsDMA(
         "remainderTiles",
         "symbolMarker",
         "Kernel Time",
-        "dma",
+        "dma"
     ]
     divisors_timed["DMA - Kernel Time"] = (
         divisors_timed["dma"] - divisors_timed["Kernel Time"]
@@ -938,12 +938,13 @@ def generateInteractiveGraphsKernelVsDMA(
     df["symbolMarker"] = "O"
     df["remainderTiles"] = df["remainderTiles"].apply(lambda x: f"{x}")
     # print(divisors_timed[["FakeNN JSON Name","DMA - Kernel Time","remainderTiles"]])
+    #print(divisors_timed.keys())
     left = divisors_timed[cols]
     df_merged["remainderTiles"] = df_merged["remainderTiles_withBug"]
     df_merged["Kernel Time"] = df_merged["Kernel Time_noBug"]
     df_merged["dma"] = df_merged["dma_noBug"]
     # print(df_merged[["FakeNN JSON Name","DMA - Kernel Time","remainderTiles"]])
-    # print(f"{df.keys()} and then {df_merged.keys()}")
+   # print(f"{df.keys()} and then {df_merged.keys()}")
     right = df_merged[cols]
 
     df_merged = pd.concat([left, right])
@@ -953,6 +954,7 @@ def generateInteractiveGraphsKernelVsDMA(
     df_sorted = df_merged.sort_values(by="dma", ascending=True)
     df_sorted["absoluteRank"] = range(1, int(df_sorted.shape[0] + 1))
     df = df_sorted
+
     more_figs.append(
         px.bar(
             df,
@@ -968,6 +970,25 @@ def generateInteractiveGraphsKernelVsDMA(
             # template='plotly_dark'
         )
     )
+
+   
+    more_figs.append(
+        px.bar(
+            df,
+            x="absoluteRank",
+            y=["dma"],  # Pass both column names here
+            # barmode='group',         # Keeps them side-by-side
+            title="Effect of Remainder Tiles on Execution Time?",
+            color="remainderTiles",
+            labels={
+                "value": "Time (cycles)",
+                "variable": "Metric",
+            },  # 'value' and 'variable' are default labels for lists
+            # template='plotly_dark'
+        )
+    )
+
+
 
     y_col = "Kernel Time"
     x_col = "dma"
@@ -1221,6 +1242,36 @@ def generateInteractiveBarGraphs(divisors, remainders, title, titleOfWebpage):
         "Remainders Untimed",
     )
 
+    x_col = "SSR Configs"
+    y_col = "dma"
+    color = "dma"
+    special_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            color,
+            hover_data,
+            "SSR Configs (Compute Core Tile Count) vs. Execution Time ",
+            "symbolMarker",
+        )
+    )
+
+    x_col = "L1 Usage"
+    y_col = "dma"
+    color = "dma"
+    special_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            color,
+            hover_data,
+            "L1 Usage vs. Execution Time ",
+            "symbolMarker",
+        )
+    )
+
     # more figures
     more_figs = []
 
@@ -1229,6 +1280,9 @@ def generateInteractiveBarGraphs(divisors, remainders, title, titleOfWebpage):
     #  print(timed[['Overlap Stall Time Total', 'Raw Compute Time Total','Before Compute Time Total','After Compute Time Total']])
     timed["8*dma"] = timed["dma"] * 8
     timed.sort_values(by="absoluteRank", ascending=True)
+    timed["mRem"] = timed["M"] % timed["m"]
+    timed["niceMRem"] = timed["mRem"].apply(lambda r: True if r == 0 or r % 8 == 0 else False)
+    timed = timed.copy() # defragment
     # # 2. Create the stacked bar graph
     fig = px.bar(
         timed,
@@ -1256,6 +1310,35 @@ def generateInteractiveBarGraphs(divisors, remainders, title, titleOfWebpage):
         template="presentation",
     )
     more_figs.append(fig)
+
+    more_figs.append(
+        px.bar(
+            timed,
+            x="absoluteRank",
+            y=["dma"],  # Pass both column names here
+            # barmode='group',         # Keeps them side-by-side
+            title="Effect of Remainder Tiles divisible by 8 on Execution Time?",
+            color="niceMRem",
+            labels={
+                "value": "Time (cycles)",
+                "variable": "Metric",
+            },  # 'value' and 'variable' are default labels for lists
+            # template='plotly_dark'
+        )
+    )
+    x_col="mRem"
+    y_col="Overlap Stall Time Total"
+    more_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "niceMRem",
+            hover_data,
+            "How do m-dim remainders affect stall time?",
+            "",
+        )
+    )
 
     pruned = timed[timed["absoluteRank"] < 50]
     pruned.sort_values(by="absoluteRank", ascending=True)

@@ -435,5 +435,20 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
 
     # more figures
     more_figs = []
+    more_figs.append(
+        px.bar(
+            timed,
+            x="absoluteRank",
+            y=["dma"],  # Pass both column names here
+            # barmode='group',         # Keeps them side-by-side
+            title="Effect of Remainder Tiles divisible by 8 on Execution Time?",
+            color="niceMRem",
+            labels={
+                "value": "Time (cycles)",
+                "variable": "Metric",
+            },  # 'value' and 'variable' are default labels for lists
+            # template='plotly_dark'
+        )
+    )
 
     return saveFigsInHTML(special_figs, more_figs, titleOfWebpage)
