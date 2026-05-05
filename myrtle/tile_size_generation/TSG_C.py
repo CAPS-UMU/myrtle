@@ -35,6 +35,16 @@ from tile_size_generation.TSG_Quidditch import TSG_Quidditch
 # def __init__(self, other):
 # cs = ColoredShape(color='red', shapename='circle')
 
+# Source - https://stackoverflow.com/a/1319675
+# Posted by gahooa, modified by community. See post 'Timeline' for change history
+# Retrieved 2026-04-28, License - CC BY-SA 4.0
+class NoDivisorTiles(Exception):
+    pass
+
+class NoDivisorTilesInAnyDim(Exception):
+    pass
+
+
 class TSG_C(TSG_Quidditch):
     def hello(self):
         print("I am a tile size generator for the manual C backend")
@@ -74,7 +84,7 @@ class TSG_C(TSG_Quidditch):
             print(f"WARNING: N = {self.me.n} is NOT divisible by 2!")
         return exhaustive
 
-    def validOptions(self, debug=False):
+    def validOptions(self, pruned=False, debug=False,threshold=0):
         # all possible values for m, n, and k
         little_m_options = self.mDimOptions()
         little_n_options = self.nDimOptions()
@@ -83,22 +93,28 @@ class TSG_C(TSG_Quidditch):
         # filter for m's, n's and k's that divide evenly into M, N and K respectively
         little_m_no_pad = list(filter(lambda x: self.dividesIntoM(x), little_m_options))
         m_options = little_m_no_pad
-        if len(little_m_no_pad) < 1:  # prime M dimension
-            raise Exception(
-                f"TSG: Cannot find a tile size that divides evenly into dimension M = {self.me.m}!"
-            )
-
+        m_empty = len(little_m_no_pad) < 1
         little_n_no_pad = list(filter(lambda x: self.dividesIntoN(x), little_n_options))
         n_options = little_n_no_pad
-        if len(little_n_no_pad) < 1:  # prime N dimension
-            raise Exception(
-                f"TSG: Cannot find a tile size that divides evenly into dimension N = {self.me.n}!"
-            )
-
+        n_empty = len(little_n_no_pad) < 1
         little_k_no_pad = list(filter(lambda x: self.dividesIntoK(x), little_k_options))
         k_options = little_k_no_pad
-        if len(little_k_no_pad) < 1:  # prime K dimension
-            raise Exception(
+        k_empty = len(little_k_no_pad) < 1
+
+        if m_empty and n_empty and k_empty:
+            raise NoDivisorTilesInAnyDim(
+                "TSG: Cannot find a tile size that divides evenly into any dimension!"
+            )
+        if m_empty:  # prime M dimension
+            raise NoDivisorTiles(
+                f"TSG: Cannot find a tile size that divides evenly into dimension M = {self.me.m}!"
+            )
+        if n_empty:  # prime N dimension
+            raise NoDivisorTiles(
+                f"TSG: Cannot find a tile size that divides evenly into dimension N = {self.me.n}!"
+            )
+        if k_empty:  # prime K dimension
+            raise NoDivisorTiles(
                 f"TSG: Cannot find a tile size that divides evenly into dimension K = {self.me.k}!"
             )
 
@@ -256,7 +272,7 @@ class TSG_C(TSG_Quidditch):
             "tileA_cc": d["tileA_cc"],
             "tileB_cc": d["tileB_cc"],
             "tileC_cc": d["tileC_cc"],
-            "remainderTiles" : d["remainderTiles"],
+            "remainderTiles" : f"{d['remainderTiles']}",
         }
 
     # helper for converting to CSV

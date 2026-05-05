@@ -24,6 +24,7 @@ from tile_size_generation.TileSizeGenerator import TileSizeGenerator
 # m is the parallel dimension but does NOT need to be a multiple of 8
 # TCDM size in bytes: TCDM_HEAP_SIZE = 112 * 1024
 
+
 class TSG_C_Remainder(TileSizeGenerator):
     def hello(self):
         print("I am a tile size generator for the manual C backend, and I consider remainder tiles.")
@@ -88,81 +89,31 @@ class TSG_C_Remainder(TileSizeGenerator):
         # print(multiples) # debugging only
         # print(list(chain.from_iterable(multiples))) # debugging only
         # first convert to set to remove duplicates, then convert to list
-        exhaustive = list(set(chain.from_iterable(multiples)))
-        # print(exhaustive) # debugging only
+        multiples = list(set(chain.from_iterable(multiples)))
+        def n_remDivisibleBy8(n):
+            rem = self.N % n
+            if rem != 0:
+                return rem % 8 == 0
+            return True
+        exhaustive = filter(n_remDivisibleBy8, multiples)
         if (self.N % 2) != 0:
             print(f"WARNING: N = {self.N} is NOT divisible by 2!")
         return exhaustive
 
-    def validOptions(self, debug=False):
+    def validOptions(self,pruned=False, debug=False, threshold=0):
         # all possible values for m, n, and k
         little_m_options = self.mDimOptions()
         little_n_options = self.nDimOptions()
         little_k_options = self.kDimOptions()
-
-        # filter for m's, n's and k's that divide evenly into M, N and K respectively
-        little_m_no_pad = list(filter(lambda x: self.dividesIntoM(x), little_m_options))
-        m_options = little_m_no_pad
-        if len(little_m_no_pad) < 1:  # prime M dimension
-            raise Exception(
-                f"TSG: Cannot find a tile size that divides evenly into dimension M = {self.M}!"
-            )
-        little_n_no_pad = list(filter(lambda x: self.dividesIntoN(x), little_n_options))
-        n_options = little_n_no_pad
-        if len(little_n_no_pad) < 1:  # prime N dimension
-            raise Exception(
-                f"TSG: Cannot find a tile size that divides evenly into dimension N = {self.N}!"
-            )
-        little_k_no_pad = list(filter(lambda x: self.dividesIntoK(x), little_k_options))
-        k_options = little_k_no_pad
-        if len(little_k_no_pad) < 1:  # prime K dimension
-            raise Exception(
-                f"TSG: Cannot find a tile size that divides evenly into dimension K = {self.K}!"
-            )
-        
-        # filter for m's, n's and k's that DO NOT divide evenly into M,N,K respectively
-        little_m_pad = list(filter(lambda x: not self.dividesIntoM(x), little_m_options))
-        if len(little_m_pad) < 1:  
-            print(
-                f"TSG: Cannot find a tile size that DOESN'T divide evenly into dimension M = {self.M}!"
-            )
-        little_n_pad = list(filter(lambda x: not self.dividesIntoN(x), little_n_options))
-        if len(little_n_pad) < 1:  
-            print(
-                f"TSG: Cannot find a tile size that DOESN'T divide evenly into dimension N = {self.N}!"
-            )
-        little_k_pad = list(filter(lambda x: not self.dividesIntoK(x), little_k_options))
-        if len(little_k_pad) < 1:  
-            print(
-                f"TSG: Cannot find a tile size that DOESN'T divide evenly into dimension K = {self.K}!"
-            )
-        else:
-            # since we DO have some remainder tile options, make sure the remainder tile in the k dim is >= 3
-            little_k_pad = list(filter(lambda x: self.remainderKGreaterThanTwo(x), little_k_options))
-
-        # print(f"little_m_pad is {little_m_pad}")
-        # print(f"little_m_options is {little_m_options}")
         # enumerate all remainder tile possibilities
-        mnk = list(product(little_m_pad, little_n_pad, little_k_pad))     # M, N, K :)
-        only_m = list(product(little_m_pad, n_options, k_options))        # only M
-        only_mn = list(product(little_m_pad, little_n_pad, k_options))    # only M, N
-        only_mk = list(product(little_m_pad, n_options, little_k_pad))    # only M, K
-        only_n = list(product(m_options, little_n_pad, k_options))        # only N
-        only_nk = list(product(m_options, little_n_pad, little_k_pad))    # only N, K
-        only_k = list(product(m_options, n_options, little_k_pad))        # only K
-        
+        mnk = list(product(little_m_options, little_n_options, little_k_options))        
         # remove duplicates
         options = set(mnk)
-        options.update(only_m)
-        options.update(only_mn)
-        options.update(only_mk)
-        options.update(only_n)
-        options.update(only_nk)
-        options.update(only_k)
-        
         options_as_triples = list(options)
-        return self.pruneForSizeConstraints(options_as_triples, debug)
-        
+        pruned_for_size = self.pruneForSizeConstraints(options_as_triples, debug)        
+        return pruned_for_size
+
+
 
     def pruneForSizeConstraints(self, options_as_triples, debug = False):
         options_as_dicts = list(map(lambda tup: {"id":tup}, options_as_triples))
@@ -366,8 +317,11 @@ class TSG_C_Remainder(TileSizeGenerator):
         df = df[preferred_order]
         return df
 
-    def exportOptionsToCSV(self, dispatchNickName, df):
-        filename = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_rem_gen.csv"
+    def exportOptionsToCSV(self, dispatchNickName, df, pruned=False):
+        if pruned:
+            filename = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_rem_gen_pruned.csv"
+        else:
+            filename = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_rem_gen.csv"
         df.to_csv(
             filename,
             index=False,

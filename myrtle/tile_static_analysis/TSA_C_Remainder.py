@@ -4,6 +4,7 @@ import pathlib
 from tile_static_analysis.TileSizeAnalyzer import TileSizeAnalyzer
 from functools import reduce
 import math
+from pandarallel import pandarallel
 
 class TSA_C_Remainder(TileSizeAnalyzer):
     def __init__(
@@ -13,6 +14,11 @@ class TSA_C_Remainder(TileSizeAnalyzer):
     ):
         self.UaJF = unrollAndJamFactor
         self.DoP = degreeOfParallelism
+    
+    def annotate_w_ssr_configs(self,df):
+        pandarallel.initialize(verbose=0)
+        df["SSR Config Count"] = df[["M","N","K","m","n","k"]].parallel_apply(lambda r: sum([TSA_C_Remainder.computeCoreTileCount(r["M"],r["N"],r["K"],r["m"],r["n"],r["k"],i) for i in range(0,8)] ),axis=1)        
+        return df
 
     def analyze_options(self, df):
         options_as_dicts = list(df.to_dict('records'))
@@ -26,7 +32,7 @@ class TSA_C_Remainder(TileSizeAnalyzer):
         d.update(self.tilingSchemeMetrics(ts))
         return d
     
-    def computeCoreTileCount(self,M, N, K, m, n, k, idx):
+    def computeCoreTileCount(M, N, K, m, n, k, idx):
         cct_per_m_cluster_tiles = int(M / m) * math.ceil(N / n) * math.ceil(K / k)
         # when cluster tile has an m dimension < 8, we don't use all of the cores
         # only cores with indices less than rem_m will execute for this cluster tile
@@ -42,7 +48,7 @@ class TSA_C_Remainder(TileSizeAnalyzer):
         #cc_tile_count = ts.m_tiles * ts.n_tiles * ts.k_tiles * ts.m_prime_tiles
         cc_tile_count = 0
         for i in range(0,8):
-            cc_tile_count = cc_tile_count + self.computeCoreTileCount(ts.M,ts.N,ts.K,ts.m,ts.n,ts.k,i)
+            cc_tile_count = cc_tile_count + TSA_C_Remainder.computeCoreTileCount(ts.M,ts.N,ts.K,ts.m,ts.n,ts.k,i)
         info ={
                 "m_tiles":ts.m_tiles,
                 "n_tiles":ts.n_tiles,
@@ -82,22 +88,24 @@ class TSA_C_Remainder(TileSizeAnalyzer):
     def unrollAndJamFactor(self, rowDim):
             return self.UaJF # fixed unroll and jam factor
 
-    def exportAnalysisToCSV(self, dispatchNickName, df):
+    def exportAnalysisToCSV(self, dispatchNickName, df, pruned=False):
         if (df['remainderTiles'] == "000").all():
             suffix = "_c_ana"
         else:
             suffix = "_c_rem_ana"
-            nextBunch = df[df["SSR Config Count"].between(0,24576)]
+           # nextBunch = df[df["SSR Config Count"].between(0,24576)]
             # filenameSorted = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_pad_ord_L1.csv"
-            nextBunch=nextBunch.sort_values("SSR Config Count", ascending=True)
+            #nextBunch=nextBunch.sort_values("SSR Config Count", ascending=True)
         
            # print(f'Pruned analyzed ss contains: {nextBunch[["FakeNN JSON Name","SSR Config Count"]]}')
-            filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss{suffix}_pruned.csv"
-            nextBunch.to_csv(filename, index=False)
+            
+            #nextBunch.to_csv(filename, index=False)
 
         #print ((df['remainderTiles'] == df['remainderTiles'][0]).all())
-   
-        filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss{suffix}.csv"
+        if pruned:
+            filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss{suffix}_pruned.csv"
+        else:
+            filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss{suffix}.csv"
         df.to_csv(
             filename,
             index=False,
@@ -105,7 +113,7 @@ class TSA_C_Remainder(TileSizeAnalyzer):
         print("\t",end='')
         print(
             
-            f"TSA: wrote analyzed, padded search space to {filename}"
+            f"TSA: wrote analyzed, remainder search space to {filename}"
         )
         return filename
     

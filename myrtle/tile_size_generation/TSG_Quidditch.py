@@ -87,7 +87,7 @@ class TSG_Quidditch(TileSizeGenerator):
         exhaustive = list(range(min, max + 1, step))  # not actually exhaustive...
         return exhaustive
 
-    def validOptions(self, debug=False):
+    def validOptions(self, prune=False, debug=False,threshold=0):
         # all possible values for m, n, and k
         little_m_options = self.mDimOptions()
         little_n_options = self.nDimOptions()

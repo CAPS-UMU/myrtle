@@ -27,6 +27,8 @@ def get_lines_from_file(file_name):
             return file.read().splitlines()
     except FileNotFoundError:
         raise Exception(f"Error: The file '{file_name}' was not found.")
+# python topTenFromMNK.py "../384x384x384/input.txt" "../384x384x384" "_ss_c_rem_div_ana_pruned"
+# python topTenFromMNK.py "../512x512x512/input.txt" "../512x512x512" "_ss_c_rem_div_ana_pruned"
 # python topTenFromMNK.py "../32x32x32/input.txt" "../32x32x32"
 # python topTenFromMNK.py "../384x384x384/input.txt" "../384x384x384" _ss_c_rem_gen
 #python topTenFromMNK.py "../16x16x16/input.txt" "../16x16x16" _ss_c_rem_gen
@@ -43,13 +45,16 @@ def main():
     sortedL1Suffix = "_c_ord_L1"
     top10Suffix = "_top10_c_L1"
     suffix = top10Suffix # by default
-    if len(sys.argv) == 4:
+    timeout = 0
+    if len(sys.argv) >= 4:
         if sys.argv[3] == "all":
             suffix = fullSuffix
         elif sys.argv[3] == "pad":
             suffix = "_ss_c_pad_ana"
         else:
             suffix = sys.argv[3]
+    if len(sys.argv) == 5:
+        timeout=int(sys.argv[4])
      
     lines = get_lines_from_file(inputSizes)
     expNameRegex = re.compile(
@@ -63,19 +68,20 @@ def main():
     for line in lines:
         M_str, N_str, K_str = expNameRegex.search(line).groups()
         kernelName=f"matmul_{M_str}x{N_str}x{K_str}_f64"
-        fullSS=f"../myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k_ss{fullSuffix}.csv"
-        sortedL1SS=f"../myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k_ss{sortedL1Suffix}.csv"
-        top10File=f"../myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k{top10Suffix}.csv"
+        fullSS=f"../myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k{fullSuffix}.csv"
+        # sortedL1SS=f"../myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k_ss{sortedL1Suffix}.csv"
+        # top10File=f"../myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k{top10Suffix}.csv"
         requestedFile=f"../myrtle/out/{M_str}x{N_str}x{K_str}wm-n-k{suffix}.csv"
         basenames.append(f"{M_str}x{N_str}x{K_str}wm-n-k")
         kernelNames.append(kernelName)
         outputFiles.append(fullSS)
        # topTenFiles.append(top10File)
         requestedFiles.append(requestedFile)
-        subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json"])
-        f = open(top10File, "w")
-        subprocess.call(['head', sortedL1SS, "-n", "11"],stdout=f)
-        f.close()
+        #subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json"])
+        subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json", "prune"])
+        # f = open(top10File, "w")
+        # subprocess.call(['head', sortedL1SS, "-n", "11"],stdout=f)
+        # f.close()
         #FakeNN JSON Name,M,N,K,m,n,k,JSON Name,Space Needed in L1
         # fewerCols = pd.read_csv(top10File)
         # fewerCols = fewerCols[["FakeNN JSON Name","M","N","K","m","n","k","JSON Name","Space Needed in L1"]]
@@ -111,7 +117,8 @@ def main():
         print(f"bash myrtle-experiments/many_gemms.sh {ss} compile no no no > ./{topLevelOutputFolder}/compile-{basename}.txt;",file=compileScript)
     
         # create run script     
-        print(f"export experimentDir=/repo/{topLevelOutputFolder};",file=runScript)   
+        print(f"export experimentDir=/repo/{topLevelOutputFolder};",file=runScript)  
+        print(f"export TIMEOUT={timeout};",file=runScript)  
         print(f"bash myrtle-experiments/many_gemms.sh {ss} check run no no > ./{topLevelOutputFolder}/run-{basename}.txt;",file=runScript)
      
         # create check script

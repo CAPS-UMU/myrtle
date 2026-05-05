@@ -170,6 +170,7 @@ class TSA_C(TSA_Quidditch):
     #     return info
 
     def exportAnalysisToCSV(self, dispatchNickName, df):
+        print(f"the nickname is {dispatchNickName}")
         filename= f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_ana.csv"
         df.to_csv(
             filename,

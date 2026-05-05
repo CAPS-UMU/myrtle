@@ -41,9 +41,7 @@ def main():
         for x in r.columns:
             if x not in l.columns:
                 print(x)
-
-
-            
+        #print(l[["Keep"]])            
         raise Exception("Error: the to csv files contain differing number of columns")
     
     lr = pd.concat([l[list(l.columns)],r[list(l.columns)]])

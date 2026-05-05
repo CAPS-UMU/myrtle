@@ -1,22 +1,24 @@
 DIVISOR_FLDR="../sensitivity-analysis/remainder-vs-divisor/div"
 REMAINDER_FLDR="../sensitivity-analysis/remainder-vs-divisor/rem"
+BOTH_FLDR="../sensitivity-analysis/remainder-vs-divisor/both"
 WEBPAGES=""
 WEBPAGES512=""
 WEBPAGES384=""
+WEBPAGES120x120x60=""
 USER="hoppip"
 #USER="emily"
 #/home/hoppip/myrtle/sensitivity-analysis/redundant-vs-no-redundant-stores/only-time/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
 #/home/hoppip/myrtle/sensitivity-analysis/redundant-vs-no-redundant-stores/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
 #/home/hoppip/myrtle/sensitivity-analysis/remainder-vs-divisor/div/128x128x128wm-n-k_ss_c_ana-results-no-redundant.csv
 
-# DIVISOR="$DIVISOR_FLDR/timed/128x128x128wm-n-k_ss_c_ana-results.csv"
+DIVISOR="$DIVISOR_FLDR/timed/128x128x128wm-n-k_ss_c_ana-results.csv"
 HTML_NAME="out/cube128"
-# REMAINDER="/home/$USER/myrtle/sensitivity-analysis/remainder-vs-divisor/rem/timed/128x128x128wm-n-k_ss_c_ana-results_lessThan_1024.csv"
-# REMAINDER_UT="/home/$USER/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_rem_ana.csv"
-# WEBPAGE_TITLE="128x128x128-No-Redundant-Stores"
-# DIVISOR_UT="no"
-# DIVISOR_ANALYSIS="/home/$USER/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_ana.csv"
-# python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS
+REMAINDER="/home/$USER/myrtle/sensitivity-analysis/remainder-vs-divisor/rem/timed/128x128x128wm-n-k_ss_c_ana-results_lessThan_1024.csv"
+REMAINDER_UT="/home/$USER/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_rem_ana.csv"
+WEBPAGE_TITLE="128x128x128-No-Redundant-Stores"
+DIVISOR_UT="no"
+DIVISOR_ANALYSIS="/home/$USER/myrtle/myrtle/out/128x128x128wm-n-k_ss_c_ana.csv"
+python graph-4-kinds.py $DIVISOR $HTML_NAME $REMAINDER $REMAINDER_UT $WEBPAGE_TITLE $DIVISOR_UT $DIVISOR_ANALYSIS
 WEBPAGES+=" $HTML_NAME.html"
 
 DIVISOR="$DIVISOR_FLDR/timed/128x128x128wm-n-k_ss_c_ana-results.csv"
@@ -69,6 +71,15 @@ MODE="stallCyclesTimed"
 python graph-2-kinds2.py $TIMED $ANALYZED $WEBPAGE_TITLE $HTML_NAME $MODE
 WEBPAGES384+=" $HTML_NAME.html"
 
+# graph 120x120x60 data with experimental pruning methods
+ANALYZED="$BOTH_FLDR/untimed/20-points/120x120x60/120x120x60wm-n-k_ss_c_rem_div_ana_pruned.csv"
+TIMED="$BOTH_FLDR/timed/20-points/120x120x60/120x120x60wm-n-k_ss_c_rem_div_ana_pruned-results.csv"
+WEBPAGE_TITLE="120x120x60-experimental-pruning-20-points"
+HTML_NAME="out/120x120x60-experimental-pruning-20-points"
+MODE="stallCyclesTimed"
+python graph-2-kinds2.py $TIMED $ANALYZED $WEBPAGE_TITLE $HTML_NAME $MODE
+WEBPAGES120x120x60+=" $HTML_NAME.html"
+
 # concat the timed data
 REMAINDER="$REMAINDER_FLDR/timed/384x384x384wm-n-k-partial-results.csv"
 DIVISOR="$DIVISOR_FLDR/timed/384x384x384wm-n-k-partial-results.csv"
@@ -77,7 +88,7 @@ python concatCSVs.py $REMAINDER $DIVISOR "out/384x384x384-div-rem.csv"
 REMAINDER_ANALYZED="/home/$USER/myrtle/myrtle/out/384x384x384wm-n-k_ss_c_rem_ana.csv"
 DIVISOR_ANALYZED="/home/$USER/myrtle/myrtle/out/384x384x384wm-n-k_ss_c_ana.csv"
 python concatCSVs.py $REMAINDER_ANALYZED $DIVISOR_ANALYZED "out/384x384x384-div-rem-ann.csv"
-
+# now graph 384 data
 ANALYZED="out/384x384x384-div-rem-ann.csv"
 TIMED="out/384x384x384-div-rem.csv"
 WEBPAGE_TITLE="384-cube-remainder-and-divisor-tiles-experimental-pruning"
@@ -127,4 +138,11 @@ INDEX_SUMMARY="In-progress results timing tiled matmul (no remainder tiles) on s
 echo $INDEX_TITLE > tempTitle.txt
 echo $INDEX_SUMMARY > tempSummary.txt
 python generate-html-index.py "./out/384-remainders-only" $WEBPAGES384 tempTitle.txt tempSummary.txt
+rm -rf tempTitle.txt tempSummary.txt
+
+INDEX_TITLE="120x120x60 Both Remainders and Divisors- Experimental Pruning"
+INDEX_SUMMARY="Experimental Pruning on 20 points timed."
+echo $INDEX_TITLE > tempTitle.txt
+echo $INDEX_SUMMARY > tempSummary.txt
+python generate-html-index.py "./out/120x120x60" $WEBPAGES120x120x60 tempTitle.txt tempSummary.txt
 rm -rf tempTitle.txt tempSummary.txt

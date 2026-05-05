@@ -441,7 +441,7 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
         )
     ties = timed_pruned[((timed_pruned["Avg n'_sz / k_size"] ==1) & (timed_pruned["niceMRem"]))]
     ties.sort_values(by="Global Sim E2E_dma",ascending=True)
-    print(ties[["FakeNN JSON Name","Avg n'_sz / k_size","niceMRem","Global Sim E2E_dma","Overlap Stall Time Per Core"]])
+    #print(ties[["FakeNN JSON Name","Avg n'_sz / k_size","niceMRem","Global Sim E2E_dma","Overlap Stall Time Per Core"]])
     addScatterFlatColorMarker(
         myFig2,
         ties,
