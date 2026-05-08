@@ -29,12 +29,14 @@ def main():
         dims=f"{M_str}x{N_str}x{K_str}"
         inputSizesTxt=f"../{dims}/input.txt"
         outputFolder=f"../{dims}"
-        # subprocess.call(['rm', '-rf', outputFolder],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        # subprocess.call(['mkdir', outputFolder])
+        subprocess.call(['rm', '-rf', outputFolder],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.call(['mkdir', outputFolder])
         f = open(inputSizesTxt, "w")
         print(dims, file=f)
         f.close()
-        subprocess.call(["python", "topTenFromMNK.py", inputSizesTxt, outputFolder, "_ss_c_rem_div_ana_pruned", "0"])
+        #"_ss_c_rem_div_ana_pr_sel_sflt"
+        subprocess.call(["python", "topTenFromMNK.py", inputSizesTxt, outputFolder, "_ss_c_rem_div_ana_pr_sel_sflt", "0"])
+        # subprocess.call(["python", "topTenFromMNK.py", inputSizesTxt, outputFolder, "_ss_c_rem_div_ana_pruned", "0"])
     f = open(f"{sys.argv[1]}.compile-and-run.sh", "w")
     # convenience script
     print("#!/bin/bash",file=f)

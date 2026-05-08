@@ -3,6 +3,14 @@ import pickle
 import pandas as pd
 import pathlib
 
+def takeNSmallestX(df, x, n):
+    # sort from least to greatest X
+    df_sorted = df.sort_values(x, ascending=True)
+    # take best N
+    #df_best_n = df_sorted.iloc[range(0, len(df_sorted)//n)]
+    df_best_n = df_sorted.iloc[range(0, n)]
+    return df_best_n
+
 def labelThenTakeNSmallestX(df, x, n, df_record, label_name, label_val):
     # sort from least to greatest X
     df_sorted = df.sort_values(x, ascending=True)
@@ -114,8 +122,8 @@ def tileSelection(csvFile, mode):
             print('TSS: wrote ranking to file')
             print("\t", end="")
             print(f"     {csvFileRanked}")
-            stages.to_csv(csvFileRanked,index=False)
-
+            chosen = takeNSmallestX(df, "Avg n'_sz / k_size", 5)
+            chosen.to_csv(csvFileRanked,index=False)
             # save supplementary search space copies, sorted by a particular metric
             topSSRConfigs = df.sort_values("SSR Config Count", ascending=True)            
             topSSRConfigs.to_csv(f"{basename}_ord_ssrConfigs.csv",index=False)            

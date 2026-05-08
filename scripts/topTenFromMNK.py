@@ -27,6 +27,10 @@ def get_lines_from_file(file_name):
             return file.read().splitlines()
     except FileNotFoundError:
         raise Exception(f"Error: The file '{file_name}' was not found.")
+    #125x128x125wm-n-k_ss_c_rem_div_ana_pr_sel_sflt
+# python topTenFromMNK.py "../128x768x3072/input.txt" "../128x768x3072" "_ss_c_rem_div_ana_pr_sel_sflt"
+# python topTenFromMNK.py "../125x128x125/input.txt" "../125x128x125" "_ss_c_rem_div_ana_pr_sel_sflt"
+# python topTenFromMNK.py "../192x384x384/input.txt" "../192x384x384" "_ss_c_rem_div_ana_pr_sel_sflt"
 # python topTenFromMNK.py "../384x384x384/input.txt" "../384x384x384" "_ss_c_rem_div_ana_pruned"
 # python topTenFromMNK.py "../512x512x512/input.txt" "../512x512x512" "_ss_c_rem_div_ana_pruned"
 # python topTenFromMNK.py "../32x32x32/input.txt" "../32x32x32"
