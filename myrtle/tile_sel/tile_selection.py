@@ -122,7 +122,7 @@ def tileSelection(csvFile, mode):
             print('TSS: wrote ranking to file')
             print("\t", end="")
             print(f"     {csvFileRanked}")
-            chosen = takeNSmallestX(df, "Avg n'_sz / k_size", 5)
+            chosen = takeNSmallestX(df, "Avg n'_sz / k_size", 30)
             chosen.to_csv(csvFileRanked,index=False)
             # save supplementary search space copies, sorted by a particular metric
             topSSRConfigs = df.sort_values("SSR Config Count", ascending=True)            

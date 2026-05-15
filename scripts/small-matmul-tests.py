@@ -17,6 +17,8 @@ def get_lines_from_file(file_name):
         raise Exception(f"Error: The file '{file_name}' was not found.")
 
 # python small-matmul-tests.py small-matmul-tests.input
+# python small-matmul-tests.py 125-matmul-tests.input
+# python small-matmul-tests.py small-m-dim-matmul-tests.input
 def main():
     inputSizes = sys.argv[1]    
     lines = get_lines_from_file(inputSizes)
@@ -36,7 +38,7 @@ def main():
         f.close()
         #"_ss_c_rem_div_ana_pr_sel_sflt"
         subprocess.call(["python", "topTenFromMNK.py", inputSizesTxt, outputFolder, "_ss_c_rem_div_ana_pr_sel_sflt", "0"])
-        # subprocess.call(["python", "topTenFromMNK.py", inputSizesTxt, outputFolder, "_ss_c_rem_div_ana_pruned", "0"])
+        #subprocess.call(["python", "topTenFromMNK.py", inputSizesTxt, outputFolder, "_ss_c_rem_div_ana_pruned", "0"])
     f = open(f"{sys.argv[1]}.compile-and-run.sh", "w")
     # convenience script
     print("#!/bin/bash",file=f)

@@ -127,8 +127,8 @@ def main():
                 index=False,)
         prunePoint = TSG_C_Div_Rem.ssr_prune_frac(sorted_options,3)
         # now that we know the prune point, go ahead and prune
-        #pruned_options = TSG_C_Div_Rem.ssr_prune_bestX(sorted_options,40)
         pruned_options=annotated_options[annotated_options["SSR Config Count"] <= prunePoint]
+       # pruned_options = TSG_C_Div_Rem.ssr_prune_bestX(sorted_options,45)        
         if(pruned_options.shape[0] < 20):
              pruned_options = TSG_C_Div_Rem.ssr_prune_bestX(annotated_options,20)
         sorted_pruned= pruned_options.sort_values("SSR Config Count", ascending=True)
