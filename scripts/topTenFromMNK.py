@@ -71,6 +71,7 @@ def get_lines_from_file(file_name):
     except FileNotFoundError:
         raise Exception(f"Error: The file '{file_name}' was not found.")
     #125x128x125wm-n-k_ss_c_rem_div_ana_pr_sel_sflt
+
 # python topTenFromMNK.py "../16x16x16/input.txt" "../16x16x16" "_ss_c_rem_div_ana_pruned" 3600
 # python topTenFromMNK.py "../128x768x3072/input.txt" "../128x768x3072" "_ss_c_rem_div_ana_pr_sel_sflt"
 # python topTenFromMNK.py "../125x128x125/input.txt" "../125x128x125" "_ss_c_rem_div_ana_pr_sel_sflt"

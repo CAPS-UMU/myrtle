@@ -271,7 +271,7 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
         "dma",
         "HW Loops",
         "SSR Configs",
-        #"FMADDsMULs",
+        "FMADDsMULs",
         "FMADDsMULsPerCore",
         "SSR Loads per HW Loop",
         "HW Loops / SSR Loads per HW Loop",
@@ -280,11 +280,13 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
         # "Overlap Stall Time Total",
         # "Raw Compute Time Total",
         "Global Sim E2E_dma",
+        "Total CL Tiles",
         "Total CC Tiles",
         "Overlap Stall Time Per Core",
         # "Avg A''",
         # "Avg B'",
         # "Avg C''",
+        "L1 Usage",
         "Avg CC Tile Size",
         "Avg A''/ B'",
         "Avg (A''+ B') / C''",
@@ -348,6 +350,30 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
         hover_data,
         "untimed remainders"
     )
+    # size and number not same
+    x_col = "Avg CC Tile Size"
+    y_col = "SSR Configs"
+    special_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "Global Sim E2E_dma",
+            hover_data,
+            "timed and untimed remainders",
+            "symbolMarker",
+        )
+    )
+    addScatterFlatColorMarker(
+        special_figs[-1],
+        ut,
+        x_col,
+        y_col,
+        "gray",
+        "triangle-up",
+        hover_data,
+        "untimed remainders"
+    )
 
     x_col = "SSR Configs"
     y_col = "Global Sim E2E_dma"
@@ -383,7 +409,7 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
             pruned,
             x_col,
             y_col,
-            "mRem",
+            "FMADDsMULsPerCore",#"mRem",
             hover_data,
             f"After pruning to <= {prunePoint} SSR Configs",
             "symbolMarker",
@@ -427,7 +453,7 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
             y_col,
             "Global Sim E2E_dma",
             hover_data,
-            f"how is mRem size related to overlap stall time?",
+            "how is mRem size related to overlap stall time?",
             "niceMRem",
         )
     special_figs.append(myFig)
