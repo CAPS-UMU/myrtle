@@ -159,7 +159,7 @@ def generateExperimentalPruningGraphs(timed, analyzed, titleOfWebpage):
         #"FMADDsMULs",
         "FMADDsMULsPerCore",
         "SSR Loads per HW Loop",
-        "HW Loops / SSR Loads per HW Loop",
+      #  "HW Loops / SSR Loads per HW Loop",
       #  "myRegPerStream",
         "remainderTiles",
         # "Overlap Stall Time Total",
@@ -170,6 +170,7 @@ def generateExperimentalPruningGraphs(timed, analyzed, titleOfWebpage):
         # "Avg A''",
         # "Avg B'",
         # "Avg C''",
+        "timeout",
         "Avg CC Tile Size",
         "Avg A''/ B'",
         "Avg (A''+ B') / C''",
@@ -267,6 +268,7 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
     y_col = "dma"
     hover_data = [
         "JSON Name",
+        "timeout",
         "absoluteRank",
         "dma",
         "HW Loops",
@@ -350,6 +352,48 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
         hover_data,
         "untimed remainders"
     )
+    x_col = "FakeNN JSON Name"
+    y_col = "Global Sim E2E_dma"
+    special_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "SSR Configs",
+            hover_data,
+            "timed data only",
+            "symbolMarker",
+        )
+    )
+
+    x_col = "Global Sim E2E_dma"
+    y_col = "FMADDsMULsPerCore"
+    special_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "SSR Configs",
+            hover_data,
+            "timed data only",
+            "symbolMarker",
+        )
+    )
+
+    x_col = "FMADDsMULsPerCore"
+    y_col = "Global Sim E2E_dma"
+    special_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "SSR Configs",
+            hover_data,
+            "timed data only",
+            "symbolMarker",
+        )
+    )
+
     # size and number not same
     x_col = "Avg CC Tile Size"
     y_col = "SSR Configs"
@@ -360,7 +404,7 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
             y_col,
             "Global Sim E2E_dma",
             hover_data,
-            "timed and untimed remainders",
+            "Tile Size vs Arithmetic Intensity",
             "symbolMarker",
         )
     )
@@ -400,7 +444,7 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
         "untimed remainders",
     )
     
-    x_col = "Avg n'_sz / k_size"
+    x_col = "SSR Configs"
     y_col = "Global Sim E2E_dma"
    # prunePoint = 15984
     pruned = timed[timed["SSR Configs"]<= prunePoint]
@@ -409,12 +453,99 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
             pruned,
             x_col,
             y_col,
-            "FMADDsMULsPerCore",#"mRem",
+            "Avg n'_sz / k_size",#"mRem",
             hover_data,
             f"After pruning to <= {prunePoint} SSR Configs",
             "symbolMarker",
         )
     )
+
+    x_col = "SSR Configs"
+    y_col = "Avg CC Tile Size"
+    pruned.sort_values(by="niceMRem",ascending=True)
+    myFig = scatterWithColorSymbol(
+            pruned,
+            x_col,
+            y_col,
+            "absoluteRank",
+            hover_data,
+            f"pruned to SSR configs <= {prunePoint}; How does CC tile size relate to FMADDs per core?",
+            "niceMRem",
+        )
+    special_figs.append(myFig)
+
+    x_col = "SSR Configs"
+    y_col = "FMADDsMULsPerCore"
+    pruned.sort_values(by="niceMRem",ascending=True)
+    myFig = scatterWithColorSymbol(
+            pruned,
+            x_col,
+            y_col,
+            "absoluteRank",
+            hover_data,
+            f"pruned to SSR configs <= {prunePoint}; How do SSR configs relate to FMADDs per core?",
+            "niceMRem",
+        )
+    special_figs.append(myFig)
+
+    x_col = "Avg CC Tile Size"
+    y_col = "FMADDsMULsPerCore"
+    pruned.sort_values(by="niceMRem",ascending=True)
+    myFig = scatterWithColorSymbol(
+            pruned,
+            x_col,
+            y_col,
+            "absoluteRank",
+            hover_data,
+            f"pruned to SSR configs <= {prunePoint}; How does CC tile size relate to FMADDs per core?",
+            "niceMRem",
+        )
+    special_figs.append(myFig)
+
+    
+    x_col = "FMADDsMULsPerCore"
+    y_col = "Avg CC Tile Size"
+    pruned.sort_values(by="niceMRem",ascending=True)
+    myFig = scatterWithColorSymbol(
+            pruned,
+            x_col,
+            y_col,
+            "absoluteRank",
+            hover_data,
+            f"pruned to SSR configs <= {prunePoint}; How does CC tile size relate to FMADDs per core?",
+            "niceMRem",
+        )
+    special_figs.append(myFig)
+
+    x_col = "Global Sim E2E_dma"
+    y_col = "Avg n'_sz / k_size"
+    pruned.sort_values(by="niceMRem",ascending=True)
+    myFig = scatterWithColorSymbol(
+            pruned,
+            x_col,
+            y_col,
+            "FMADDsMULsPerCore",
+            hover_data,
+            f"pruned to SSR configs <= {prunePoint}; prune out triangles, then take leftmost. THEN can we maximize by FMADDS?",
+            "niceMRem",
+        )
+    special_figs.append(myFig)
+
+    x_col = "Avg n'_sz / k_size"
+    y_col = "Global Sim E2E_dma"
+    pruned.sort_values(by="niceMRem",ascending=True)
+    myFig = scatterWithColorSymbol(
+            pruned,
+            x_col,
+            y_col,
+            "FMADDsMULsPerCore",
+            hover_data,
+            f"pruned to SSR configs <= {prunePoint}; myrtle after non-squares: prune out triangles, then take leftmost. THEN can we maximize by FMADDS?",
+            "niceMRem",
+        )
+    special_figs.append(myFig)
+
+ 
 
     x_col = "Avg n'_sz / k_size"
     y_col = "Global Sim E2E_dma"
@@ -425,7 +556,7 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
             y_col,
             "mRem",
             hover_data,
-            f"pruned to SSR configs <= {prunePoint}; take leftmost, then the tie break by first preferring circle over triangle and then secondly darker colors (NOT WORKING WELL HERE)",
+            f"pruned to SSR configs <= {prunePoint}; myrtle: take leftmost, then the tie break by first preferring circle over triangle",
             "niceMRem",
         )
     special_figs.append(myFig)

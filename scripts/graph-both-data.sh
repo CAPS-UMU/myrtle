@@ -1,6 +1,6 @@
 BOTH_FLDR="../sensitivity-analysis/remainder-vs-divisor/both"
 WEBPAGES40ishPoints=""
-USER="hoppip"
+USER="emily"
 
 #bash graph-both-data.sh dims-csv-name-line-by-line.input both
 
@@ -12,7 +12,9 @@ graph(){
     CSV="${stringarray[1]}"
     echo $DIMS
     echo $CSV
-    ANALYZED="../myrtle/out/$DIMS""wm-n-k_ss_c_rem_div_ana_pruned.csv"
+    ANALYZED="../paper/cached-out/out/$DIMS""wm-n-k_ss_c_rem_div_ana_pruned.csv"
+    #/home/emily/myrtle/paper/cached-out/out/30x128x125wm-n-k_ss_c_rem_div_ana_pruned.csv
+    # ANALYZED="../myrtle/out/$DIMS""wm-n-k_ss_c_rem_div_ana_pruned.csv"
     TIMED="$BOTH_FLDR/timed/$CSV"
     WEBPAGE_TITLE="$DIMS-experimental-pruning-both-div-rem-points"
     HTML_NAME="out/$DIMS-experimental-pruning-both-div-rem-points"

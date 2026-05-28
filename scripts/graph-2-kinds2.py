@@ -25,6 +25,7 @@ def addFakeKernelTime(df_ut, df_t):
     df_ut["absoluteRank"] = -1
     df_ut["Overlap Stall Time Total"] = -1
     df_ut["Raw Compute Time Total"] = -1
+    df_ut["timeout"] = False
     return df_ut
 
 def main():
@@ -36,6 +37,24 @@ def main():
 
     # Read in the timed CSV file
     df = pd.read_csv(timed)
+
+    # Find the row safely
+    matching_rows = df.loc[df["FakeNN JSON Name"] == "timeout", "dma"]
+
+    if not matching_rows.empty:
+        #timeout_dma_value = matching_rows.values[0]
+        max_dma = df["dma"].max()
+        timeout_dma_value=max_dma
+        # Apply the updates
+        df["timeout"] = df["dma"] == -1
+        df.loc[df["dma"] == -1, "dma"] = timeout_dma_value
+        #Global Sim E2E_dma
+        df.loc[df["Global Sim E2E_dma"] == -1, "Global Sim E2E_dma"] = timeout_dma_value
+    else:
+        df["timeout"]=False
+        print("Warning: 'timeout' row not found!.")
+   
+
     # read in the analysis csv file
     df_ann = pd.read_csv(analyzed)
     df_ann = ae.addExtras(df_ann)
@@ -55,6 +74,7 @@ def main():
         df_sorted["absoluteRank"] = range(1, int(df_sorted.shape[0] + 1))
         df = df_sorted 
         df_ann = ae.addFakeKernelTime(df_ann, df)
+        df_ann["timeout"] = False
         html = ig.generateExperimentalPruningGraphsStalls(df, df_ann, titleOfWebpage)
     else:
         df_sorted = df.sort_values(by="dma", ascending=True)

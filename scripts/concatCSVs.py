@@ -13,8 +13,6 @@ import recentGraphs_2_23 as rg_2_23
 import addExtraMetrics as ae
 import interactiveGraphs as ig
 
-# this script compares the myrtle output before and after tile size analysis is adjusted
-
 def sameCol(left,right,colName,colNickName):
     if (left[[colName]] == right[[colName]])[[colName]].all(axis='columns').all():
         print(f'old and new contain the same  {colNickName}')
@@ -28,6 +26,9 @@ def main():
     outputName= sys.argv[3]
     l = pd.read_csv(left)
     r = pd.read_csv(right)
+    print(f"Rows in File 1: {len(l)}")
+    print(f"Rows in File 2: {len(r)}")
+    print(f"Expected total rows: {len(l) + len(r)}")
     if len(l.columns) != len(r.columns):
         print(len(l.columns))
         print(len(r.columns))
@@ -43,11 +44,28 @@ def main():
                 print(x)
         #print(l[["Keep"]])            
         raise Exception("Error: the to csv files contain differing number of columns")
-    
-    lr = pd.concat([l[list(l.columns)],r[list(l.columns)]])
+
+    lr = pd.concat([l[list(l.columns)],r[list(l.columns)]],axis=0, ignore_index=True)
+    # print(f"Actual total rows: {len(lr)}")
+    # print("LEFT")
+    # print(l[["FakeNN JSON Name","dma"]])
+    # l[["FakeNN JSON Name","dma"]].to_csv("left.csv",index=False)
+    # print("RIGHT")
+    # print(r[["FakeNN JSON Name","dma"]])
+    # r[["FakeNN JSON Name","dma"]].to_csv("right.csv",index=False)
+    # print("LEFT AND RIGHT")
+    # print(lr[["FakeNN JSON Name","dma"]])
+    # lr[["FakeNN JSON Name","dma"]].to_csv("leftRight.csv",index=False)
+    #print(lr[["FakeNN JSON Name","dma"]])
     # print(len(lr.columns))
     # print(lr.columns)
     lr.to_csv(outputName, index=False)
+
+
+if __name__ == "__main__":
+    main()
+
+
     # oR = pd.read_csv(oldRemainders)
     # nR = pd.read_csv(newRemainders)
     # # categories I do NOT expect to change:
@@ -70,6 +88,3 @@ def main():
     
 
     # print(oD.columns)
-
-if __name__ == "__main__":
-    main()
