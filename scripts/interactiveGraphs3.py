@@ -517,7 +517,7 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
         )
     special_figs.append(myFig)
 
-    x_col = "Global Sim E2E_dma"
+    x_col = "FakeNN JSON Name"
     y_col = "Avg n'_sz / k_size"
     pruned.sort_values(by="niceMRem",ascending=True)
     myFig = scatterWithColorSymbol(
@@ -535,16 +535,23 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
     y_col = "Global Sim E2E_dma"
     pruned.sort_values(by="niceMRem",ascending=True)
     myFig = scatterWithColorSymbol(
-            pruned,
+            pruned[pruned["niceMRem"]== True],
             x_col,
             y_col,
             "FMADDsMULsPerCore",
             hover_data,
             f"pruned to SSR configs <= {prunePoint}; myrtle after non-squares: prune out triangles, then take leftmost. THEN can we maximize by FMADDS?",
-            "niceMRem",
+             "mRem",
         )
-    special_figs.append(myFig)
+    special_figs.append(myFig) #pruned[pruned["niceMRem"]== True]
 
+    
+
+    # print(pruned[pruned["FakeNN JSON Name"]== "384x384x384w21-24-39"][["Avg n'_sz / k_size","mRem"]]) #0.626573
+    # print(pruned[pruned["FakeNN JSON Name"]== "384x384x384w21-24-39"][["Avg n'_sz / k_size","mRem"]].iloc(0))
+
+    #               #,"Avg n'_sz / k_size"]])
+    # print(pruned[pruned["Avg n'_sz / k_size"] == "0.626573"][["FakeNN JSON Name","Avg n'_sz / k_size","mRem"]])
  
 
     x_col = "Avg n'_sz / k_size"

@@ -1,20 +1,6 @@
 # python concatCSVs.py $REMAINDER $DIVISOR "out/128x128x128-div-rem.csv"
 
-# 128x768x768wm-n-k_ss_c_rem_div_ana_pr_sel_sflt-timeout-results.csv
-# 128x768x768wm-n-k_ss_c_rem_div_ana_pruned-results-unskipped.csv
-# 192x384x384wm-n-k_ss_c_rem_div_ana_pr_sel_sflt-results-unskipped-151.csv
-# 192x384x384wm-n-k_ss_c_rem_div_ana_pr_sel_sflt-results-unskipped-25.csv
-# 192x384x384wm-n-k_ss_c_rem_div_ana_pr_sel_sflt-timeout-results.csv
-# 192x384x384wm-n-k_ss_c_rem_div_ana_pruned-39-min-ssr-configs-results.csv
-# 20-points
-# 20-points-div-rem
-# 256x256x256wm-n-k_ss_c_rem_div_ana_pruned-results.csv
-# 30x128x125wm-n-k_ss_c_rem_div_ana_pruned-50-results.csv
-# 384x384x384-div-rem-partial-results.csv
-# 384x384x384wm-n-k_ss_c_rem_ana_pruned-results-more.csv
-# 512x512x512wm-n-k_ss_c_rem_div_ana_pruned-results.csv
-
-DATAROOT="/home/emily/myrtle/sensitivity-analysis"
+DATAROOT="/home/hoppip/myrtle/sensitivity-analysis"
 BOTHTIMEDDIR="$DATAROOT/remainder-vs-divisor/both/timed"
 BOTHANNDIR="$DATAROOT/remainder-vs-divisor/both/untimed"
 
@@ -26,6 +12,7 @@ MOREDATA="$DATAROOT/remainder-vs-divisor/both/timed/384x384x384wm-n-k_ss_c_rem_a
 bgeTIMEOUT="$BOTHTIMEDDIR/192x384x384wm-n-k_ss_c_rem_div_ana_pr_sel_sflt-timeout-results.csv"
 bge25="$BOTHTIMEDDIR/192x384x384wm-n-k_ss_c_rem_div_ana_pr_sel_sflt-results-unskipped-25.csv"
 bge151="$BOTHTIMEDDIR/192x384x384wm-n-k_ss_c_rem_div_ana_pr_sel_sflt-results-unskipped-151.csv"
+bge65="$BOTHTIMEDDIR/192x384x384wm-n-k_ss_c_rem_div_ana_pruned-results-unskipped-65.csv"
 
 # Roberta
 robertaTIMEOUT="$BOTHTIMEDDIR/128x768x768wm-n-k_ss_c_rem_div_ana_pr_sel_sflt-timeout-results.csv"
@@ -41,9 +28,11 @@ robertaREST="$BOTHTIMEDDIR/128x768x768wm-n-k_ss_c_rem_div_ana_pruned-results-uns
 # wc -l $bge25
 # python concatCSVs.py $bgeTIMEOUT $bge25 "out/192x384x384-bgeSmall-25-timeout-results.csv"
 # wc -l "out/192x384x384-bgeSmall-25-timeout-results.csv"
-# wc -l "out/192x384x384-bgeSmall-25-timeout-results.csv"
+# wc -l $bge65
+# python concatCSVs.py "out/192x384x384-bgeSmall-25-timeout-results.csv" $bge65 "out/192x384x384-bgeSmall-25-timeout-65-results.csv"
+# wc -l "out/192x384x384-bgeSmall-25-timeout-65-results.csv"
 # wc -l $bge151
-# python concatCSVs.py "out/192x384x384-bgeSmall-25-timeout-results.csv" $bge151 "out/192x384x384-bgeSmall-results.csv"
+# python concatCSVs.py "out/192x384x384-bgeSmall-25-timeout-65-results.csv" $bge151 "out/192x384x384-bgeSmall-results.csv"
 # wc -l "out/192x384x384-bgeSmall-results.csv"
 
 # wc -l $robertaTIMEOUT
@@ -69,8 +58,17 @@ robertaREST="$BOTHTIMEDDIR/128x768x768wm-n-k_ss_c_rem_div_ana_pruned-results-uns
 
 TIMED=""
 ANNED=""
+#sensitivity-analysis/remainder-vs-divisor/rem/timed/128x128x128wm-n-k_ss_c_ana-results_lessThan_1024.csv
 
-bertTinyTIMED="$DATAROOT/remainder-vs-divisor/rem/timed/128x128x128wm-n-k_ss_c_rem_ana_pruned-results_lessThan_2048.csv"
+# we need to combine these
+# bertlt2048="$DATAROOT/remainder-vs-divisor/rem/timed/128x128x128wm-n-k_ss_c_rem_ana_pruned-results_lessThan_2048.csv"
+# bertDivs="$DATAROOT/remainder-vs-divisor/div/timed/128x128x128wm-n-k_ss_c_ana-results.csv"
+# wc -l $bertlt2048
+# wc -l $bertDivs
+# python concatCSVs.py $bertlt2048 $bertDivs "out/128x128x128-bertTiny-results.csv"
+# wc -l "out/128x128x128-bertTiny-results.csv"
+# /home/hoppip/myrtle/sensitivity-analysis/remainder-vs-divisor/div/timed/128x128x128wm-n-k_ss_c_ana-results.csv
+bertTinyTIMED="$BOTHTIMEDDIR/128x128x128-bertTiny-results.csv"
 TIMED+=" $bertTinyTIMED"
 bertTinyANN="$BOTHANNDIR/128x128x128-div-rem-ann.csv"
 ANNED+=" $bertTinyANN"
