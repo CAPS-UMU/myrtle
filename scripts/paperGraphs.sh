@@ -1,13 +1,15 @@
-# python concatCSVs.py $REMAINDER $DIVISOR "out/128x128x128-div-rem.csv"
-
-DATAROOT="/home/emily/myrtle/sensitivity-analysis"
+DATAROOT="/home/hoppip/myrtle/sensitivity-analysis"
 BOTHTIMEDDIR="$DATAROOT/remainder-vs-divisor/both/timed"
 BOTHANNDIR="$DATAROOT/remainder-vs-divisor/both/untimed"
+FULLDIR="$BOTHANNDIR/full" 
+ANNDIR="$BOTHANNDIR/ann-to-min-third-ssr-configs"
+
+# python concatCSVs.py $REMAINDER $DIVISOR "out/128x128x128-div-rem.csv"
 
 # Bert Tiny
-bertlt1024="$DATAROOT/remainder-vs-divisor/rem/timed/128x128x128wm-n-k_ss_c_ana-results_lessThan_1024.csv"
-bertlt2048="$DATAROOT/remainder-vs-divisor/rem/timed/128x128x128wm-n-k_ss_c_rem_ana_pruned-results_lessThan_2048.csv"
-bertDivs="$DATAROOT/remainder-vs-divisor/div/timed/128x128x128wm-n-k_ss_c_ana-results.csv"
+# bertlt1024="$DATAROOT/remainder-vs-divisor/rem/timed/128x128x128wm-n-k_ss_c_ana-results_lessThan_1024.csv"
+# bertlt2048="$DATAROOT/remainder-vs-divisor/rem/timed/128x128x128wm-n-k_ss_c_rem_ana_pruned-results_lessThan_2048.csv"
+# bertDivs="$DATAROOT/remainder-vs-divisor/div/timed/128x128x128wm-n-k_ss_c_ana-results.csv"
 
 # # miniLM
 # PARTIALRESULTS="$DATAROOT/remainder-vs-divisor/both/timed/384x384x384-div-rem-partial-results.csv"
@@ -65,44 +67,36 @@ bertDivs="$DATAROOT/remainder-vs-divisor/div/timed/128x128x128wm-n-k_ss_c_ana-re
 # python concatCSVs.py $robertaTIMEOUT $robertaREST "out/128x768x768-roberta-results.csv"
 # wc -l "out/128x768x768-roberta-results.csv"
 
-# create list of timed and annotated points to graph 
-# annotated should include the timed points + untimed points, only w/ analysis info
-TIMED=""
-ANNED=""
+# graph each
 
 miniLMTIMED="$BOTHTIMEDDIR/384x384x384-miniLM-results.csv"
-TIMED+=" $miniLMTIMED"
-miniLMANN="$BOTHANNDIR/384x384x384wm-n-k_ss_c_rem_div_ana_pruned.csv"
-ANNED+=" $miniLMANN"
-echo "384x384x384 $miniLMTIMED $miniLMANN" > "dims-csv-name-line-by-line-paper.input"
+miniLMANN="$ANNDIR/384x384x384wm-n-k_ss_c_rem_div_ana_pruned.csv"
+FULL="$FULLDIR/384x384x384wm-n-k_ss_c_rem_div.csv"
+echo "384x384x384 $miniLMTIMED $miniLMANN" $FULL > "dims-csv-name-line-by-line-paper.input"
 
 bertTinyTIMED="$BOTHTIMEDDIR/128x128x128-bertTiny-results.csv"
-TIMED+=" $bertTinyTIMED"
-bertTinyANN="$BOTHANNDIR/128x128x128-div-rem-ann.csv"
-ANNED+=" $bertTinyANN"
-echo "128x128x128 $bertTinyTIMED $bertTinyANN" >> "dims-csv-name-line-by-line-paper.input"
+bertTinyANN="$ANNDIR/128x128x128wm-n-k_ss_c_rem_div_ana_pruned.csv"
+FULL="$FULLDIR/128x128x128wm-n-k_ss_c_rem_div.csv"
+echo "128x128x128 $bertTinyTIMED $bertTinyANN" $FULL >> "dims-csv-name-line-by-line-paper.input"
 
 bertMiniTIMED="$BOTHTIMEDDIR/256x256x256wm-n-k_ss_c_rem_div_ana_pruned-results.csv"
-TIMED+=" $bertMiniTIMED"
-bertMiniANN="$BOTHANNDIR/256x256x256wm-n-k_ss_c_rem_div_ana_pruned.csv"
-ANNED+=" $bertMiniANN"
-echo "256x256x256 $bertMiniTIMED $bertMiniANN" >> "dims-csv-name-line-by-line-paper.input"
+bertMiniANN="$ANNDIR/256x256x256wm-n-k_ss_c_rem_div_ana_pruned.csv"
+FULL="$FULLDIR/256x256x256wm-n-k_ss_c_rem_div.csv"
+echo "256x256x256 $bertMiniTIMED $bertMiniANN" $FULL >> "dims-csv-name-line-by-line-paper.input"
 
 bgeSmallTIMED="$BOTHTIMEDDIR/192x384x384-bgeSmall-results.csv"
-TIMED+=" $bgeSmallTIMED"
-bgeSmallANN="$BOTHANNDIR/192x384x384wm-n-k_ss_c_rem_div_ana_pruned.csv"
-ANNED+=" $bgeSmallANN"
-echo "192x384x384 $bgeSmallTIMED $bgeSmallANN" >> "dims-csv-name-line-by-line-paper.input"
+bgeSmallANN="$ANNDIR/192x384x384wm-n-k_ss_c_rem_div_ana_pruned.csv"
+FULL="$FULLDIR/192x384x384wm-n-k_ss_c_rem_div.csv"
+echo "192x384x384 $bgeSmallTIMED $bgeSmallANN" $FULL >> "dims-csv-name-line-by-line-paper.input"
 
-# robertaTIMED="$BOTHTIMEDDIR/128x768x768-roberta-results.csv"
-# TIMED+=" $robertaTIMED"
-# robertaANN="$BOTHANNDIR/128x768x768wm-n-k_ss_c_rem_div_ana_pruned.csv"
-# ANNED+=" $robertaANN"
-# echo "128x768x768 $robertaTIMED $robertaANN" >> "dims-csv-name-line-by-line-paper.input"
+robertaTIMED="$BOTHTIMEDDIR/128x768x768-roberta-results.csv"
+robertaANN="$ANNDIR/128x768x768wm-n-k_ss_c_rem_div_ana_pruned.csv"
+FULL="$FULLDIR/128x768x768wm-n-k_ss_c_rem_div.csv"
+echo "128x768x768 $robertaTIMED $robertaANN" $FULL >> "dims-csv-name-line-by-line-paper.input"
 
-# echo $TIMED
-# ls $TIMED
-# echo $ANNED
+TIMED="$BOTHTIMEDDIR/512x512x512wm-n-k_ss_c_rem_div_ana_pruned-results-include-timeout.csv"
+ANN="$ANNDIR/512x512x512wm-n-k_ss_c_rem_div_ana_pruned.csv"
+FULL="$FULLDIR/512x512x512wm-n-k_ss_c_rem_div.csv"
+echo "512x512x512" $TIMED $ANN $FULL >> "dims-csv-name-line-by-line-paper.input"
 
-
-bash graph-paper-data.sh dims-csv-name-line-by-line-paper.input both
+bash graph-paper-data.sh dims-csv-name-line-by-line-paper.input transformers

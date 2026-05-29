@@ -7,25 +7,17 @@ USER="emily"
 
 graph(){
     stringarray=($1) # dims followed by the the CSV name, INCLUDING .csv extension!
-    CSV="${stringarray[1]}"
     DIMS="${stringarray[0]}"
-    CSV="${stringarray[1]}"
-    CSVANN="${stringarray[2]}"
+    TIMED="${stringarray[1]}"
+    ANALYZED="${stringarray[2]}"
+    FULL="${stringarray[3]}"
     echo $DIMS
-    echo $CSV
-    echo $CSVANN
-    ANALYZED="$CSVANN"
-    # ANALYZED="../paper/cached-out/out/$DIMS""wm-n-k_ss_c_rem_div_ana_pruned.csv"
-    #/home/emily/myrtle/paper/cached-out/out/30x128x125wm-n-k_ss_c_rem_div_ana_pruned.csv
-    # ANALYZED="../myrtle/out/$DIMS""wm-n-k_ss_c_rem_div_ana_pruned.csv"
-    TIMED="$CSV"
     WEBPAGE_TITLE="$DIMS-myrtle-pruning"
     HTML_NAME="out/$DIMS-myrtle-pruning"
     MODE="stallCyclesTimed" # legacy
     # now graph the data
-    python graph-2-kinds2.py $TIMED $ANALYZED $WEBPAGE_TITLE $HTML_NAME $MODE
-    WEBPAGES40ishPoints+=" $HTML_NAME.html"
-    
+    python graph-full-timed-pruned.py $TIMED $ANALYZED $FULL $WEBPAGE_TITLE $HTML_NAME $MODE
+    WEBPAGES40ishPoints+=" $HTML_NAME.html"    
 }
 
 
