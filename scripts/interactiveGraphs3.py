@@ -255,6 +255,17 @@ def addFakeTime(df_ut, df_t):
     df_ut["Raw Compute Time Total"] = -1
     return df_ut
 
+# return the SSR config value that is the largest of the bottom frac
+def ssr_prune_frac(df,frac):
+        unique_ssr_configs = list(
+            set(df["SSR Config Count"].values.tolist())
+        )  # remove duplicates
+        unique_ssr_configs.sort()  # sort least to greateset
+        third = unique_ssr_configs[0:int(len(unique_ssr_configs)/frac)]
+        #print(f"{unique_ssr_configs} with len {len(unique_ssr_configs)} and bottom third {third}")
+        prunePoint = unique_ssr_configs[int(len(unique_ssr_configs)/frac)]  # prune to smallest frac of ssr_configs   
+        return prunePoint
+
 def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
     timed["Total CC Tiles"] = timed["SSR Config Count"]
     timed["FMADDsMULsPerCore"] = timed["FMADDsMULs"] / timed["Total CC Tiles"]
@@ -290,9 +301,10 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
         # "Avg C''",
         "L1 Usage",
         "Avg CC Tile Size",
-        "Avg A''/ B'",
-        "Avg (A''+ B') / C''",
-        "Avg A'",
+        "mRem",
+        # "Avg A''/ B'",
+        # "Avg (A''+ B') / C''",
+        # "Avg A'",
         # "L3 Loads",
         # "L3 Stores",
         "Avg L3 Loads",
@@ -320,9 +332,9 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
     timed["flatColor"] = "pink"
 
     #prunePoint = ssr_prune(analyzed)
-    prunePoint = 24576
+    prunePoint = ssr_prune_frac(analyzed,3)
     ut = analyzed[~analyzed["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])]
-    #print(ut)
+    
     # combine timed points into single DF, then create absolute rank
     
     
@@ -448,6 +460,7 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
     y_col = "Global Sim E2E_dma"
    # prunePoint = 15984
     pruned = timed[timed["SSR Configs"]<= prunePoint]
+    ut_pruned = ut[ut["SSR Configs"]<= prunePoint]
     special_figs.append(
         scatterWithColor(
             pruned,
@@ -458,6 +471,16 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
             f"After pruning to <= {prunePoint} SSR Configs",
             "symbolMarker",
         )
+    )
+    addScatterFlatColorMarker(
+        special_figs[-1],
+        ut_pruned,
+        x_col,
+        y_col,
+        "gray",
+        "square",
+        hover_data,
+        "untimed remainders",
     )
 
     x_col = "SSR Configs"
@@ -531,6 +554,7 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
         )
     special_figs.append(myFig)
 
+    # here we prune out bad mrems
     x_col = "Avg n'_sz / k_size"
     y_col = "Global Sim E2E_dma"
     pruned.sort_values(by="niceMRem",ascending=True)
@@ -544,6 +568,16 @@ def generateExperimentalPruningGraphsStalls(timed, analyzed, titleOfWebpage):
              "mRem",
         )
     special_figs.append(myFig) #pruned[pruned["niceMRem"]== True]
+    addScatterFlatColorMarker(
+        special_figs[-1],
+        ut_pruned[ut_pruned["niceMRem"]== True],
+        x_col,
+        y_col,
+        "gray",
+        "square",
+        hover_data,
+        "untimed remainders"
+    )
 
     
 

@@ -13,13 +13,6 @@ import recentGraphs_2_23 as rg_2_23
 import addExtraMetrics as ae
 import interactiveGraphs as ig
 
-def sameCol(left,right,colName,colNickName):
-    if (left[[colName]] == right[[colName]])[[colName]].all(axis='columns').all():
-        print(f'old and new contain the same  {colNickName}')
-    else:
-        print(f'these csvs do NOT contain the same {colNickName}')
-
-
 def main():
     left = sys.argv[1]              
     right = sys.argv[2]            
@@ -41,50 +34,13 @@ def main():
         print("missing from right:")
         for x in r.columns:
             if x not in l.columns:
-                print(x)
-        #print(l[["Keep"]])            
+                print(x)           
         raise Exception("Error: the to csv files contain differing number of columns")
 
     lr = pd.concat([l[list(l.columns)],r[list(l.columns)]],axis=0, ignore_index=True)
-    # print(f"Actual total rows: {len(lr)}")
-    # print("LEFT")
-    # print(l[["FakeNN JSON Name","dma"]])
-    # l[["FakeNN JSON Name","dma"]].to_csv("left.csv",index=False)
-    # print("RIGHT")
-    # print(r[["FakeNN JSON Name","dma"]])
-    # r[["FakeNN JSON Name","dma"]].to_csv("right.csv",index=False)
-    # print("LEFT AND RIGHT")
-    # print(lr[["FakeNN JSON Name","dma"]])
-    # lr[["FakeNN JSON Name","dma"]].to_csv("leftRight.csv",index=False)
-    #print(lr[["FakeNN JSON Name","dma"]])
-    # print(len(lr.columns))
-    # print(lr.columns)
-    lr.to_csv(outputName, index=False)
+    df_cleaned = lr.drop_duplicates(subset=["FakeNN JSON Name"])
+    df_cleaned.to_csv(outputName, index=False)
 
 
 if __name__ == "__main__":
     main()
-
-
-    # oR = pd.read_csv(oldRemainders)
-    # nR = pd.read_csv(newRemainders)
-    # # categories I do NOT expect to change:
-    # noChanges = ['SSR Config Count','Space Needed in L1','L3 Stores','SSR Loads', 'FMADDs', 'MULs',
-    #    'FMADDsMULs','Total SSR Loads','FMADDsPerCore']
-    # print("old vs new DIVISORS")
-    # sameCol(oD,nD,"FakeNN JSON Name","tiling schemes") # reality check
-    # for cat in noChanges:
-    #     sameCol(oD,nD,cat,cat)
-    # # categories I do NOT expect to change: 
-    # noChanges = ['Space Needed in L1','L3 Stores']
-    # print("\nold vs new REMAINDERS")
-    # sameCol(oR,nR,"FakeNN JSON Name","tiling schemes") # reality check
-    # for cat in noChanges:
-    #     sameCol(oR,nR,cat,cat)
-    # print("\nwe do expect SOME changes in the remainder tile search space...")
-    # changes=['SSR Config Count','SSR Loads', 'FMADDs', 'MULs','FMADDsMULs','Total SSR Loads','FMADDsPerCore']
-    # for cat in changes:
-    #     sameCol(oR,nR,cat,cat)
-    
-
-    # print(oD.columns)

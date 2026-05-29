@@ -16,6 +16,7 @@ def addFakeKernelTime(df_ut, df_t):
     df_ut["Kernel Time"] = avgTime
     df_ut["dma"] = avgTime
     df_ut["absoluteRank"] = -1
+    print(f"the average is {avgTime}")
     return df_ut
 def addExtras(df):
    # df["Hardware Loops"] = df["M"] * df["N"] * df["K"] / (8 * df["k"])

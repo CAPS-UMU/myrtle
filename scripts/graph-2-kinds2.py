@@ -38,17 +38,14 @@ def main():
     # Read in the timed CSV file
     df = pd.read_csv(timed)
 
-    # Find the row safely
+    # Find the row timeout row if it exists
     matching_rows = df.loc[df["FakeNN JSON Name"] == "timeout", "dma"]
-
     if not matching_rows.empty:
-        #timeout_dma_value = matching_rows.values[0]
         max_dma = df["dma"].max()
         timeout_dma_value=max_dma
-        # Apply the updates
+        # Apply the updates to fields "dma" and "Global Sim E2E_dma"
         df["timeout"] = df["dma"] == -1
         df.loc[df["dma"] == -1, "dma"] = timeout_dma_value
-        #Global Sim E2E_dma
         df.loc[df["Global Sim E2E_dma"] == -1, "Global Sim E2E_dma"] = timeout_dma_value
     else:
         df["timeout"]=False
