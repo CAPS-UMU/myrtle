@@ -2,6 +2,146 @@ import plotly.express as px
 import plotly.io as pio
 import plotly.graph_objects as go
 import pandas as pd
+import math
+# theColorBar="ylorrd_r"
+theColorBar="haline"
+
+def jugaadTitle(df):
+    M=int(df["M"][0])
+    N=int(df["N"][0])
+    K=int(df["K"][0])
+    dims=f"{M}x{N}x{K}"
+    t="Transformer"
+    if (M == 128) and (N == 128) and (K == 128):
+        t="BertTiny" 
+    if (M == 128) and (N == 768) and (K == 768):
+        t="Roberta" 
+    if (M == 192) and (N == 384) and (K == 384):
+        t="BGESmall" 
+    if (M == 384) and (N == 384) and (K == 384):
+        t="MiniLM" 
+    if (M == 256) and (N == 256) and (K == 256):
+        t="BertMini" 
+    if (M == 512) and (N == 512) and (K == 512):
+        t="Bert" 
+    return f"{t} Matmul {dims}"
+
+def genResultGraphPDF(title,timed, untimed, recentlyPruned,hover_data):
+    has_low_values = (timed["mRem"] < 0).any()
+    print(f"Are there values below -0.5 in timed? {has_low_values}")
+    has_low_values = (untimed["mRem"] < 0).any()
+    print(f"Are there values below -0.5 untimed? {has_low_values}")
+    has_low_values = (recentlyPruned["mRem"] < 0).any()
+    print(f"Are there values below -0.5 in recentlyPruned? {has_low_values}")
+    if len(timed)<5:
+        rp_max=recentlyPruned["Time (cycles)"].max()
+        tm_max=timed["Time (cycles)"].max()
+        newFakeTime = max(tm_max,rp_max)
+        if newFakeTime==rp_max:
+            newFakeTime = rp_max*1.25
+    else:
+        newFakeTime = timed["Time (cycles)"].max()
+    # customize the height of the untimed points
+    untimed = untimed.copy(deep=True)
+    untimed["Time (cycles)"]=newFakeTime    
+    x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
+    y_col = "Time (cycles)"#"Global Sim E2E_dma"
+    fig=scatterWithColorSymbol(
+         timed,
+            x_col,
+            y_col,
+            "mRem",
+            hover_data,
+            "testing short tile",
+            "timeout",
+            ["circle","cross"]
+    )
+    addScatterFlatColorMarker(
+        fig,
+        untimed,
+        x_col,
+        y_col,
+        "gray",
+        "square",
+        hover_data,
+        "untimed w/ nice m remainder, n/k < 1"
+        )
+    if(len(timed)<5):
+        addScatterFlatColorMarker(
+        fig,
+        recentlyPruned,
+        x_col,
+        y_col,
+        "gray",
+        "circle-open",
+        hover_data,
+        "untimed w/ nice m remainder, n/k < 1"
+        )
+    fig.update_layout(
+        title=dict(
+            text=f"<b>{title}</b>",
+            x=0.5,             # Center point on a scale from 0 to 1
+            xanchor="center"   # Anchor the title string by its exact middle
+        )
+    )
+    fig.update_layout(
+    font=dict(
+       # family="CMU Serif",  # Tells Plotly to search your system for Computer Modern
+        family="CMU Serif, Computer Modern, Latin Modern Roman, Serif",
+        size=12,
+        color="black"
+    ),
+    )
+    fig.update_traces(showlegend=False)
+
+
+    #fig.write_image(f"out/{title}.pdf", width=1200, height=800, scale=3)
+    # I have a 7x10 paper, so 1/3 of the width is approx 2.3 inches
+    # let's try 600 dpi for the scale
+    # plotly graph is 7 wide and 8 tall
+    dpi = 72#300
+    ratio=4/3.2
+    heightPx=4*ratio*dpi#(3.2/8*7)*dpi
+    widthPx=6*ratio*dpi#3.2*dpi
+  
+    fig.update_layout(
+    # 1. Maintain your physical 6x4 inch PDF aspect ratio
+    width=widthPx,  
+    height=heightPx,
+    
+    # 2. Aggressively reduce the outer canvas padding
+    margin=dict(
+        l=30,  # Left margin (space for Y-axis titles/labels)
+        r=20,  # Right margin (space near your legend)
+        t=35,  # Top margin (just enough room for your centered title)
+        b=30   # Bottom margin (space for X-axis titles/labels)
+    ),
+    
+    # 3. Tell the axes to automatically expand only what they need
+    xaxis=dict(automargin=True),
+    yaxis=dict(automargin=True),
+    
+    # 4. Your clean, smaller font settings
+    font=dict(
+        family="CMU Sans Serif Demi Condensed,CMU Typewriter Text", 
+        size=14,
+        color="black"
+    ),
+    template="plotly_white"
+)
+    # Scale it by 3x upon export to achieve 300 DPI crispness.
+    # This keeps the text, lines, and markers perfectly proportioned!
+    fig.update_layout(
+    coloraxis=dict(
+        cmin=0,         # Force the scale to start exactly at 0
+        # cmax=8        # Optional: You can also hardcode the maximum if you want
+    )
+    )
+
+    fig.write_image(f"out/{title}.pdf", scale=1)
+    #fig.write_image(f"out/{title}.pdf", width=widthPx, height=heightPx)
+    return fig
+
 
 def saveFigsInHTML(special_figs, more_figs, titleOfWebpage):
     # --- Convert each figure to HTML div ---
@@ -65,6 +205,7 @@ def scatterWithColor(df, x_col, y_col, color, hover_data, title, maerker=""):
         x=x_col,
         y=y_col,
         color=color,
+        color_continuous_scale=theColorBar,
         hover_data=hover_data,  # Show these columns on hover
         title=f"{title} <b>{x_col} vs {y_col}</b>",
     )
@@ -87,10 +228,11 @@ def scatterWithColorSymbol(df, x_col, y_col, color, hover_data, title, marker, m
         x=x_col,
         y=y_col,
         color=color,
+        color_continuous_scale=theColorBar,
         symbol=marker,
         symbol_sequence=markerSequence,
         hover_data=hover_data,  # Show these columns on hover
-        title=f"{title} <b>{x_col} vs {y_col}</b>",
+        title=title#f"{title} <b>{x_col} vs {y_col}</b>",
     )
 
 def scatterWithFlatColorSymbol(df, x_col, y_col, color, hover_data, title, marker,markerSeq=["circle", "triangle-up", "triangle-up"]):
@@ -108,9 +250,10 @@ def scatterWithFlatColorSymbol(df, x_col, y_col, color, hover_data, title, marke
 def addFakeTime(df_ut, df_t):
     avgTime = sum(df_t["Kernel Time"].values) / len(df_t["Kernel Time"].values)
     df_ut["Kernel Time"] = avgTime
-    avgTime = sum(df_t["Global Sim E2E_dma"].values) / len(df_t["Global Sim E2E_dma"].values)
-    df_ut["Global Sim E2E_dma"] = avgTime
-    df_ut["dma"] = avgTime
+    # avgTime = sum(df_t["Global Sim E2E_dma"].values) / len(df_t["Global Sim E2E_dma"].values)
+    maxTime = df_t["Global Sim E2E_dma"].max()*1.5
+    df_ut["Global Sim E2E_dma"] = maxTime
+    df_ut["dma"] = maxTime
     df_ut["absoluteRank"] = -1
     df_ut["Overlap Stall Time Total"] = -1
     df_ut["Raw Compute Time Total"] = -1
@@ -170,10 +313,15 @@ def prunedScatter(df, x_col, y_col, color, hover_data, title, prunePoint, marker
 def visualizePruning(timed, analyzed, full, titleOfWebpage):
      timed["Total CC Tiles"] = timed["SSR Config Count"]
      timed["FMADDsMULsPerCore"] = timed["FMADDsMULs"] / timed["Total CC Tiles"]
+     timed["1/FMADDS"]=1/timed["FMADDsMULsPerCore"]
      timed["Overlap Stall Time Per Core"] = timed["Overlap Stall Time Total"] / timed["Total CC Tiles"]
      timed["mRem"] = timed["M"] % timed["m"]
+     timed["1/mRem"]=1/timed["mRem"]
      timed["niceMRem"] = timed["mRem"].apply(lambda r: True if r == 0 or r % 8 == 0 else False)
      timed["howNice"] = timed["mRem"].apply(lambda r: "zero" if r == 0 else ("divisBy8" if r % 8 == 0 else "mean"))
+     timed["hypotenuse"] = timed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
+     timed["Time (cycles)"]=timed["Global Sim E2E_dma"]
+    # print(timed[["JSON Name","mRem","1/FMADDS","hypotenuse"]])
      x_col = "SSR Config Count"
      y_col = "dma"
      hover_data = [
@@ -185,13 +333,14 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
         "SSR Configs",
         "FMADDsMULs",
         "FMADDsMULsPerCore",
-        "SSR Loads per HW Loop",
+        "Time (cycles)",#"SSR Loads per HW Loop",
         "HW Loops / SSR Loads per HW Loop",
         "remainderTiles",
         "Global Sim E2E_dma",
         "Total CL Tiles",
         "Total CC Tiles",
-        "Overlap Stall Time Per Core",
+        #"Overlap Stall Time Per Core",
+        "1/FMADDS",
         "L1 Usage",
         "Avg CC Tile Size",
         "mRem",
@@ -206,14 +355,19 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
         "L1 Usage",       
      ]
      analyzed["mRem"] = analyzed["M"] % analyzed["m"]
+     analyzed["1/mRem"]=1/analyzed["mRem"]
      analyzed["niceMRem"] = analyzed["mRem"].apply(lambda r: True if r == 0 or r % 8 == 0 else False)
      analyzed["howNice"] = analyzed["mRem"].apply(lambda r: "zero" if r == 0 else ("divisBy8" if r % 8 == 0 else "mean"))
      analyzed["Total CC Tiles"] = analyzed["SSR Config Count"]
      analyzed["FMADDsMULsPerCore"] = analyzed["FMADDsMULs"] / analyzed["Total CC Tiles"]
+     analyzed["1/FMADDS"]=1/analyzed["FMADDsMULsPerCore"]
+     analyzed["hypotenuse"] = analyzed[["1/mRem","FMADDsMULsPerCore"]].apply(lambda x: math.sqrt(x["1/mRem"]*x["1/mRem"]+x["FMADDsMULsPerCore"]*x["FMADDsMULsPerCore"]),axis=1)
      analyzed["Overlap Stall Time Per Core"] = -1
      analyzed = addFakeTime(analyzed,timed)
      analyzed["Y/X"]=timed["Avg n'_sz / k_size"] * timed["Avg A'"]
      analyzed["timedData"] = False
+     analyzed["hypotenuse"] = analyzed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
+     analyzed["Time (cycles)"]=analyzed["Global Sim E2E_dma"]
      
      timed["remainderTiles"] = timed["remainderTiles"].apply(lambda x: "000" if x == 0 else f"{x}")
      timed["symbolMarker"] = timed["remainderTiles"].apply(lambda x: "O" if x == "000" else "^")
@@ -481,402 +635,140 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      # prune to less than n/k = 1
      #combined = combined[combined["Avg n'_sz / k_size"] < 1.0]
      nice_timed_reduced_lt1 = nice_timed_reduced[nice_timed_reduced["Avg n'_sz / k_size"] < 1.0]
+     nice_timed_reduced_gte1=nice_timed_reduced[nice_timed_reduced["Avg n'_sz / k_size"] >= 1.0]
      nice_ut_reduced_lt1 = nice_ut_reduced[nice_ut_reduced["Avg n'_sz / k_size"] < 1.0]
+     #jugaad
+     more_figs.append(genResultGraphPDF(jugaadTitle(timed),nice_timed_reduced_lt1,nice_ut_reduced_lt1,nice_timed_reduced_gte1,hover_data))
 
-     x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
-     y_col = "Global Sim E2E_dma"#"Global Sim E2E_dma"
-     more_figs.append(scatterWithColorSymbol(
-         nice_timed_reduced_lt1,
-            x_col,
-            y_col,
-            "mRem",
-            hover_data,
-            "3) Prune to n/k < 1;  Maximize FMADDS per core (take right most). TIE BREAK with smaller mRem size.",
-            "timedData",
-            ["circle","circle"]
-     ))
-     addScatterFlatColorMarker(
-        more_figs[-1],
-        nice_ut_reduced_lt1,
-        x_col,
-        y_col,
-        "gray",
-        "circle",
-        hover_data,
-        "untimed w/ nice m remainder, n/k < 1"
-    )
- 
 
-     # x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
-     # y_col = "Avg n'_sz / k_size"#"Global Sim E2E_dma"
-     # more_figs.append(scatterWithColorSymbol(
-     #     combined,
-     #        x_col,
-     #        y_col,
-     #        "Global Sim E2E_dma",
-     #        hover_data,
-     #        "Another view: Take left most. Tie break by maximizing FMADDS per core",
-     #        "timedData",
-     #        ["circle","square"]
-     # ))
 
-#      special_figs[-1].update_layout(
+     return saveFigsInHTML(special_figs, more_figs, titleOfWebpage)
+
+#      more_figs[-1].update_layout(
+#     # 1. Target the Title specifically
+#     title=dict(
+#         font=dict(
+#         family="CMU Serif",  # Tells Plotly to search your system for Computer Modern
+#         size=12,
+#         color="black"
+#     )
+#     ),
+#     # 2. Target the X-Axis Title
+#     xaxis=dict(
+#         title=dict(
+#             font=dict(
+#         family="CMU Serif",  # Tells Plotly to search your system for Computer Modern
+#         size=12,
+#         color="black"
+#     )
+#         )
+#     ),
+#     yaxis=dict(
+#         title=dict(
+#             font=dict(
+#         family="CMU Serif",  # Tells Plotly to search your system for Computer Modern
+#         size=12,
+#         color="black"
+#     )
+#         )
+#     ),
+#     # 3. Target the Legend text
 #     legend=dict(
-#         orientation="v",  # Forces vertical layout
-#         itemwidth=30,  # Gives the markers more breathing room from the text
-#         tracegroupgap=10,  # Adds vertical space between different trace groups
-#         yanchor="top",
-#         y=1,  # Keeps it aligned at the top right
-#         xanchor="left",
-#         x=1.02,  # Pushes the legend slightly outside the plot area so it doesn't overlap the grid
+#         font=dict(
+#         family="CMU Serif",  # Tells Plotly to search your system for Computer Modern
+#         size=6,
+#         color="white"
 #     )
+#     ),
+#     template="plotly_white", 
+#     width=600, 
+#     height=400
 # )
-     
 
-
-
-#     pruned.sort_values(by="niceMRem",ascending=True)
-#     myFig = scatterWithColorSymbol(
-#             pruned[pruned["niceMRem"]== True],
-#             x_col,
-#             y_col,
-#             "FMADDsMULsPerCore",
-#             hover_data,
-#             f"pruned to SSR configs <= {prunePoint}; myrtle after non-squares: prune out triangles, then take leftmost. THEN can we maximize by FMADDS?",
-#              "mRem",
-#         )
-
-#     # here we prune out bad mrems
-#     x_col = "Avg n'_sz / k_size"
-#     y_col = "Global Sim E2E_dma"
-#     pruned.sort_values(by="niceMRem",ascending=True)
-#     myFig = scatterWithColorSymbol(
-#             pruned[pruned["niceMRem"]== True],
-#             x_col,
-#             y_col,
-#             "FMADDsMULsPerCore",
-#             hover_data,
-#             f"pruned to SSR configs <= {prunePoint}; myrtle after non-squares: prune out triangles, then take leftmost. THEN can we maximize by FMADDS?",
-#              "mRem",
-#         )
-   
-#      x_col = "L1 Usage"
-#      y_col = "SSR Configs"
-#      special_figs.append(
-#         scatterWithColor(
-#             timed,
-#             x_col,
-#             y_col,
-#             "SSR Configs",
-#             hover_data,
-#             "Reality Check: timed and untimed points",
-#             "symbolMarker",
-#         )
-#     )
-#      addScatterFlatColorMarker(
-#         special_figs[-1],
-#         ut,
-#         x_col,
-#         y_col,
-#         "gray",
-#         "triangle-up",
-#         hover_data,
-#         "untimed points"
-#     )
-#      addScatterFlatColorMarker(
-#         special_figs[-1],
-#         pruned,
-#         x_col,
-#         y_col,
-#         "gray",
-#         "square",
-#         minimal_hover,
-#         "pruned out by SSR Config pruning"
-#     )
-
-#      x_col = "FakeNN JSON Name"
-#      y_col = "Global Sim E2E_dma"
-#      special_figs.append(
-#         scatterWithColor(
-#             timed,
-#             x_col,
-#             y_col,
-#             "SSR Configs",
-#             hover_data,
-#             "timed data only",
-#             "symbolMarker",
-#         )
-#     )
-
-#     x_col = "Global Sim E2E_dma"
-#     y_col = "FMADDsMULsPerCore"
-#     special_figs.append(
-#         scatterWithColor(
-#             timed,
-#             x_col,
-#             y_col,
-#             "SSR Configs",
-#             hover_data,
-#             "timed data only",
-#             "symbolMarker",
-#         )
-#     )
-
-#     x_col = "FMADDsMULsPerCore"
-#     y_col = "Global Sim E2E_dma"
-#     special_figs.append(
-#         scatterWithColor(
-#             timed,
-#             x_col,
-#             y_col,
-#             "SSR Configs",
-#             hover_data,
-#             "timed data only",
-#             "symbolMarker",
-#         )
-#     )
-
-#     # size and number not same
-#     x_col = "Avg CC Tile Size"
-#     y_col = "SSR Configs"
-#     special_figs.append(
-#         scatterWithColor(
-#             timed,
-#             x_col,
-#             y_col,
-#             "Global Sim E2E_dma",
-#             hover_data,
-#             "Tile Size vs Arithmetic Intensity",
-#             "symbolMarker",
-#         )
-#     )
-#     addScatterFlatColorMarker(
-#         special_figs[-1],
-#         ut,
-#         x_col,
-#         y_col,
-#         "gray",
-#         "triangle-up",
-#         hover_data,
-#         "untimed remainders"
-#     )
-
-#     x_col = "SSR Configs"
-#     y_col = "Global Sim E2E_dma"
-#     special_figs.append(
-#         prunedScatter(
-#             timed,
-#             x_col,
-#             y_col,
-#             "Avg n'_sz / k_size",
-#             hover_data,
-#             "timed remainders",
-#             prunePoint,
-#             "symbolMarker",
-#         )
-#     )
-#     addScatterFlatColorMarker(
-#         special_figs[-1],
-#         ut,
-#         x_col,
-#         y_col,
-#         "gray",
-#         "triangle-up",
-#         hover_data,
-#         "untimed remainders",
-#     )
-    
-#     x_col = "SSR Configs"
-#     y_col = "Global Sim E2E_dma"
-#    # prunePoint = 15984
-#     pruned = timed[timed["SSR Configs"]<= prunePoint]
-#     ut_pruned = ut[ut["SSR Configs"]<= prunePoint]
-#     special_figs.append(
-#         scatterWithColor(
-#             pruned,
-#             x_col,
-#             y_col,
-#             "Avg n'_sz / k_size",#"mRem",
-#             hover_data,
-#             f"After pruning to <= {prunePoint} SSR Configs",
-#             "symbolMarker",
-#         )
-#     )
-#     addScatterFlatColorMarker(
-#         special_figs[-1],
-#         ut_pruned,
-#         x_col,
-#         y_col,
-#         "gray",
-#         "square",
-#         hover_data,
-#         "untimed remainders",
-#     )
-
-#     x_col = "SSR Configs"
-#     y_col = "Avg CC Tile Size"
-#     pruned.sort_values(by="niceMRem",ascending=True)
-#     myFig = scatterWithColorSymbol(
-#             pruned,
-#             x_col,
-#             y_col,
-#             "absoluteRank",
-#             hover_data,
-#             f"pruned to SSR configs <= {prunePoint}; How does CC tile size relate to FMADDs per core?",
-#             "niceMRem",
-#         )
-#     special_figs.append(myFig)
-
-#     x_col = "SSR Configs"
-#     y_col = "FMADDsMULsPerCore"
-#     pruned.sort_values(by="niceMRem",ascending=True)
-#     myFig = scatterWithColorSymbol(
-#             pruned,
-#             x_col,
-#             y_col,
-#             "absoluteRank",
-#             hover_data,
-#             f"pruned to SSR configs <= {prunePoint}; How do SSR configs relate to FMADDs per core?",
-#             "niceMRem",
-#         )
-#     special_figs.append(myFig)
-
-#     x_col = "Avg CC Tile Size"
-#     y_col = "FMADDsMULsPerCore"
-#     pruned.sort_values(by="niceMRem",ascending=True)
-#     myFig = scatterWithColorSymbol(
-#             pruned,
-#             x_col,
-#             y_col,
-#             "absoluteRank",
-#             hover_data,
-#             f"pruned to SSR configs <= {prunePoint}; How does CC tile size relate to FMADDs per core?",
-#             "niceMRem",
-#         )
-#     special_figs.append(myFig)
-
-    
-#     x_col = "FMADDsMULsPerCore"
-#     y_col = "Avg CC Tile Size"
-#     pruned.sort_values(by="niceMRem",ascending=True)
-#     myFig = scatterWithColorSymbol(
-#             pruned,
-#             x_col,
-#             y_col,
-#             "absoluteRank",
-#             hover_data,
-#             f"pruned to SSR configs <= {prunePoint}; How does CC tile size relate to FMADDs per core?",
-#             "niceMRem",
-#         )
-#     special_figs.append(myFig)
-
-#     x_col = "FakeNN JSON Name"
-#     y_col = "Avg n'_sz / k_size"
-#     pruned.sort_values(by="niceMRem",ascending=True)
-#     myFig = scatterWithColorSymbol(
-#             pruned,
-#             x_col,
-#             y_col,
-#             "FMADDsMULsPerCore",
-#             hover_data,
-#             f"pruned to SSR configs <= {prunePoint}; prune out triangles, then take leftmost. THEN can we maximize by FMADDS?",
-#             "niceMRem",
-#         )
-#     special_figs.append(myFig)
-
-#     # here we prune out bad mrems
-#     x_col = "Avg n'_sz / k_size"
-#     y_col = "Global Sim E2E_dma"
-#     pruned.sort_values(by="niceMRem",ascending=True)
-#     myFig = scatterWithColorSymbol(
-#             pruned[pruned["niceMRem"]== True],
-#             x_col,
-#             y_col,
-#             "FMADDsMULsPerCore",
-#             hover_data,
-#             f"pruned to SSR configs <= {prunePoint}; myrtle after non-squares: prune out triangles, then take leftmost. THEN can we maximize by FMADDS?",
-#              "mRem",
-#         )
-#     special_figs.append(myFig) #pruned[pruned["niceMRem"]== True]
-#     addScatterFlatColorMarker(
-#         special_figs[-1],
-#         ut_pruned[ut_pruned["niceMRem"]== True],
-#         x_col,
-#         y_col,
-#         "gray",
-#         "square",
-#         hover_data,
-#         "untimed remainders"
-#     )
-
-    
-
-#     # print(pruned[pruned["FakeNN JSON Name"]== "384x384x384w21-24-39"][["Avg n'_sz / k_size","mRem"]]) #0.626573
-#     # print(pruned[pruned["FakeNN JSON Name"]== "384x384x384w21-24-39"][["Avg n'_sz / k_size","mRem"]].iloc(0))
-
-#     #               #,"Avg n'_sz / k_size"]])
-#     # print(pruned[pruned["Avg n'_sz / k_size"] == "0.626573"][["FakeNN JSON Name","Avg n'_sz / k_size","mRem"]])
- 
-
-#     x_col = "Avg n'_sz / k_size"
-#     y_col = "Global Sim E2E_dma"
-#     pruned.sort_values(by="niceMRem",ascending=True)
-#     myFig = scatterWithColorSymbol(
-#             pruned,
+# def genResultGraphPDF(title,timed, untimed, recentlyPruned,hover_data):
+#     if len(timed)<5:
+#         rp_max=recentlyPruned["Time (cycles)"].max()
+#         tm_max=timed["Time (cycles)"].max()
+#         newFakeTime = max(tm_max,rp_max)
+#         if newFakeTime==rp_max:
+#             newFakeTime = rp_max*1.25
+#     else:
+#         newFakeTime = timed["Time (cycles)"].max()
+#     # customize the height of the untimed points
+#     untimed = untimed.copy(deep=True)
+#     untimed["Time (cycles)"]=newFakeTime    
+#     x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
+#     y_col = "Time (cycles)"#"Global Sim E2E_dma"
+#     fig=scatterWithColorSymbol(
+#          timed,
 #             x_col,
 #             y_col,
 #             "mRem",
 #             hover_data,
-#             f"pruned to SSR configs <= {prunePoint}; myrtle: take leftmost, then the tie break by first preferring circle over triangle",
-#             "niceMRem",
+#             f"<b>{title}</b>",
+#             "timeout",
+#             ["circle","cross"]
+#     )
+#     addScatterFlatColorMarker(
+#         fig,
+#         untimed,
+#         x_col,
+#         y_col,
+#         "gray",
+#         "square",
+#         hover_data,
+#         "untimed w/ nice m remainder, n/k < 1"
 #         )
-#     special_figs.append(myFig)
+#     if(len(timed)<5):
+#         addScatterFlatColorMarker(
+#         fig,
+#         recentlyPruned,
+#         x_col,
+#         y_col,
+#         "gray",
+#         "circle-open",
+#         hover_data,
+#         "untimed w/ nice m remainder, n/k < 1"
+#         )
 
-#     x_col = "Overlap Stall Time Per Core"
-#     y_col = "Global Sim E2E_dma"
-#     pruned.sort_values(by="niceMRem",ascending=True)
-#     myFig = scatterWithColorSymbol(
-#             pruned,
-#             x_col,
-#             y_col,
-#             "Avg n'_sz / k_size",
-#             hover_data,
-#             "does ordering by overlap stall time help?",
-#             "niceMRem",
-#         )
-#     special_figs.append(myFig)
+#     fig.update_traces(showlegend=False)
 
-#     x_col = "mRem"
-#     y_col = "Overlap Stall Time Per Core"
-#     pruned.sort_values(by="niceMRem",ascending=True)
-#     myFig = scatterWithColorSymbol(
-#             pruned,
-#             x_col,
-#             y_col,
-#             "Global Sim E2E_dma",
-#             hover_data,
-#             "how is mRem size related to overlap stall time?",
-#             "niceMRem",
-#         )
-#     special_figs.append(myFig)
-    
-
-#     # more figures
-     
-#     more_figs.append(
-#         px.bar(
-#             timed,
-#             x="absoluteRank",
-#             y=["dma"],  # Pass both column names here
-#             # barmode='group',         # Keeps them side-by-side
-#             title="Effect of Remainder Tiles divisible by 8 on Execution Time?",
-#             color="niceMRem",
-#             labels={
-#                 "value": "Time (cycles)",
-#                 "variable": "Metric",
-#             },  # 'value' and 'variable' are default labels for lists
-#             # template='plotly_dark'
-#         )
+#     #fig.write_image(f"out/{title}.pdf", width=1200, height=800, scale=3)
+#     # I have a 7x10 paper, so 1/3 of the width is approx 2.3 inches
+#     # let's try 600 dpi for the scale
+#     # plotly graph is 7 wide and 8 tall
+#     dpi = 72#300
+#     heightPx=4*dpi#(3.2/8*7)*dpi
+#     widthPx=6*dpi#3.2*dpi
+#     # 1. Apply your base template
+#     fig.update_layout(
+#         template="plotly_white",
+#         title=dict(x=0.5, xanchor="center"),
+#         font=dict(family="CMU Serif, Computer Modern, Serif", size=10)
 #     )
 
-     return saveFigsInHTML(special_figs, more_figs, titleOfWebpage)
+#     # 2. Add the border lines to the axes
+#     fig.update_xaxes(
+#         showline=True,       # Turn on the axis line
+#         linewidth=1,         # Thickness of the border
+#         linecolor="black",   # Color of the border (matches standard academic plots)
+#         mirror=True,         # CRITICAL: Mirrors the line to the top of the graph box
+#         gridcolor="lightblue" # Keeps your light blue grid lines intact
+#     )
+
+#     fig.update_yaxes(
+#         showline=True,
+#         linewidth=1,
+#         linecolor="black",
+#         mirror=True,         # CRITICAL: Mirrors the line to the right side of the graph box
+#         gridcolor="lightblue"
+#     )
+
+# # Adjust your physical PDF size and export
+#     fig.update_layout(width=widthPx, height=heightPx, margin=dict(l=30, r=20, t=35, b=30))
+#     # Scale it by 3x upon export to achieve 300 DPI crispness.
+#     # This keeps the text, lines, and markers perfectly proportioned!
+
+#     fig.write_image(f"out/{title}.pdf", scale=4)
+#     #fig.write_image(f"out/{title}.pdf", width=widthPx, height=heightPx)
+#     return fig

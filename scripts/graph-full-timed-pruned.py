@@ -36,13 +36,15 @@ def main():
     # Read in the timed CSV file
     df = pd.read_csv(timed)
 
-    # Find the row timeout row if it exists
+    # Find the row timeout row if it exists, and pull out its dma cycle value
     matching_rows = df.loc[df["FakeNN JSON Name"] == "timeout", "dma"]
     if not matching_rows.empty:
-        max_dma = df["dma"].max()
-        timeout_dma_value=max_dma*1.5
-        # Apply the updates to fields "dma" and "Global Sim E2E_dma"
+        # we expect only ONE row called "timeout"
+        timeout_dma_value = matching_rows.values[0]
+        # now that we have a timeout row, we assume
+        # any rows with -1 cycles is a row that timed out
         df["timeout"] = df["dma"] == -1
+        # Apply the updates to fields "dma" and "Global Sim E2E_dma"
         df.loc[df["dma"] == -1, "dma"] = timeout_dma_value
         df.loc[df["Global Sim E2E_dma"] == -1, "Global Sim E2E_dma"] = timeout_dma_value
     else:
@@ -54,18 +56,29 @@ def main():
     # compute derived features
     df_ann = ae.addExtras(df_ann)
 
-    # merge timed with analysis
-    df_merged = df.merge(df_ann,how="left",on="FakeNN JSON Name")
-    df = df_merged
     # rank timed points
     df_sorted = df.sort_values(by="Global Sim E2E_dma", ascending=True)
     df_sorted["absoluteRank"] = range(1, int(df_sorted.shape[0] + 1))
     df = df_sorted 
+
+    # merge timed with analysis
+    print(f"Before merge, df had {len(df.columns)} cols")
+    if("M" not in df_ann.columns):
+        print("M is missing from ann before the merge")
+    df = df.merge(df_ann,how="left",on="FakeNN JSON Name")
+    print(f"after merge, df had {len(df.columns)} cols")
+
     # give analyzed points fake time data
     df_ann = ae.addFakeKernelTime(df_ann, df)
-    df_ann["timeout"] = False
-    # eventually load FULL search space
+    df_ann["timeout"] = False # they aren't timed so they can't possibly have timed out
+    # load FULL search space (contains minimal annotations)
     df_full = pd.read_csv(full)
+    
+    if("M" not in df_ann.columns):
+        print("M is missing from ann")
+    if("M" not in df.columns):
+        print("M is missing from df")
+        raise Exception("M is missing somehow")
 
     html = viz.visualizePruning(df, df_ann, df_full, titleOfWebpage)
     
