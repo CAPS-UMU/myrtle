@@ -73,35 +73,34 @@ miniLMTIMED="$BOTHTIMEDDIR/384x384x384-miniLM-results.csv"
 python createTimeoutRows.py "$miniLMTIMED" 8311517
 miniLMANN="$ANNDIR/384x384x384wm-n-k_ss_c_rem_div_ana_pruned.csv"
 FULL="$FULLDIR/384x384x384wm-n-k_ss_c_rem_div.csv"
-#echo "384x384x384 $miniLMTIMED $miniLMANN" $FULL > "dims-csv-name-line-by-line-paper.input"
+echo "384x384x384 $miniLMTIMED $miniLMANN" $FULL > "dims-csv-name-line-by-line-paper.input"
 
 bertTinyTIMED="$BOTHTIMEDDIR/128x128x128-bertTiny-results.csv"
 bertTinyANN="$ANNDIR/128x128x128wm-n-k_ss_c_rem_div_ana_pruned.csv"
 FULL="$FULLDIR/128x128x128wm-n-k_ss_c_rem_div.csv"
-#echo "128x128x128 $bertTinyTIMED $bertTinyANN" $FULL >> "dims-csv-name-line-by-line-paper.input"
+echo "128x128x128 $bertTinyTIMED $bertTinyANN" $FULL >> "dims-csv-name-line-by-line-paper.input"
 
 bertMiniTIMED="$BOTHTIMEDDIR/256x256x256wm-n-k_ss_c_rem_div_ana_pruned-results.csv"
 bertMiniANN="$ANNDIR/256x256x256wm-n-k_ss_c_rem_div_ana_pruned.csv"
 FULL="$FULLDIR/256x256x256wm-n-k_ss_c_rem_div.csv"
-#echo "256x256x256 $bertMiniTIMED $bertMiniANN" $FULL > "dims-csv-name-line-by-line-paper.input"
-# Mrem Value not correct in graph^^^^
+echo "256x256x256 $bertMiniTIMED $bertMiniANN" $FULL >> "dims-csv-name-line-by-line-paper.input"
 
 bgeSmallTIMED="$BOTHTIMEDDIR/192x384x384-bgeSmall-results.csv"
 #python createTimeoutRows.py "$bgeSmallTIMED" 4259722
 bgeSmallANN="$ANNDIR/192x384x384wm-n-k_ss_c_rem_div_ana_pruned.csv"
 FULL="$FULLDIR/192x384x384wm-n-k_ss_c_rem_div.csv"
-#echo "192x384x384 $bgeSmallTIMED $bgeSmallANN" $FULL > "dims-csv-name-line-by-line-paper.input"
+echo "192x384x384 $bgeSmallTIMED $bgeSmallANN" $FULL >> "dims-csv-name-line-by-line-paper.input"
 
 robertaTIMED="$BOTHTIMEDDIR/128x768x768-roberta-results.csv"
 #python createTimeoutRows.py "$robertaTIMED" 11391161
 robertaANN="$ANNDIR/128x768x768wm-n-k_ss_c_rem_div_ana_pruned.csv"
 FULL="$FULLDIR/128x768x768wm-n-k_ss_c_rem_div.csv"
-#echo "128x768x768 $robertaTIMED $robertaANN" $FULL > "dims-csv-name-line-by-line-paper.input"
+echo "128x768x768 $robertaTIMED $robertaANN" $FULL >> "dims-csv-name-line-by-line-paper.input"
 
 TIMED="$BOTHTIMEDDIR/512x512x512wm-n-k_ss_c_rem_div_ana_pruned-results-include-timeout.csv"
 python createTimeoutRows.py "$TIMED" 19921156
 ANN="$ANNDIR/512x512x512wm-n-k_ss_c_rem_div_ana_pruned.csv"
 FULL="$FULLDIR/512x512x512wm-n-k_ss_c_rem_div.csv"
-echo "512x512x512" $TIMED $ANN $FULL > "dims-csv-name-line-by-line-paper.input"
+echo "512x512x512" $TIMED $ANN $FULL >> "dims-csv-name-line-by-line-paper.input"
 
 bash graph-paper-data.sh dims-csv-name-line-by-line-paper.input transformers

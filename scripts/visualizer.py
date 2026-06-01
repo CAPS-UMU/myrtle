@@ -27,18 +27,18 @@ def jugaadTitle(df):
     return f"{t} Matmul {dims}"
 
 def genResultGraphPDF(title,timed, untimed, recentlyPruned,hover_data):
-    has_low_values = (timed["mRem"] < 0).any()
-    print(f"Are there values below -0.5 in timed? {has_low_values}")
-    has_low_values = (untimed["mRem"] < 0).any()
-    print(f"Are there values below -0.5 untimed? {has_low_values}")
-    has_low_values = (recentlyPruned["mRem"] < 0).any()
-    print(f"Are there values below -0.5 in recentlyPruned? {has_low_values}")
+    colorMin=timed["mRem"].min()
+    colorMax=timed["mRem"].max()
+    # print(f"color min is {colorMin} with type{type(colorMin)}")
+    # print(f"color max is {colorMax} with type{type(colorMax)}")
     if len(timed)<5:
         rp_max=recentlyPruned["Time (cycles)"].max()
         tm_max=timed["Time (cycles)"].max()
         newFakeTime = max(tm_max,rp_max)
         if newFakeTime==rp_max:
-            newFakeTime = rp_max*1.25
+            newFakeTime = rp_max*1.1
+        colorMin=min(colorMin,recentlyPruned["mRem"].min())
+        colorMax=max(colorMax,recentlyPruned["mRem"].max())
     else:
         newFakeTime = timed["Time (cycles)"].max()
     # customize the height of the untimed points
@@ -52,10 +52,15 @@ def genResultGraphPDF(title,timed, untimed, recentlyPruned,hover_data):
             y_col,
             "mRem",
             hover_data,
-            "testing short tile",
+            "testing short title",
             "timeout",
             ["circle","cross"]
     )
+    matching_rows = timed.loc[timed["timeout"] == True, "dma"]
+    if not matching_rows.empty:
+        # plot timeout threshold
+        dma=matching_rows.values[0]
+        fig.add_hline(y=dma, line_width=0.75, line_dash="dash", line_color="black",layer="below")
     addScatterFlatColorMarker(
         fig,
         untimed,
@@ -79,7 +84,7 @@ def genResultGraphPDF(title,timed, untimed, recentlyPruned,hover_data):
         )
     fig.update_layout(
         title=dict(
-            text=f"<b>{title}</b>",
+            text=title,
             x=0.5,             # Center point on a scale from 0 to 1
             xanchor="center"   # Anchor the title string by its exact middle
         )
@@ -93,16 +98,16 @@ def genResultGraphPDF(title,timed, untimed, recentlyPruned,hover_data):
     ),
     )
     fig.update_traces(showlegend=False)
+    
 
 
     #fig.write_image(f"out/{title}.pdf", width=1200, height=800, scale=3)
     # I have a 7x10 paper, so 1/3 of the width is approx 2.3 inches
     # let's try 600 dpi for the scale
     # plotly graph is 7 wide and 8 tall
-    dpi = 72#300
-    ratio=4/3.2
-    heightPx=4*ratio*dpi#(3.2/8*7)*dpi
-    widthPx=6*ratio*dpi#3.2*dpi
+    dpi = 72 #300
+    widthPx=6*dpi
+    heightPx=4*dpi
   
     fig.update_layout(
     # 1. Maintain your physical 6x4 inch PDF aspect ratio
@@ -133,8 +138,8 @@ def genResultGraphPDF(title,timed, untimed, recentlyPruned,hover_data):
     # This keeps the text, lines, and markers perfectly proportioned!
     fig.update_layout(
     coloraxis=dict(
-        cmin=0,         # Force the scale to start exactly at 0
-        # cmax=8        # Optional: You can also hardcode the maximum if you want
+        cmin=colorMin,         # Force the scale to start exactly at 0
+        cmax=colorMax        # Optional: You can also hardcode the maximum if you want
     )
     )
 
@@ -565,30 +570,8 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
                     symbol=mRem_shape_map[status_name], color="gray"  
                ),
           )
-     # step 6: tie-break with FMADDMULS per Core
-#      x_col = "Avg n'_sz / k_size"
-#      y_col = "Global Sim E2E_dma"
-#      special_figs.append(scatterWithColorSymbol(
-#          nice_timed,
-#             x_col,
-#             y_col,
-#             "FMADDsMULsPerCore",
-#             hover_data,
-#             "Take left most. Tie break by maximizing FMADDS per core. SQUARES are untimed.",
-#             "mRem",
-#      ))
-#      addScatterFlatColorMarker(
-#         special_figs[-1],
-#         nice_ut,
-#         x_col,
-#         y_col,
-#         "gray",
-#         "square",
-#         hover_data,
-#         "untimed"
-#     )
-     
-
+          
+     # step 6: tie-break with FMADDMULS per Core   
      nice_timed_reduced = nice_timed[hover_data]
      nice_ut_reduced = nice_ut[hover_data]     
      combined = pd.concat([nice_timed_reduced,nice_ut_reduced],axis=0, ignore_index=True)
@@ -607,9 +590,34 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      ))
 
      # more figs
+     y_col = "mRem"
+     x_col = "Global Sim E2E_dma"
+     timed.sort_values("howNice")
+     more_figs.append(scatterWithColorSymbol(
+         timed,
+            x_col,
+            y_col,
+            "mRem",
+            hover_data,
+            "Is it ever worth it to includle boundary tiles? Emily, fix marker symbols (not working right)",
+            "howNice",
+            ["circle","triangle-up","x",]
+     ))
+     addScatterFlatColorMarker(
+        more_figs[-1],
+        ut,
+        x_col,
+        y_col,
+        "gray",
+        "square",
+        hover_data,
+        "untimed"
+    )
 
+     print(f"before appending: len of more_figs is {len(more_figs)}")
      x_col = "Avg n'_sz / k_size"
      y_col = "Global Sim E2E_dma"
+     mRem_shape_map = {"zero": "circle", "divisBy8": "triangle-up","mean":"diamond"}
      more_figs.append(scatterWithFlatColorSymbol(
          nice_timed,
             x_col,
@@ -617,7 +625,7 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
             "black",
             hover_data,
             "2) Worst-case CL boundary tiles pruned out; only nice ones remain. RED LINE marks n/k = 1",
-            "mRem",
+            "howNice",
      ))
      mRem_shape_map = {"zero": "circle", "divisBy8": "triangle-up","mean":"diamond"}
      for status_name, group_df in nice_ut.groupby("howNice"):
@@ -630,145 +638,44 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
                     symbol=mRem_shape_map[status_name], color="gray"  
                ),
           )
+     for status_name, group_df in nice_timed.groupby("howNice"):
+          more_figs[-1].add_scatter(
+               x=group_df[x_col],
+               y=group_df[y_col],
+               mode="markers",
+               name=status_name,  # Sets the legend label
+               marker=dict(
+                    symbol=mRem_shape_map[status_name], color="black"  
+               ),
+          )
      more_figs[-1].add_vline(x=1.0, line_width=2, line_dash="dash", line_color="red")
-
+    
      # prune to less than n/k = 1
      #combined = combined[combined["Avg n'_sz / k_size"] < 1.0]
      nice_timed_reduced_lt1 = nice_timed_reduced[nice_timed_reduced["Avg n'_sz / k_size"] < 1.0]
      nice_timed_reduced_gte1=nice_timed_reduced[nice_timed_reduced["Avg n'_sz / k_size"] >= 1.0]
      nice_ut_reduced_lt1 = nice_ut_reduced[nice_ut_reduced["Avg n'_sz / k_size"] < 1.0]
-     #jugaad
-     more_figs.append(genResultGraphPDF(jugaadTitle(timed),nice_timed_reduced_lt1,nice_ut_reduced_lt1,nice_timed_reduced_gte1,hover_data))
-
-
+     
+     x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
+     y_col = "Time (cycles)"#"Global Sim E2E_dma"
+     print(f"before appending: len of more_figs is {len(more_figs)}")
+     more_figs.append(scatterWithColorSymbol(
+         nice_timed_reduced_lt1,
+            x_col,
+            y_col,
+            "mRem",
+            hover_data,
+            "testing short title",
+            "timeout",
+            ["circle","cross"]
+     ))
+     
+     #result graph
+     x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
+     y_col = "Time (cycles)"#"Global Sim E2E_dma"
+     resultGraph = genResultGraphPDF(jugaadTitle(timed),nice_timed_reduced_lt1,nice_ut_reduced_lt1,nice_timed_reduced_gte1,hover_data)
+     print(f"before appending: len of more_figs is {len(more_figs)}")
+     more_figs.append(resultGraph)
 
      return saveFigsInHTML(special_figs, more_figs, titleOfWebpage)
 
-#      more_figs[-1].update_layout(
-#     # 1. Target the Title specifically
-#     title=dict(
-#         font=dict(
-#         family="CMU Serif",  # Tells Plotly to search your system for Computer Modern
-#         size=12,
-#         color="black"
-#     )
-#     ),
-#     # 2. Target the X-Axis Title
-#     xaxis=dict(
-#         title=dict(
-#             font=dict(
-#         family="CMU Serif",  # Tells Plotly to search your system for Computer Modern
-#         size=12,
-#         color="black"
-#     )
-#         )
-#     ),
-#     yaxis=dict(
-#         title=dict(
-#             font=dict(
-#         family="CMU Serif",  # Tells Plotly to search your system for Computer Modern
-#         size=12,
-#         color="black"
-#     )
-#         )
-#     ),
-#     # 3. Target the Legend text
-#     legend=dict(
-#         font=dict(
-#         family="CMU Serif",  # Tells Plotly to search your system for Computer Modern
-#         size=6,
-#         color="white"
-#     )
-#     ),
-#     template="plotly_white", 
-#     width=600, 
-#     height=400
-# )
-
-# def genResultGraphPDF(title,timed, untimed, recentlyPruned,hover_data):
-#     if len(timed)<5:
-#         rp_max=recentlyPruned["Time (cycles)"].max()
-#         tm_max=timed["Time (cycles)"].max()
-#         newFakeTime = max(tm_max,rp_max)
-#         if newFakeTime==rp_max:
-#             newFakeTime = rp_max*1.25
-#     else:
-#         newFakeTime = timed["Time (cycles)"].max()
-#     # customize the height of the untimed points
-#     untimed = untimed.copy(deep=True)
-#     untimed["Time (cycles)"]=newFakeTime    
-#     x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
-#     y_col = "Time (cycles)"#"Global Sim E2E_dma"
-#     fig=scatterWithColorSymbol(
-#          timed,
-#             x_col,
-#             y_col,
-#             "mRem",
-#             hover_data,
-#             f"<b>{title}</b>",
-#             "timeout",
-#             ["circle","cross"]
-#     )
-#     addScatterFlatColorMarker(
-#         fig,
-#         untimed,
-#         x_col,
-#         y_col,
-#         "gray",
-#         "square",
-#         hover_data,
-#         "untimed w/ nice m remainder, n/k < 1"
-#         )
-#     if(len(timed)<5):
-#         addScatterFlatColorMarker(
-#         fig,
-#         recentlyPruned,
-#         x_col,
-#         y_col,
-#         "gray",
-#         "circle-open",
-#         hover_data,
-#         "untimed w/ nice m remainder, n/k < 1"
-#         )
-
-#     fig.update_traces(showlegend=False)
-
-#     #fig.write_image(f"out/{title}.pdf", width=1200, height=800, scale=3)
-#     # I have a 7x10 paper, so 1/3 of the width is approx 2.3 inches
-#     # let's try 600 dpi for the scale
-#     # plotly graph is 7 wide and 8 tall
-#     dpi = 72#300
-#     heightPx=4*dpi#(3.2/8*7)*dpi
-#     widthPx=6*dpi#3.2*dpi
-#     # 1. Apply your base template
-#     fig.update_layout(
-#         template="plotly_white",
-#         title=dict(x=0.5, xanchor="center"),
-#         font=dict(family="CMU Serif, Computer Modern, Serif", size=10)
-#     )
-
-#     # 2. Add the border lines to the axes
-#     fig.update_xaxes(
-#         showline=True,       # Turn on the axis line
-#         linewidth=1,         # Thickness of the border
-#         linecolor="black",   # Color of the border (matches standard academic plots)
-#         mirror=True,         # CRITICAL: Mirrors the line to the top of the graph box
-#         gridcolor="lightblue" # Keeps your light blue grid lines intact
-#     )
-
-#     fig.update_yaxes(
-#         showline=True,
-#         linewidth=1,
-#         linecolor="black",
-#         mirror=True,         # CRITICAL: Mirrors the line to the right side of the graph box
-#         gridcolor="lightblue"
-#     )
-
-# # Adjust your physical PDF size and export
-#     fig.update_layout(width=widthPx, height=heightPx, margin=dict(l=30, r=20, t=35, b=30))
-#     # Scale it by 3x upon export to achieve 300 DPI crispness.
-#     # This keeps the text, lines, and markers perfectly proportioned!
-
-#     fig.write_image(f"out/{title}.pdf", scale=4)
-#     #fig.write_image(f"out/{title}.pdf", width=widthPx, height=heightPx)
-#     return fig

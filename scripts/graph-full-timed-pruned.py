@@ -62,11 +62,11 @@ def main():
     df = df_sorted 
 
     # merge timed with analysis
-    print(f"Before merge, df had {len(df.columns)} cols")
-    if("M" not in df_ann.columns):
-        print("M is missing from ann before the merge")
+    # print(f"Before merge, df had {len(df.columns)} cols")
+    # if("M" not in df_ann.columns):
+    #     print("M is missing from ann before the merge")
     df = df.merge(df_ann,how="left",on="FakeNN JSON Name")
-    print(f"after merge, df had {len(df.columns)} cols")
+   # print(f"after merge, df had {len(df.columns)} cols")
 
     # give analyzed points fake time data
     df_ann = ae.addFakeKernelTime(df_ann, df)
@@ -74,11 +74,11 @@ def main():
     # load FULL search space (contains minimal annotations)
     df_full = pd.read_csv(full)
     
-    if("M" not in df_ann.columns):
-        print("M is missing from ann")
-    if("M" not in df.columns):
-        print("M is missing from df")
-        raise Exception("M is missing somehow")
+    # if("M" not in df_ann.columns):
+    #     print("M is missing from ann")
+    # if("M" not in df.columns):
+    #     print("M is missing from df")
+    #     raise Exception("M is missing somehow")
 
     html = viz.visualizePruning(df, df_ann, df_full, titleOfWebpage)
     
