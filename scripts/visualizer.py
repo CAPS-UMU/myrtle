@@ -26,9 +26,10 @@ def jugaadTitle(df):
         t="Bert" 
     return f"{t} Matmul {dims}"
 
-def genResultGraphPDF(title,timed, untimed, recentlyPruned,hover_data):
-    colorMin=timed["mRem"].min()
-    colorMax=timed["mRem"].max()
+def genResultGraphPDF(title,timed, untimed, recentlyPruned,hover_data,color="n / k"):
+    colorCol=color
+    colorMin=timed[colorCol].min()
+    colorMax=timed[colorCol].max()
     # print(f"color min is {colorMin} with type{type(colorMin)}")
     # print(f"color max is {colorMax} with type{type(colorMax)}")
     if len(timed)<5:
@@ -37,8 +38,8 @@ def genResultGraphPDF(title,timed, untimed, recentlyPruned,hover_data):
         newFakeTime = max(tm_max,rp_max)
         if newFakeTime==rp_max:
             newFakeTime = rp_max*1.1
-        colorMin=min(colorMin,recentlyPruned["mRem"].min())
-        colorMax=max(colorMax,recentlyPruned["mRem"].max())
+        colorMin=min(colorMin,recentlyPruned[colorCol].min())
+        colorMax=max(colorMax,recentlyPruned[colorCol].max())
     else:
         newFakeTime = timed["Time (cycles)"].max()
     # customize the height of the untimed points
@@ -50,7 +51,7 @@ def genResultGraphPDF(title,timed, untimed, recentlyPruned,hover_data):
          timed,
             x_col,
             y_col,
-            "mRem",
+            colorCol,
             hover_data,
             "testing short title",
             "timeout",
@@ -314,6 +315,31 @@ def prunedScatter(df, x_col, y_col, color, hover_data, title, prunePoint, marker
     # turn the pruned points gray?
     return fig14
 
+def printFinalRanking(df,colorCol):
+    print("\tFinal ranking:")
+    df=df.sort_values("FMADDsMULsPerCore",ascending=False)
+    best=df["Time (cycles)"][0]
+    print(f"best observed: {best} cycles")
+    df["diff"] = df["Time (cycles)"].apply(lambda x: (x - best)/best * 100)
+    print(df[["JSON Name","FMADDsMULsPerCore","absoluteRank","Time (cycles)","diff"]][0:9])
+    print("--------------------")
+#     pointsPrinted = 0
+#     for fmadds, group_df in df.groupby("FMADDsMULsPerCore",sort=False):
+#           if pointsPrinted < 5:
+#                print(f"FMADDS: {fmadds} w/ len {len(group_df)}")
+#                pointsPrinted = pointsPrinted + len(group_df)
+#                sorted = group_df.sort_values(colorCol,ascending=True)
+#                print(sorted[["JSON Name","absoluteRank",colorCol,"Time (cycles)","diff"]])
+    
+#     print("-------------------- FOR LATEX")
+#     pointsPrinted = 0
+#     for fmadds, group_df in df.groupby("FMADDsMULsPerCore",sort=False):
+#           if pointsPrinted < 5:
+#                print(f"FMADDS: {fmadds} w/ len {len(group_df)}")
+#                pointsPrinted = pointsPrinted + len(group_df)
+#                sorted = group_df.sort_values(colorCol,ascending=True)
+#                print(sorted[["JSON Name","Time (cycles)","diff"]])
+    print("-------------- ^^^^ ------------\n")
 
 def visualizePruning(timed, analyzed, full, titleOfWebpage):
      timed["Total CC Tiles"] = timed["SSR Config Count"]
@@ -322,13 +348,42 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      timed["Overlap Stall Time Per Core"] = timed["Overlap Stall Time Total"] / timed["Total CC Tiles"]
      timed["mRem"] = timed["M"] % timed["m"]
      timed["1/mRem"]=1/timed["mRem"]
+     timed["niceM"] = timed["m"].apply(lambda r: True if r % 8 == 0 else False)
      timed["niceMRem"] = timed["mRem"].apply(lambda r: True if r == 0 or r % 8 == 0 else False)
+     timed["bothNice"]=timed[["niceM", "niceMRem"]].apply(lambda r: True if r["niceM"] & r["niceMRem"] else False,axis=1)
      timed["howNice"] = timed["mRem"].apply(lambda r: "zero" if r == 0 else ("divisBy8" if r % 8 == 0 else "mean"))
      timed["hypotenuse"] = timed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
      timed["Time (cycles)"]=timed["Global Sim E2E_dma"]
-    # print(timed[["JSON Name","mRem","1/FMADDS","hypotenuse"]])
-     x_col = "SSR Config Count"
-     y_col = "dma"
+     timed["n / k"]=timed["Avg n'_sz / k_size"]
+   
+     analyzed["mRem"] = analyzed["M"] % analyzed["m"]
+     analyzed["1/mRem"]=1/analyzed["mRem"]
+     analyzed["niceM"] = timed["m"].apply(lambda r: True if r % 8 == 0 else False)
+     analyzed["niceMRem"] = analyzed["mRem"].apply(lambda r: True if r == 0 or r % 8 == 0 else False)
+     analyzed["howNice"] = analyzed["mRem"].apply(lambda r: "zero" if r == 0 else ("divisBy8" if r % 8 == 0 else "mean"))
+     analyzed["bothNice"]=analyzed[["niceM", "niceMRem"]].apply(lambda r: True if r["niceM"] and r["niceMRem"] else False,axis=1)
+     analyzed["Total CC Tiles"] = analyzed["SSR Config Count"]
+     analyzed["FMADDsMULsPerCore"] = analyzed["FMADDsMULs"] / analyzed["Total CC Tiles"]
+     analyzed["1/FMADDS"]=1/analyzed["FMADDsMULsPerCore"]
+     analyzed["hypotenuse"] = analyzed[["1/mRem","FMADDsMULsPerCore"]].apply(lambda x: math.sqrt(x["1/mRem"]*x["1/mRem"]+x["FMADDsMULsPerCore"]*x["FMADDsMULsPerCore"]),axis=1)
+     analyzed["Overlap Stall Time Per Core"] = -1
+     analyzed = addFakeTime(analyzed,timed)
+     analyzed["Y/X"]=timed["Avg n'_sz / k_size"] * timed["Avg A'"]
+     analyzed["timedData"] = False
+     analyzed["hypotenuse"] = analyzed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
+     analyzed["Time (cycles)"]=analyzed["Global Sim E2E_dma"]
+     analyzed["n / k"]=analyzed["Avg n'_sz / k_size"]
+     
+     timed["remainderTiles"] = timed["remainderTiles"].apply(lambda x: "000" if x == 0 else f"{x}")
+     timed["symbolMarker"] = timed["remainderTiles"].apply(lambda x: "O" if x == "000" else "^")
+     timed = timed.sort_values(by="symbolMarker", ascending=True)
+     timed["flatColor"] = "pink"
+     timed["timedData"] = True
+
+     full["SSR Configs"] = full["SSR Config Count"]
+     full["L1 Usage"] = full["Space Needed in L1"]
+     full = addFakeTime(full,timed)
+
      hover_data = [
         "JSON Name",
         "timeout",
@@ -350,7 +405,7 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
         "Avg CC Tile Size",
         "mRem",
         "Avg L3 Loads",
-        "Avg L3 Stores",
+        "n / k",
         "Avg n'_sz / k_size",
         "timedData",
      ]
@@ -359,41 +414,62 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
         "SSR Configs",
         "L1 Usage",       
      ]
-     analyzed["mRem"] = analyzed["M"] % analyzed["m"]
-     analyzed["1/mRem"]=1/analyzed["mRem"]
-     analyzed["niceMRem"] = analyzed["mRem"].apply(lambda r: True if r == 0 or r % 8 == 0 else False)
-     analyzed["howNice"] = analyzed["mRem"].apply(lambda r: "zero" if r == 0 else ("divisBy8" if r % 8 == 0 else "mean"))
-     analyzed["Total CC Tiles"] = analyzed["SSR Config Count"]
-     analyzed["FMADDsMULsPerCore"] = analyzed["FMADDsMULs"] / analyzed["Total CC Tiles"]
-     analyzed["1/FMADDS"]=1/analyzed["FMADDsMULsPerCore"]
-     analyzed["hypotenuse"] = analyzed[["1/mRem","FMADDsMULsPerCore"]].apply(lambda x: math.sqrt(x["1/mRem"]*x["1/mRem"]+x["FMADDsMULsPerCore"]*x["FMADDsMULsPerCore"]),axis=1)
-     analyzed["Overlap Stall Time Per Core"] = -1
-     analyzed = addFakeTime(analyzed,timed)
-     analyzed["Y/X"]=timed["Avg n'_sz / k_size"] * timed["Avg A'"]
-     analyzed["timedData"] = False
-     analyzed["hypotenuse"] = analyzed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
-     analyzed["Time (cycles)"]=analyzed["Global Sim E2E_dma"]
      
-     timed["remainderTiles"] = timed["remainderTiles"].apply(lambda x: "000" if x == 0 else f"{x}")
-     timed["symbolMarker"] = timed["remainderTiles"].apply(lambda x: "O" if x == "000" else "^")
-     timed = timed.sort_values(by="symbolMarker", ascending=True)
-     timed["flatColor"] = "pink"
-     timed["timedData"] = True
-
-     prunePoint = ssr_prune_frac(full,3)
-     full["SSR Configs"] = full["SSR Config Count"]
-     full["L1 Usage"] = full["Space Needed in L1"]
-     full = addFakeTime(full,timed)
-
-    # we assume untimed points are a subset of the pruned search space
-     ut = analyzed[~analyzed["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])]
-     pruned = full[full["SSR Config Count"] < prunePoint]
-
-    # special figures
      special_figs = []
-     # more figs
      more_figs = []
 
+     special_figs,more_figs = pruneApproach1(timed,analyzed,full)
+     special_figs=special_figs+more_figs
+
+     more_figs = pruneApproach2(timed,analyzed,full)
+     
+     return saveFigsInHTML(special_figs, more_figs, titleOfWebpage)
+
+def pruneApproach2(timed, analyzed, full):
+     prunePoint = ssr_prune_frac(full,3)
+    # we assume untimed points are a subset of the pruned search space
+   #  print("Missing values in M:", analyzed['M'].isna().sum())
+   #  print("Missing values in m:", analyzed['m'].isna().sum())
+   #  print("analyzed: NaN for NiceM:", analyzed['niceM'].isna())
+     #print(analyzed[["FakeNN JSON Name","M","m","niceM"]])
+     ut = analyzed[~analyzed["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])]
+   #  print("ut: NaN for NiceM:", ut['niceM'].isna())
+    # print(ut[["FakeNN JSON Name","M","m","niceM"]])
+     pruned = full[full["SSR Config Count"] < prunePoint]
+     print("prune approach 2 statistics:")
+     print(f"full: {len(full)} pruned:{len(pruned)} % analyzed:{len(pruned)/len(full)}")
+     print(f"ann: {len(analyzed)} pruned: {len(pruned)} timed: {len(timed)} % timed:{len(timed)/len(pruned)}")
+     hover_data = [
+        "JSON Name",
+        "timeout",
+        "absoluteRank",
+        "dma",
+        "HW Loops",
+        "SSR Configs",
+        "FMADDsMULs",
+        "FMADDsMULsPerCore",
+        "Time (cycles)",#"SSR Loads per HW Loop",
+        "HW Loops / SSR Loads per HW Loop",
+        "remainderTiles",
+        "Global Sim E2E_dma",
+        "Total CL Tiles",
+        "Total CC Tiles",
+        #"Overlap Stall Time Per Core",
+        "1/FMADDS",
+        "L1 Usage",
+        "Avg CC Tile Size",
+        "mRem",
+        "Avg L3 Loads",
+        "n / k",
+        "Avg n'_sz / k_size",
+        "timedData",
+     ]
+     minimal_hover = [
+        "JSON Name",       
+        "SSR Configs",
+        "L1 Usage",       
+     ]
+     special_figs=[]
      x_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
      y_col = "Global Sim E2E_dma"#"Global Sim E2E_dma"
      special_figs.append(scatterWithColorSymbol(
@@ -428,7 +504,289 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      y_col = "SSR Configs"
      special_figs.append(
         scatterWithColor(
-            analyzed,
+            pruned,
+            x_col,
+            y_col,
+            "SSR Configs",
+            minimal_hover,
+            "0.1) Full search space (multicolor points are analyzed by our model)",
+            "symbolMarker",
+        )
+    )
+     addScatterFlatColorMarker(
+        special_figs[-1],
+        full,
+        x_col,
+        y_col,
+        "gray",
+        "circle",
+        minimal_hover,
+        "full search space"
+    )
+     
+     # step 3: timed vs untimed points
+     x_col = "SSR Configs"
+     y_col = "L1 Usage"
+     special_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "SSR Configs",
+            minimal_hover,
+            "1) Pruned Search Space (multicolor points are timed)",
+            "symbolMarker",
+        )
+    )
+     addScatterFlatColorMarker(
+        special_figs[-1],
+        ut,
+        x_col,
+        y_col,
+        "gray",
+        "circle",
+        minimal_hover,
+        "untimed"
+    )
+     
+     # step 5: identify nice m remainders and keep 'em, also keep nice m sizes
+
+     niceM_timed=timed[timed["niceM"]==True]
+     niceMrem_timed=timed[timed["niceMRem"]==True] 
+     niceM_ut=ut[ut["niceM"]==True]
+     niceMrem_ut=ut[ut["niceMRem"]==True]
+
+     nice_timed=timed[timed["bothNice"]==True]
+     nice_ut=ut[ut["bothNice"]==True]
+
+     meanM_timed=timed[timed["niceM"]==False]
+     meanMRem_timed=timed[timed["niceMRem"]==False] 
+     meanM_ut=ut[ut["niceM"]==False]
+     meanMRem_ut=niceM_ut[niceM_ut["niceMRem"]==False]
+
+     
+     x_col = "Global Sim E2E_dma" #"Avg n'_sz / k_size"
+     y_col = "mRem"
+     special_figs.append(
+        scatterWithFlatColor(
+            nice_timed,
+            x_col,
+            y_col,
+            "black",
+            hover_data,
+            "1.2) Pruned Search Space (black points are timed); prune out all m boundary tiles (blue x); worst case CL boundary tiles (red x)",
+            "symbolMarker",
+        )
+    )
+     addScatterFlatColorMarker(
+        special_figs[-1],
+        nice_ut,
+        x_col,
+        y_col,
+        "gray",
+        "circle",
+        hover_data,
+        "untimed w/ nice m "
+    )
+     addScatterFlatColorMarker(
+        special_figs[-1],
+        meanM_ut,
+        x_col,
+        y_col,
+        "blue",
+        "x",
+        hover_data,
+        "untimed w/ m not evenly divided by 8"
+    )
+     addScatterFlatColorMarker(
+        special_figs[-1],
+        meanM_timed,
+        x_col,
+        y_col,
+        "blue",
+        "x",
+        hover_data,
+        "timed w/ m not evenly divided by 8"
+    )
+     addScatterFlatColorMarker(
+        special_figs[-1],
+        meanMRem_ut,
+        x_col,
+        y_col,
+        "red",
+        "x",
+        hover_data,
+        "untimed w/ worst case m remainder"
+    )
+     addScatterFlatColorMarker(
+        special_figs[-1],
+        meanMRem_timed,
+        x_col,
+        y_col,
+        "red",
+        "x",
+        hover_data,
+        "timed w/ worst case m remainder"
+    )
+     
+     x_col = "Time (cycles)"
+     y_col = "Avg n'_sz / k_size"#"Avg n'_sz / k_size"
+     special_figs.append(
+        scatterWithColor(
+            nice_timed,
+            x_col,
+            y_col,
+            "Avg n'_sz / k_size",
+            hover_data,
+            "1.2) Pruned by n/k < 1 (threshold line in green)",
+            "symbolMarker",
+        )
+    )
+     addScatterFlatColorMarker(
+        special_figs[-1],
+        nice_ut,
+        x_col,
+        y_col,
+        "gray",
+        "circle",
+        hover_data,
+        "untimed w/ nice m "
+    )
+     special_figs[-1].add_hline(y=1.0, line_width=2, line_dash="dash", line_color="green")
+
+     nice_timed_reduced = nice_timed[hover_data]
+     nice_ut_reduced = nice_ut[hover_data]  
+
+     nice_timed_lt1=nice_timed_reduced[nice_timed_reduced["Avg n'_sz / k_size"]<1.0]
+     nice_ut_lt1=nice_ut_reduced[nice_ut_reduced["Avg n'_sz / k_size"]<1]
+     nice_timed_gte1 = nice_timed_reduced[nice_timed_reduced["Avg n'_sz / k_size"]<=1.0]
+     x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
+     y_col = "Time (cycles)"
+     special_figs.append(
+        scatterWithColor(
+            nice_timed_lt1,
+            x_col,
+            y_col,
+            "mRem",#"Avg n'_sz / k_size",
+            hover_data,
+            "1.2) Pruned Search Space (black points are timed); identify worst case CL boundary tiles (marked with red x)",
+            "symbolMarker",
+        )
+    )
+     addScatterFlatColorMarker(
+        special_figs[-1],
+        nice_ut_lt1,
+        x_col,
+        y_col,
+        "gray",
+        "circle",
+        hover_data,
+        "untimed w/ nice m "
+    )
+     
+     x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
+     y_col = "Time (cycles)"#"Global Sim E2E_dma"
+     special_figs.append(scatterWithColorSymbol(
+         nice_timed_lt1,
+            x_col,
+            y_col,
+            "n / k",
+            hover_data,
+            "web version of result graph",
+            "timeout",
+            ["circle","cross"]
+     ))
+     addScatterFlatColorMarker(
+        special_figs[-1],
+        nice_ut_lt1,
+        x_col,
+        y_col,
+        "gray",
+        "circle",
+        hover_data,
+        "untimed w/ nice m AND mRem "
+    )
+     
+     
+     #result graph
+     x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
+     y_col = "Time (cycles)"#"Global Sim E2E_dma"
+     resultGraph = genResultGraphPDF(jugaadTitle(timed),nice_timed_lt1,nice_ut_lt1,nice_timed_gte1,hover_data,"n / k")
+     printFinalRanking(nice_timed_lt1,"n / k")
+     special_figs.append(resultGraph)     
+     return special_figs
+
+def pruneApproach1(timed, analyzed, full):
+     prunePoint = ssr_prune_frac(full,3)
+    # we assume untimed points are a subset of the pruned search space
+     ut = analyzed[~analyzed["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])]
+     pruned = full[full["SSR Config Count"] < prunePoint]
+     hover_data = [
+        "JSON Name",
+        "timeout",
+        "absoluteRank",
+        "dma",
+        "HW Loops",
+        "SSR Configs",
+        "FMADDsMULs",
+        "FMADDsMULsPerCore",
+        "Time (cycles)",#"SSR Loads per HW Loop",
+        "HW Loops / SSR Loads per HW Loop",
+        "remainderTiles",
+        "Global Sim E2E_dma",
+        "Total CL Tiles",
+        "Total CC Tiles",
+        #"Overlap Stall Time Per Core",
+        "1/FMADDS",
+        "L1 Usage",
+        "Avg CC Tile Size",
+        "mRem",
+        "Avg L3 Loads",
+        "Avg L3 Stores",
+        "Avg n'_sz / k_size",
+        "timedData",
+     ]
+     minimal_hover = [
+        "JSON Name",       
+        "SSR Configs",
+        "L1 Usage",       
+     ]
+     special_figs=[]
+     x_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
+     y_col = "Global Sim E2E_dma"#"Global Sim E2E_dma"
+     special_figs.append(scatterWithColorSymbol(
+         timed,
+            x_col,
+            y_col,
+            "mRem",
+            hover_data,
+            "Reality Check. Make sure fastest point is ranked 1.",
+            "timedData",
+            ["circle","circle"]
+     ))
+
+     # step 0: full search space
+     x_col = "L1 Usage"
+     y_col = "SSR Configs"
+     special_figs.append(
+         scatterWithFlatColor(
+            full,
+            x_col,
+            y_col,
+            "gray",
+            minimal_hover,
+            "0) full search space",
+            "symbolMarker",
+        )
+     )
+
+
+    # step 1: pruned search space
+     x_col = "L1 Usage"
+     y_col = "SSR Configs"
+     special_figs.append(
+        scatterWithColor(
+            pruned,
             x_col,
             y_col,
             "SSR Configs",
@@ -588,6 +946,9 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
             "timedData",
             ["circle","square"]
      ))
+     more_figs = []
+
+
 
      # more figs
      y_col = "mRem"
@@ -614,7 +975,7 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
         "untimed"
     )
 
-     print(f"before appending: len of more_figs is {len(more_figs)}")
+    # print(f"before appending: len of more_figs is {len(more_figs)}")
      x_col = "Avg n'_sz / k_size"
      y_col = "Global Sim E2E_dma"
      mRem_shape_map = {"zero": "circle", "divisBy8": "triangle-up","mean":"diamond"}
@@ -658,7 +1019,7 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      
      x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
      y_col = "Time (cycles)"#"Global Sim E2E_dma"
-     print(f"before appending: len of more_figs is {len(more_figs)}")
+    # print(f"before appending: len of more_figs is {len(more_figs)}")
      more_figs.append(scatterWithColorSymbol(
          nice_timed_reduced_lt1,
             x_col,
@@ -673,9 +1034,11 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      #result graph
      x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
      y_col = "Time (cycles)"#"Global Sim E2E_dma"
-     resultGraph = genResultGraphPDF(jugaadTitle(timed),nice_timed_reduced_lt1,nice_ut_reduced_lt1,nice_timed_reduced_gte1,hover_data)
-     print(f"before appending: len of more_figs is {len(more_figs)}")
+     resultGraph = genResultGraphPDF(jugaadTitle(timed),nice_timed_reduced_lt1,nice_ut_reduced_lt1,nice_timed_reduced_gte1,hover_data,"mRem")
+     printFinalRanking(nice_timed_reduced_lt1,"mRem")
      more_figs.append(resultGraph)
 
-     return saveFigsInHTML(special_figs, more_figs, titleOfWebpage)
-
+     
+     
+     return special_figs,more_figs
+  

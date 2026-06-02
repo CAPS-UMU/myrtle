@@ -11,7 +11,7 @@ graph(){
     TIMED="${stringarray[1]}"
     ANALYZED="${stringarray[2]}"
     FULL="${stringarray[3]}"
-    echo $DIMS
+    echo $DIMS" -----vvvvvvvvvvvvvvvvvvvvvvvvv--------"
     WEBPAGE_TITLE="$DIMS-myrtle-pruning"
     HTML_NAME="out/$DIMS-myrtle-pruning"
     MODE="stallCyclesTimed" # legacy
@@ -23,7 +23,7 @@ graph(){
 
 while read -r line
 do
-    echo "$line"
+   # echo "$line"
     graph "$line"
 done < "$1"
 

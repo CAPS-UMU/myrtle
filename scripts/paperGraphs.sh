@@ -1,4 +1,4 @@
-DATAROOT="/home/emily/myrtle/sensitivity-analysis"
+DATAROOT="/home/hoppip/myrtle/sensitivity-analysis"
 BOTHTIMEDDIR="$DATAROOT/remainder-vs-divisor/both/timed"
 BOTHANNDIR="$DATAROOT/remainder-vs-divisor/both/untimed"
 FULLDIR="$BOTHANNDIR/full" 
@@ -70,7 +70,7 @@ ANNDIR="$BOTHANNDIR/ann-to-min-third-ssr-configs"
 # graph each
 
 miniLMTIMED="$BOTHTIMEDDIR/384x384x384-miniLM-results.csv"
-python createTimeoutRows.py "$miniLMTIMED" 8311517
+#python createTimeoutRows.py "$miniLMTIMED" 8311517
 miniLMANN="$ANNDIR/384x384x384wm-n-k_ss_c_rem_div_ana_pruned.csv"
 FULL="$FULLDIR/384x384x384wm-n-k_ss_c_rem_div.csv"
 echo "384x384x384 $miniLMTIMED $miniLMANN" $FULL > "dims-csv-name-line-by-line-paper.input"
@@ -98,7 +98,7 @@ FULL="$FULLDIR/128x768x768wm-n-k_ss_c_rem_div.csv"
 echo "128x768x768 $robertaTIMED $robertaANN" $FULL >> "dims-csv-name-line-by-line-paper.input"
 
 TIMED="$BOTHTIMEDDIR/512x512x512wm-n-k_ss_c_rem_div_ana_pruned-results-include-timeout.csv"
-python createTimeoutRows.py "$TIMED" 19921156
+#python createTimeoutRows.py "$TIMED" 19921156
 ANN="$ANNDIR/512x512x512wm-n-k_ss_c_rem_div_ana_pruned.csv"
 FULL="$FULLDIR/512x512x512wm-n-k_ss_c_rem_div.csv"
 echo "512x512x512" $TIMED $ANN $FULL >> "dims-csv-name-line-by-line-paper.input"
