@@ -321,15 +321,16 @@ def printFinalRanking(df,colorCol):
     best=df["Time (cycles)"][0]
     print(f"best observed: {best} cycles")
     df["diff"] = df["Time (cycles)"].apply(lambda x: (x - best)/best * 100)
-    print(df[["JSON Name","FMADDsMULsPerCore","absoluteRank","Time (cycles)","diff"]][0:9])
+ #   print(df[["JSON Name","FMADDsMULsPerCore","timeout","Time (cycles)","diff"]][0:9])
     print("--------------------")
-#     pointsPrinted = 0
-#     for fmadds, group_df in df.groupby("FMADDsMULsPerCore",sort=False):
-#           if pointsPrinted < 5:
-#                print(f"FMADDS: {fmadds} w/ len {len(group_df)}")
-#                pointsPrinted = pointsPrinted + len(group_df)
-#                sorted = group_df.sort_values(colorCol,ascending=True)
-#                print(sorted[["JSON Name","absoluteRank",colorCol,"Time (cycles)","diff"]])
+    pointsPrinted = 0
+    for fmadds, group_df in df.groupby("FMADDsMULsPerCore",sort=False):
+          if pointsPrinted < 5:
+               print(f"FMADDS: {fmadds} w/ len {len(group_df)}")
+               pointsPrinted = pointsPrinted + len(group_df)
+               sorted = group_df.sort_values(colorCol,ascending=True)
+               print(sorted[["JSON Name","timed",colorCol,"Time (cycles)","diff"]])
+               # print(sorted[["JSON Name","timeout",colorCol,"Time (cycles)","diff"]])
     
 #     print("-------------------- FOR LATEX")
 #     pointsPrinted = 0
@@ -355,6 +356,7 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      timed["hypotenuse"] = timed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
      timed["Time (cycles)"]=timed["Global Sim E2E_dma"]
      timed["n / k"]=timed["Avg n'_sz / k_size"]
+    
    
      analyzed["mRem"] = analyzed["M"] % analyzed["m"]
      analyzed["1/mRem"]=1/analyzed["mRem"]
@@ -419,9 +421,9 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      more_figs = []
 
      special_figs,more_figs = pruneApproach1(timed,analyzed,full)
-     special_figs=special_figs+more_figs
+    # special_figs=special_figs+more_figs
 
-     more_figs = pruneApproach2(timed,analyzed,full)
+     #more_figs = pruneApproach2(timed,analyzed,full)
      
      return saveFigsInHTML(special_figs, more_figs, titleOfWebpage)
 
@@ -930,8 +932,10 @@ def pruneApproach1(timed, analyzed, full):
           )
           
      # step 6: tie-break with FMADDMULS per Core   
-     nice_timed_reduced = nice_timed[hover_data]
-     nice_ut_reduced = nice_ut[hover_data]     
+     nice_timed_reduced = nice_timed[hover_data].copy()
+     nice_ut_reduced = nice_ut[hover_data].copy()
+     nice_timed_reduced["timed"]=True
+     nice_ut_reduced["timed"] = False
      combined = pd.concat([nice_timed_reduced,nice_ut_reduced],axis=0, ignore_index=True)
    
      x_col = "Avg n'_sz / k_size"
@@ -1035,7 +1039,11 @@ def pruneApproach1(timed, analyzed, full):
      x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
      y_col = "Time (cycles)"#"Global Sim E2E_dma"
      resultGraph = genResultGraphPDF(jugaadTitle(timed),nice_timed_reduced_lt1,nice_ut_reduced_lt1,nice_timed_reduced_gte1,hover_data,"mRem")
-     printFinalRanking(nice_timed_reduced_lt1,"mRem")
+     
+     print(len(nice_timed_reduced_lt1.columns))
+     print(len(nice_ut_reduced_lt1.columns))
+     combined=pd.concat([nice_timed_reduced_lt1,nice_ut_reduced_lt1])
+     printFinalRanking(combined,"mRem")
      more_figs.append(resultGraph)
 
      
