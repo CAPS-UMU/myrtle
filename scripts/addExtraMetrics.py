@@ -17,6 +17,16 @@ def addFakeKernelTime(df_ut, df_t):
     df_ut["dma"] = avgTime
     df_ut["absoluteRank"] = -1
     return df_ut
+
+def addExtrasQ(df):
+    df["CL Tile Count"] = df["M"]/df["m"] * df["N"]/df["n"] * df["K"]/df["k"]
+    df["SSR Config Count"] = df["CL Tile Count"]*8
+    df["SSR Configs"] = df["SSR Config Count"]
+    df["L1 Usage"] = df["Space Needed in L1"]
+    df["m-n-k"] = df["JSON Name"]
+    df["fmaddsPerCore"] = df["m"] * df["n"] * df["k"] / 8
+    df["n/k"] = df["n"]/df["k"]
+
 def addExtras(df):
    # df["Hardware Loops"] = df["M"] * df["N"] * df["K"] / (8 * df["k"])
     df["SSR Configs"] = df["SSR Config Count"]

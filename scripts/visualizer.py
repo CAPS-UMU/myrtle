@@ -1044,9 +1044,417 @@ def pruneApproach1(timed, analyzed, full):
      print(len(nice_ut_reduced_lt1.columns))
      combined=pd.concat([nice_timed_reduced_lt1,nice_ut_reduced_lt1])
      printFinalRanking(combined,"mRem")
-     more_figs.append(resultGraph)
+     more_figs.append(resultGraph)   
+     return special_figs,more_figs
+
+def pruneApproachQ(timed):
+    prunePoint = ssr_prune_frac(timed,3)
+    pruned = timed[timed["SSR Config Count"] < prunePoint]
+    # print("prune approach 2 statistics:")
+    # print(f"full: {len(full)} pruned:{len(pruned)} % analyzed:{len(pruned)/len(full)}")
+    # print(f"ann: {len(analyzed)} pruned: {len(pruned)} timed: {len(timed)} % timed:{len(timed)/len(pruned)}")
+    hover_data = [
+        "JSON Name",
+        "timeout",
+        "absoluteRank",
+        "dma",
+        "fmaddsPerCore",
+        "n/k"
+    ]
+    special_figs=[]
+    x_col = "dma"#"Avg n'_sz / k_size"
+    y_col = "dma"#"Global Sim E2E_dma"
+    special_figs.append(scatterWithColorSymbol(
+         timed,
+            x_col,
+            y_col,
+            "SSR Config Count",
+            hover_data,
+            "Reality Check. Make sure fastest point is ranked 1.",
+            "timeout",
+            ["circle","circle"]
+     ))
+    x_col = "SSR Configs"
+    y_col = "dma"
+    special_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "SSR Configs",
+            hover_data,
+            "0.1) Full search space (multicolor points are analyzed by our model)",
+            "symbolMarker",
+        )
+    )
+    x_col = "n/k"
+    y_col = "dma"
+    special_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "SSR Configs",
+            hover_data,
+            "0.1) Full search space (multicolor points are analyzed by our model)",
+            "symbolMarker",
+        )
+    )
+
+    x_col = "SSR Configs"
+    y_col = "dma"
+    special_figs.append(
+        scatterWithColor(
+            pruned,
+            x_col,
+            y_col,
+            "SSR Configs",
+            hover_data,
+            "0.1) Pruned search space (multicolor points are analyzed by our model)",
+            "symbolMarker",
+        )
+    )
+
+    # step 1: pruned search space
+    # x_col = "L1 Usage"
+    # y_col = "dma"
+    # special_figs.append(
+    #     scatterWithColor(
+    #         timed,
+    #         x_col,
+    #         y_col,
+    #         "SSR Configs",
+    #         hover_data,
+    #         "0.1) Full search space (multicolor points are analyzed by our model)",
+    #         "symbolMarker",
+    #     )
+    # )
+    # x_col = "Regular Loads"
+    # y_col = "dma"
+    # special_figs.append(
+    #     scatterWithColor(
+    #         pruned,
+    #         x_col,
+    #         y_col,
+    #         "fmaddsPerCore",
+    #         hover_data,
+    #         "Order by Regular Loads and tie break with Fmadds?",
+    #         "symbolMarker",
+    #     )
+    # )
+    # PRUNE OUT points with n/k >= 1
+    pruned_for_n_k=pruned.copy()
+    n_k_ge_one = pruned_for_n_k[pruned_for_n_k["n/k"]>=1.0]
+    n_k_lt_one = pruned_for_n_k[pruned_for_n_k["n/k"]<1.0]
+
+    x_col = "n/k"
+    y_col = "dma"
+    special_figs.append(
+        scatterWithColor(
+            n_k_lt_one,
+            x_col,
+            y_col,
+            "Regular Loads",
+            hover_data,
+            "Prune out n/k > 1, THEN order by n/k and tie-break with Regular Loads??",
+            "symbol-marker",
+        )
+    )
+    addScatterFlatColorMarker(
+        special_figs[-1],
+        n_k_ge_one,
+        x_col,
+        y_col,
+        "gray",
+        "circle-open",
+        hover_data,
+        "n/k > 1"
+        )
+
+    x_col = "fmaddsPerCore"
+    y_col = "dma"
+    special_figs.append(
+        scatterWithColor(
+            n_k_lt_one,
+            x_col,
+            y_col,
+            "Regular Loads",
+            hover_data,
+            "Prune out n/k > 1, THEN order by Fmadds and tie-break with Regular Loads??",
+            "symbol-marker",
+        )
+    )
+    addScatterFlatColorMarker(
+        special_figs[-1],
+        n_k_ge_one,
+        x_col,
+        y_col,
+        "gray",
+        "circle-open",
+        hover_data,
+        "n/k > 1"
+        )
+    
+    x_col = "SSR Configs"
+    y_col = "dma"
+    special_figs.append(
+        scatterWithColor(
+            n_k_lt_one,
+            x_col,
+            y_col,
+            "Regular Loads",
+            hover_data,
+            "Prune out n/k > 1, THEN order by SSR configs and tie-break with Regular Loads??",
+            "symbol-marker",
+        )
+    )
+    addScatterFlatColorMarker(
+        special_figs[-1],
+        n_k_ge_one,
+        x_col,
+        y_col,
+        "gray",
+        "circle-open",
+        hover_data,
+        "n/k > 1"
+        )
+
+    x_col = "Regular Loads"
+    y_col = "dma"
+    special_figs.append(
+        scatterWithColor(
+            n_k_lt_one,
+            x_col,
+            y_col,
+            "fmaddsPerCore",
+            hover_data,
+            "Prune out n/k > 1, THEN order by reg loads configs and tie-break with Regular Loads??",
+            "symbol-marker",
+        )
+    )
+    addScatterFlatColorMarker(
+        special_figs[-1],
+        n_k_ge_one,
+        x_col,
+        y_col,
+        "gray",
+        "circle-open",
+        hover_data,
+        "n/k > 1"
+        )
+  
+    # addScatterFlatColorMarker(
+    #     special_figs[-1],
+    #     n_k_ge_one,
+    #     x_col,
+    #     y_col,
+    #     "gray",
+    #     "circle",
+    #     hover_data,
+    #     "n\k >= 1"
+    # )
+     
 
      
+    #  # step 5: identify nice m remainders and keep 'em, also keep nice m sizes
+
+    #  niceM_timed=timed[timed["niceM"]==True]
+    #  niceMrem_timed=timed[timed["niceMRem"]==True] 
+    #  niceM_ut=ut[ut["niceM"]==True]
+    #  niceMrem_ut=ut[ut["niceMRem"]==True]
+
+    #  nice_timed=timed[timed["bothNice"]==True]
+    #  nice_ut=ut[ut["bothNice"]==True]
+
+    #  meanM_timed=timed[timed["niceM"]==False]
+    #  meanMRem_timed=timed[timed["niceMRem"]==False] 
+    #  meanM_ut=ut[ut["niceM"]==False]
+    #  meanMRem_ut=niceM_ut[niceM_ut["niceMRem"]==False]
+
      
-     return special_figs,more_figs
+    #  x_col = "Global Sim E2E_dma" #"Avg n'_sz / k_size"
+    #  y_col = "mRem"
+    #  special_figs.append(
+    #     scatterWithFlatColor(
+    #         nice_timed,
+    #         x_col,
+    #         y_col,
+    #         "black",
+    #         hover_data,
+    #         "1.2) Pruned Search Space (black points are timed); prune out all m boundary tiles (blue x); worst case CL boundary tiles (red x)",
+    #         "symbolMarker",
+    #     )
+    # )
+    #  addScatterFlatColorMarker(
+    #     special_figs[-1],
+    #     nice_ut,
+    #     x_col,
+    #     y_col,
+    #     "gray",
+    #     "circle",
+    #     hover_data,
+    #     "untimed w/ nice m "
+    # )
+    #  addScatterFlatColorMarker(
+    #     special_figs[-1],
+    #     meanM_ut,
+    #     x_col,
+    #     y_col,
+    #     "blue",
+    #     "x",
+    #     hover_data,
+    #     "untimed w/ m not evenly divided by 8"
+    # )
+    #  addScatterFlatColorMarker(
+    #     special_figs[-1],
+    #     meanM_timed,
+    #     x_col,
+    #     y_col,
+    #     "blue",
+    #     "x",
+    #     hover_data,
+    #     "timed w/ m not evenly divided by 8"
+    # )
+    #  addScatterFlatColorMarker(
+    #     special_figs[-1],
+    #     meanMRem_ut,
+    #     x_col,
+    #     y_col,
+    #     "red",
+    #     "x",
+    #     hover_data,
+    #     "untimed w/ worst case m remainder"
+    # )
+    #  addScatterFlatColorMarker(
+    #     special_figs[-1],
+    #     meanMRem_timed,
+    #     x_col,
+    #     y_col,
+    #     "red",
+    #     "x",
+    #     hover_data,
+    #     "timed w/ worst case m remainder"
+    # )
+     
+    #  x_col = "Time (cycles)"
+    #  y_col = "Avg n'_sz / k_size"#"Avg n'_sz / k_size"
+    #  special_figs.append(
+    #     scatterWithColor(
+    #         nice_timed,
+    #         x_col,
+    #         y_col,
+    #         "Avg n'_sz / k_size",
+    #         hover_data,
+    #         "1.2) Pruned by n/k < 1 (threshold line in green)",
+    #         "symbolMarker",
+    #     )
+    # )
+    #  addScatterFlatColorMarker(
+    #     special_figs[-1],
+    #     nice_ut,
+    #     x_col,
+    #     y_col,
+    #     "gray",
+    #     "circle",
+    #     hover_data,
+    #     "untimed w/ nice m "
+    # )
+    #  special_figs[-1].add_hline(y=1.0, line_width=2, line_dash="dash", line_color="green")
+
+    #  nice_timed_reduced = nice_timed[hover_data]
+    #  nice_ut_reduced = nice_ut[hover_data]  
+
+    #  nice_timed_lt1=nice_timed_reduced[nice_timed_reduced["Avg n'_sz / k_size"]<1.0]
+    #  nice_ut_lt1=nice_ut_reduced[nice_ut_reduced["Avg n'_sz / k_size"]<1]
+    #  nice_timed_gte1 = nice_timed_reduced[nice_timed_reduced["Avg n'_sz / k_size"]<=1.0]
+    #  x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
+    #  y_col = "Time (cycles)"
+    #  special_figs.append(
+    #     scatterWithColor(
+    #         nice_timed_lt1,
+    #         x_col,
+    #         y_col,
+    #         "mRem",#"Avg n'_sz / k_size",
+    #         hover_data,
+    #         "1.2) Pruned Search Space (black points are timed); identify worst case CL boundary tiles (marked with red x)",
+    #         "symbolMarker",
+    #     )
+    # )
+    #  addScatterFlatColorMarker(
+    #     special_figs[-1],
+    #     nice_ut_lt1,
+    #     x_col,
+    #     y_col,
+    #     "gray",
+    #     "circle",
+    #     hover_data,
+    #     "untimed w/ nice m "
+    # )
+     
+    #  x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
+    #  y_col = "Time (cycles)"#"Global Sim E2E_dma"
+    #  special_figs.append(scatterWithColorSymbol(
+    #      nice_timed_lt1,
+    #         x_col,
+    #         y_col,
+    #         "n / k",
+    #         hover_data,
+    #         "web version of result graph",
+    #         "timeout",
+    #         ["circle","cross"]
+    #  ))
+    #  addScatterFlatColorMarker(
+    #     special_figs[-1],
+    #     nice_ut_lt1,
+    #     x_col,
+    #     y_col,
+    #     "gray",
+    #     "circle",
+    #     hover_data,
+    #     "untimed w/ nice m AND mRem "
+    # )
+     
+     
+     #result graph
+    #  x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
+    #  y_col = "Time (cycles)"#"Global Sim E2E_dma"
+    #  resultGraph = genResultGraphPDF(jugaadTitle(timed),nice_timed_lt1,nice_ut_lt1,nice_timed_gte1,hover_data,"n / k")
+    #  printFinalRanking(nice_timed_lt1,"n / k")
+    #  special_figs.append(resultGraph)     
+    return special_figs,[]
+
+def visualizePruningQ(timed,titleOfWebpage):
+    timed["Total CC Tiles"] = timed["SSR Config Count"]
+    #  timed["FMADDsMULsPerCore"] = timed["FMADDsMULs"] / timed["Total CC Tiles"]
+    #  timed["1/FMADDS"]=1/timed["FMADDsMULsPerCore"]
+    #  timed["Overlap Stall Time Per Core"] = timed["Overlap Stall Time Total"] / timed["Total CC Tiles"]
+    #  timed["mRem"] = timed["M"] % timed["m"]
+    #  timed["1/mRem"]=1/timed["mRem"]
+    #  timed["niceM"] = timed["m"].apply(lambda r: True if r % 8 == 0 else False)
+    #  timed["niceMRem"] = timed["mRem"].apply(lambda r: True if r == 0 or r % 8 == 0 else False)
+    #  timed["bothNice"]=timed[["niceM", "niceMRem"]].apply(lambda r: True if r["niceM"] & r["niceMRem"] else False,axis=1)
+    #  timed["howNice"] = timed["mRem"].apply(lambda r: "zero" if r == 0 else ("divisBy8" if r % 8 == 0 else "mean"))
+    #  timed["hypotenuse"] = timed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
+    timed["Time (cycles)"]=timed["dma"]
+    #  timed["n / k"]=timed["Avg n'_sz / k_size"]
+    
+    #  timed["remainderTiles"] = timed["remainderTiles"].apply(lambda x: "000" if x == 0 else f"{x}")
+    #  timed["symbolMarker"] = timed["remainderTiles"].apply(lambda x: "O" if x == "000" else "^")
+    #  timed = timed.sort_values(by="symbolMarker", ascending=True)
+    #  timed["flatColor"] = "pink"
+    #  timed["timedData"] = True
+
+    
+  
+     
+    special_figs = []
+    more_figs = []
+
+    special_figs,more_figs = pruneApproachQ(timed)
+    # special_figs=special_figs+more_figs
+
+     #more_figs = pruneApproach2(timed,analyzed,full)
+     
+    return saveFigsInHTML(special_figs, more_figs, titleOfWebpage)
+
   
