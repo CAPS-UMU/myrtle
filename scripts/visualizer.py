@@ -1048,8 +1048,17 @@ def pruneApproach1(timed, analyzed, full):
      return special_figs,more_figs
 
 def pruneApproachQ(timed):
-    prunePoint = ssr_prune_frac(timed,3)
-    pruned = timed[timed["SSR Config Count"] < prunePoint]
+    # prunePoint = ssr_prune_frac(timed,3)
+    # pruned = timed[timed["SSR Config Count"] < prunePoint]
+    sorted_ssr =timed.sort_values("SSR Configs", ascending=True)
+    best_third_ssr = sorted_ssr.iloc[range(0, len(sorted_ssr)//3)]
+    ssr_thresh = max(best_third_ssr["SSR Configs"].values)
+
+    pruned_sorted_l1 =best_third_ssr.sort_values("L1 Usage", ascending=False)
+    best_half_l1 = pruned_sorted_l1.iloc[range(0, len(pruned_sorted_l1)//2)]
+    l1_thresh = min(best_half_l1["L1 Usage"].values)
+  
+    
     # print("prune approach 2 statistics:")
     # print(f"full: {len(full)} pruned:{len(pruned)} % analyzed:{len(pruned)/len(full)}")
     # print(f"ann: {len(analyzed)} pruned: {len(pruned)} timed: {len(timed)} % timed:{len(timed)/len(pruned)}")
@@ -1059,7 +1068,8 @@ def pruneApproachQ(timed):
         "absoluteRank",
         "dma",
         "fmaddsPerCore",
-        "n/k"
+        "n/k",
+        "SSR Configs"
     ]
     special_figs=[]
     x_col = "dma"#"Avg n'_sz / k_size"
@@ -1083,13 +1093,135 @@ def pruneApproachQ(timed):
             y_col,
             "SSR Configs",
             hover_data,
-            "0.1) Full search space (multicolor points are analyzed by our model)",
+            "1) Full search space (divisor tiles only). Vertical line is SSR Config pruning threshold.",
             "symbolMarker",
         )
     )
-    x_col = "n/k"
+    special_figs[-1].add_vline(x=ssr_thresh, line_width=2, line_dash="dash", line_color="green")
+
+
+    x_col = "L1 Usage"
     y_col = "dma"
     special_figs.append(
+        scatterWithColor(
+            best_third_ssr,
+            x_col,
+            y_col,
+            "SSR Configs",
+            hover_data,
+            "2) Pruned by SSR Configs. Vertical line is L1 Usage pruning threshold",
+            "symbolMarker",
+        )
+    )
+    special_figs[-1].add_vline(x=l1_thresh, line_width=2, line_dash="dash", line_color="green")
+
+    x_col = "Regular Loads"
+    y_col = "dma"
+    special_figs.append(
+        scatterWithColor(
+            best_half_l1,
+            x_col,
+            y_col,
+            "fmaddsPerCore",
+            hover_data,
+            "3) Pruned by L1 Usage. Minimize by Regular Loads",
+            "symbolMarker",
+        )
+    )
+
+
+# more experiments
+
+
+    more_figs=[]
+
+    x_col = "Regular Loads"
+    y_col = "dma"
+    more_figs.append(
+        scatterWithColor(
+            best_third_ssr,
+            x_col,
+            y_col,
+            "fmaddsPerCore",
+            hover_data,
+            "3) What if we DON'T prune by L1 usage, just order by regular loads and tie break by FMADDs??",
+            "symbolMarker",
+        )
+    )
+
+    x_col = "fmaddsPerCore"
+    y_col = "dma"
+    more_figs.append(
+        scatterWithColor(
+            best_third_ssr,
+            x_col,
+            y_col,
+            "Regular Loads",
+            hover_data,
+            "What if we DON'T prune by L1 usage??",
+            "symbolMarker",
+        )
+    )
+
+    x_col = "Regular Loads"
+    y_col = "dma"
+    more_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "fmaddsPerCore",
+            hover_data,
+            "Completely unpruned",
+            "symbolMarker",
+        )
+    )
+
+    x_col = "fmaddsPerCore"
+    y_col = "SSR Configs"
+    more_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "dma",
+            hover_data,
+            "Reality Check: SSR Configs and FmaddsPerCore (for Quidditch) are linear to each other (NOT TRUE!)",
+            "symbolMarker",
+        )
+    )
+
+    x_col = "L1 Usage"
+    y_col = "dma"
+    more_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "fmaddsPerCore",
+            hover_data,
+            "L1 Usage vs time",
+            "symbolMarker",
+        )
+    )
+    x_col = "SSR Configs"
+    y_col = "dma"
+    more_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "fmaddsPerCore",
+            hover_data,
+            "SSR Configs vs time",
+            "symbolMarker",
+        )
+    )
+
+
+    x_col = "n/k"
+    y_col = "dma"
+    more_figs.append(
         scatterWithColor(
             timed,
             x_col,
@@ -1101,55 +1233,14 @@ def pruneApproachQ(timed):
         )
     )
 
-    x_col = "SSR Configs"
-    y_col = "dma"
-    special_figs.append(
-        scatterWithColor(
-            pruned,
-            x_col,
-            y_col,
-            "SSR Configs",
-            hover_data,
-            "0.1) Pruned search space (multicolor points are analyzed by our model)",
-            "symbolMarker",
-        )
-    )
-
-    # step 1: pruned search space
-    # x_col = "L1 Usage"
-    # y_col = "dma"
-    # special_figs.append(
-    #     scatterWithColor(
-    #         timed,
-    #         x_col,
-    #         y_col,
-    #         "SSR Configs",
-    #         hover_data,
-    #         "0.1) Full search space (multicolor points are analyzed by our model)",
-    #         "symbolMarker",
-    #     )
-    # )
-    # x_col = "Regular Loads"
-    # y_col = "dma"
-    # special_figs.append(
-    #     scatterWithColor(
-    #         pruned,
-    #         x_col,
-    #         y_col,
-    #         "fmaddsPerCore",
-    #         hover_data,
-    #         "Order by Regular Loads and tie break with Fmadds?",
-    #         "symbolMarker",
-    #     )
-    # )
     # PRUNE OUT points with n/k >= 1
-    pruned_for_n_k=pruned.copy()
+    pruned_for_n_k=best_half_l1.copy()
     n_k_ge_one = pruned_for_n_k[pruned_for_n_k["n/k"]>=1.0]
     n_k_lt_one = pruned_for_n_k[pruned_for_n_k["n/k"]<1.0]
 
     x_col = "n/k"
     y_col = "dma"
-    special_figs.append(
+    more_figs.append(
         scatterWithColor(
             n_k_lt_one,
             x_col,
@@ -1161,7 +1252,7 @@ def pruneApproachQ(timed):
         )
     )
     addScatterFlatColorMarker(
-        special_figs[-1],
+        more_figs[-1],
         n_k_ge_one,
         x_col,
         y_col,
@@ -1173,7 +1264,7 @@ def pruneApproachQ(timed):
 
     x_col = "fmaddsPerCore"
     y_col = "dma"
-    special_figs.append(
+    more_figs.append(
         scatterWithColor(
             n_k_lt_one,
             x_col,
@@ -1185,7 +1276,7 @@ def pruneApproachQ(timed):
         )
     )
     addScatterFlatColorMarker(
-        special_figs[-1],
+        more_figs[-1],
         n_k_ge_one,
         x_col,
         y_col,
@@ -1195,45 +1286,45 @@ def pruneApproachQ(timed):
         "n/k > 1"
         )
     
-    x_col = "SSR Configs"
-    y_col = "dma"
-    special_figs.append(
-        scatterWithColor(
-            n_k_lt_one,
-            x_col,
-            y_col,
-            "Regular Loads",
-            hover_data,
-            "Prune out n/k > 1, THEN order by SSR configs and tie-break with Regular Loads??",
-            "symbol-marker",
-        )
-    )
-    addScatterFlatColorMarker(
-        special_figs[-1],
-        n_k_ge_one,
-        x_col,
-        y_col,
-        "gray",
-        "circle-open",
-        hover_data,
-        "n/k > 1"
-        )
+    # x_col = "SSR Configs"
+    # y_col = "dma"
+    # more_figs.append(
+    #     scatterWithColor(
+    #         n_k_lt_one,
+    #         x_col,
+    #         y_col,
+    #         "Regular Loads",
+    #         hover_data,
+    #         "Prune out n/k > 1, THEN order by SSR configs and tie-break with Regular Loads??",
+    #         "symbol-marker",
+    #     )
+    # )
+    # addScatterFlatColorMarker(
+    #     more_figs[-1],
+    #     n_k_ge_one,
+    #     x_col,
+    #     y_col,
+    #     "gray",
+    #     "circle-open",
+    #     hover_data,
+    #     "n/k > 1"
+    #     )
 
     x_col = "Regular Loads"
     y_col = "dma"
-    special_figs.append(
+    more_figs.append(
         scatterWithColor(
             n_k_lt_one,
             x_col,
             y_col,
             "fmaddsPerCore",
             hover_data,
-            "Prune out n/k > 1, THEN order by reg loads configs and tie-break with Regular Loads??",
+            "Prune out n/k > 1, THEN order by reg loads configs and tie-break with Fmadds Per Core??",
             "symbol-marker",
         )
     )
     addScatterFlatColorMarker(
-        special_figs[-1],
+        more_figs[-1],
         n_k_ge_one,
         x_col,
         y_col,
@@ -1421,7 +1512,7 @@ def pruneApproachQ(timed):
     #  resultGraph = genResultGraphPDF(jugaadTitle(timed),nice_timed_lt1,nice_ut_lt1,nice_timed_gte1,hover_data,"n / k")
     #  printFinalRanking(nice_timed_lt1,"n / k")
     #  special_figs.append(resultGraph)     
-    return special_figs,[]
+    return special_figs,more_figs
 
 def visualizePruningQ(timed,titleOfWebpage):
     timed["Total CC Tiles"] = timed["SSR Config Count"]

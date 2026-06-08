@@ -38,6 +38,7 @@ def main():
         pageBase = os.path.basename(page)
         pageBases.append(pageBase)
         subprocess.call(["cp", page, f"{outputFolder}/{pageBase}"])
+        subprocess.call(["rm", page])
     # create the ToC
     toc = ""
     for page in pageBases:
