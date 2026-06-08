@@ -103,5 +103,5 @@ ANN="$ANNDIR/512x512x512wm-n-k_ss_c_rem_div_ana_pruned.csv"
 FULL="$FULLDIR/512x512x512wm-n-k_ss_c_rem_div.csv"
 echo "512x512x512" $TIMED $ANN $FULL >> "dims-csv-name-line-by-line-paper.input"
 
-#bash graph-paper-data.sh dims-csv-name-line-by-line-paper.input transformers
-bash graph-paper-data-q.sh dims-csv-name-line-by-line-paper-q.input q
+bash graph-paper-data.sh dims-csv-name-line-by-line-paper.input transformers
+#bash graph-paper-data-q.sh dims-csv-name-line-by-line-paper-q.input q

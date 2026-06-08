@@ -19,12 +19,15 @@ def addFakeKernelTime(df_ut, df_t):
     return df_ut
 
 def addExtrasQ(df):
+    df["dma"] = df["Total Time"]
+    df["Time (cycles)"]=df["dma"]
     df["CL Tile Count"] = df["M"]/df["m"] * df["N"]/df["n"] * df["K"]/df["k"]
     df["SSR Config Count"] = df["CL Tile Count"]*8
     df["SSR Configs"] = df["SSR Config Count"]
     df["L1 Usage"] = df["Space Needed in L1"]
     df["m-n-k"] = df["JSON Name"]
     df["fmaddsPerCore"] = df["m"] * df["n"] * df["k"] / 8
+    df["FMADDs/core"] = df["fmaddsPerCore"] 
     df["n/k"] = df["n"]/df["k"]
 
 def addExtras(df):

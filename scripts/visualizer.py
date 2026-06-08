@@ -6,6 +6,37 @@ import math
 # theColorBar="ylorrd_r"
 theColorBar="haline"
 
+subfigEpi=r"""
+            \bottomrule
+        \end{tabular}
+         \Description{todo}
+        \label{subfig:table_a}
+    \end{subfigure}
+"""
+def subFigPro(title):
+    beg=r"""
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \textbf{"""
+    end=r"""} \\[0.5ex] % Title row over the table
+        \begin{tabular}{ccc}
+            \toprule
+            m-n-k & Cycles & \% from Best \\
+            \midrule
+        """
+    return beg + title + end
+def tableRow(mnk,cycles, diff):
+    return f"    {mnk}&         {cycles}&  {diff:.2f} \\\\"
+def df_to_latex_rows(df):
+    str = ""
+    for row in df[["JSON Name","Time (cycles)","diff"]].iterrows():
+        # print(row[1]["JSON Name"])
+        # print(row[1]["Time (cycles)"])
+        # print(row[1]["diff"])
+        str = str + tableRow(row[1]["JSON Name"],row[1]["Time (cycles)"],row[1]["diff"]) + "\n"
+    return str
+
+
 def jugaadTitle(df):
     M=int(df["M"][0])
     N=int(df["N"][0])
@@ -26,6 +57,15 @@ def jugaadTitle(df):
         t="Bert" 
     return f"{t} Matmul {dims}"
 
+def jugaadTitleQ(df):
+    df = df.reset_index(drop=True)
+    M=int(df["M"][0])
+    N=int(df["N"][0])
+    K=int(df["K"][0])
+    dims=f"{M}x{N}x{K}"
+    return f"VecMatT {dims}"
+
+
 def genResultGraphPDF(title,timed, untimed, recentlyPruned,hover_data,color="n / k"):
     colorCol=color
     colorMin=timed[colorCol].min()
@@ -41,7 +81,7 @@ def genResultGraphPDF(title,timed, untimed, recentlyPruned,hover_data,color="n /
         colorMin=min(colorMin,recentlyPruned[colorCol].min())
         colorMax=max(colorMax,recentlyPruned[colorCol].max())
     else:
-        newFakeTime = timed["Time (cycles)"].max()
+        newFakeTime = timed["Time (cycles)"].max()*1.01
     # customize the height of the untimed points
     untimed = untimed.copy(deep=True)
     untimed["Time (cycles)"]=newFakeTime    
@@ -148,6 +188,103 @@ def genResultGraphPDF(title,timed, untimed, recentlyPruned,hover_data,color="n /
     #fig.write_image(f"out/{title}.pdf", width=widthPx, height=heightPx)
     return fig
 
+def genResultGraphQPDF(title,timed, recentlyPruned,hover_data,color="fmaddsPerCore"):
+    colorCol=color
+    colorMin=timed[colorCol].min()
+    colorMax=timed[colorCol].max()
+    x_col = "Regular Loads"#"Avg n'_sz / k_size"
+    y_col = "Time (cycles)"#"Global Sim E2E_dma"
+    # only graph bottom half of regular loads to improve visibility in left corner
+    sorted =timed.sort_values("Regular Loads", ascending=True)
+   # print(sorted[["FakeNN JSON Name","Regular Loads"]])
+    pruned = sorted.iloc[range(0, int(len(sorted)*0.75))]
+   # print(pruned[["FakeNN JSON Name","Regular Loads"]])
+    #l1_thresh = min(best_half_l1["L1 Usage"].values)
+
+    fig=scatterWithColorSymbol(
+         timed,#pruned,
+            x_col,
+            y_col,
+            colorCol,
+            hover_data,
+            "testing short title",
+            "timeout",
+            ["circle","cross"]
+    )
+    # addScatterFlatColorMarker(
+    #     fig,
+    #     recentlyPruned,
+    #     x_col,
+    #     y_col,
+    #     "gray",
+    #     "circle-open",
+    #     hover_data,
+    #     "pruned out by SSR config threshold"
+    #     )
+    fig.update_layout(
+        title=dict(
+            text=title,
+            x=0.5,             # Center point on a scale from 0 to 1
+            xanchor="center"   # Anchor the title string by its exact middle
+        )
+    )
+    fig.update_layout(
+    font=dict(
+       # family="CMU Serif",  # Tells Plotly to search your system for Computer Modern
+        family="CMU Serif, Computer Modern, Latin Modern Roman, Serif",
+        size=12,
+        color="black"
+    ),
+    )
+    fig.update_traces(showlegend=False)
+    
+
+
+    #fig.write_image(f"out/{title}.pdf", width=1200, height=800, scale=3)
+    # I have a 7x10 paper, so 1/3 of the width is approx 2.3 inches
+    # let's try 600 dpi for the scale
+    # plotly graph is 7 wide and 8 tall
+    dpi = 72 #300
+    widthPx=6*dpi
+    heightPx=4*dpi
+  
+    fig.update_layout(
+    # 1. Maintain your physical 6x4 inch PDF aspect ratio
+    width=widthPx,  
+    height=heightPx,
+    
+    # 2. Aggressively reduce the outer canvas padding
+    margin=dict(
+        l=30,  # Left margin (space for Y-axis titles/labels)
+        r=20,  # Right margin (space near your legend)
+        t=35,  # Top margin (just enough room for your centered title)
+        b=30   # Bottom margin (space for X-axis titles/labels)
+    ),
+    
+    # 3. Tell the axes to automatically expand only what they need
+    xaxis=dict(automargin=True),
+    yaxis=dict(automargin=True),
+    
+    # 4. Your clean, smaller font settings
+    font=dict(
+        family="CMU Sans Serif Demi Condensed,CMU Typewriter Text", 
+        size=14,
+        color="black"
+    ),
+    template="plotly_white"
+)
+    # Scale it by 3x upon export to achieve 300 DPI crispness.
+    # This keeps the text, lines, and markers perfectly proportioned!
+    fig.update_layout(
+    coloraxis=dict(
+        cmin=colorMin,         # Force the scale to start exactly at 0
+        cmax=colorMax        # Optional: You can also hardcode the maximum if you want
+    )
+    )
+
+    fig.write_image(f"out/{title}.pdf", scale=1)
+    #fig.write_image(f"out/{title}.pdf", width=widthPx, height=heightPx)
+    return fig
 
 def saveFigsInHTML(special_figs, more_figs, titleOfWebpage):
     # --- Convert each figure to HTML div ---
@@ -315,24 +452,61 @@ def prunedScatter(df, x_col, y_col, color, hover_data, title, prunePoint, marker
     # turn the pruned points gray?
     return fig14
 
-def printFinalRanking(df,colorCol):
+def printFinalRanking(title,df,colorCol):
     print("\tFinal ranking:")
-    df=df.sort_values("FMADDsMULsPerCore",ascending=False)
+    df=df.sort_values("Time (cycles)",ascending=True)
+    df = df.reset_index(drop=True)
     best=df["Time (cycles)"][0]
     print(f"best observed: {best} cycles")
+    df=df.sort_values("FMADDsMULsPerCore",ascending=False)
     df["diff"] = df["Time (cycles)"].apply(lambda x: (x - best)/best * 100)
  #   print(df[["JSON Name","FMADDsMULsPerCore","timeout","Time (cycles)","diff"]][0:9])
     print("--------------------")
+    latexList=[subFigPro(title)]
     pointsPrinted = 0
     for fmadds, group_df in df.groupby("FMADDsMULsPerCore",sort=False):
           if pointsPrinted < 5:
                print(f"FMADDS: {fmadds} w/ len {len(group_df)}")
                pointsPrinted = pointsPrinted + len(group_df)
                sorted = group_df.sort_values(colorCol,ascending=True)
-               print(sorted[["JSON Name","timed",colorCol,"Time (cycles)","diff"]])
-               # print(sorted[["JSON Name","timeout",colorCol,"Time (cycles)","diff"]])
+               print(sorted[["JSON Name","timeout","timed",colorCol,"Time (cycles)","diff"]])
+               latexList.append(df_to_latex_rows(sorted))
     
-#     print("-------------------- FOR LATEX")
+    print("-------------------- FOR LATEX")
+    latexList.append(subfigEpi)
+   # print(''.join(latexList))
+#     pointsPrinted = 0
+#     for fmadds, group_df in df.groupby("FMADDsMULsPerCore",sort=False):
+#           if pointsPrinted < 5:
+#                print(f"FMADDS: {fmadds} w/ len {len(group_df)}")
+#                pointsPrinted = pointsPrinted + len(group_df)
+#                sorted = group_df.sort_values(colorCol,ascending=True)
+#                print(sorted[["JSON Name","Time (cycles)","diff"]])
+    print("-------------- ^^^^ ------------\n")
+
+def printFinalRankingQ(title,df,colorCol):
+    print("\tFinal ranking:")
+    df=df.sort_values("Time (cycles)",ascending=True)
+    df = df.reset_index(drop=True)
+    best=df["Time (cycles)"][0]
+    print(f"best observed: {best} cycles")
+    df=df.sort_values("Regular Loads",ascending=True)
+    df["diff"] = df["Time (cycles)"].apply(lambda x: (x - best)/best * 100)
+ #   print(df[["JSON Name","FMADDsMULsPerCore","timeout","Time (cycles)","diff"]][0:9])
+    print("--------------------")
+    latexList=[subFigPro(title)]
+    pointsPrinted = 0
+    for regLoads, group_df in df.groupby("Regular Loads",sort=False):
+          if pointsPrinted < 5:
+               print(f"REGULAR LDS: {regLoads} w/ len {len(group_df)}")
+               pointsPrinted = pointsPrinted + len(group_df)
+               sorted = group_df.sort_values(colorCol,ascending=True)
+               print(sorted[["JSON Name",colorCol,"Time (cycles)","diff"]])               
+               latexList.append(df_to_latex_rows(sorted))
+    
+    print("-------------------- FOR LATEX")
+    latexList.append(subfigEpi)
+    print(''.join(latexList))
 #     pointsPrinted = 0
 #     for fmadds, group_df in df.groupby("FMADDsMULsPerCore",sort=False):
 #           if pointsPrinted < 5:
@@ -714,7 +888,7 @@ def pruneApproach2(timed, analyzed, full):
      x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
      y_col = "Time (cycles)"#"Global Sim E2E_dma"
      resultGraph = genResultGraphPDF(jugaadTitle(timed),nice_timed_lt1,nice_ut_lt1,nice_timed_gte1,hover_data,"n / k")
-     printFinalRanking(nice_timed_lt1,"n / k")
+     printFinalRanking(jugaadTitle(timed),nice_timed_lt1,"n / k")
      special_figs.append(resultGraph)     
      return special_figs
 
@@ -1043,17 +1217,19 @@ def pruneApproach1(timed, analyzed, full):
      print(len(nice_timed_reduced_lt1.columns))
      print(len(nice_ut_reduced_lt1.columns))
      combined=pd.concat([nice_timed_reduced_lt1,nice_ut_reduced_lt1])
-     printFinalRanking(combined,"mRem")
+     printFinalRanking(jugaadTitle(timed),combined,"mRem")
      more_figs.append(resultGraph)   
      return special_figs,more_figs
 
 def pruneApproachQ(timed):
     # prunePoint = ssr_prune_frac(timed,3)
     # pruned = timed[timed["SSR Config Count"] < prunePoint]
+    
     sorted_ssr =timed.sort_values("SSR Configs", ascending=True)
     best_third_ssr = sorted_ssr.iloc[range(0, len(sorted_ssr)//3)]
     ssr_thresh = max(best_third_ssr["SSR Configs"].values)
-
+    recentlyPruned =  timed[~timed["FakeNN JSON Name"].isin(best_third_ssr["FakeNN JSON Name"])]
+   
     pruned_sorted_l1 =best_third_ssr.sort_values("L1 Usage", ascending=False)
     best_half_l1 = pruned_sorted_l1.iloc[range(0, len(pruned_sorted_l1)//2)]
     l1_thresh = min(best_half_l1["L1 Usage"].values)
@@ -1149,6 +1325,8 @@ def pruneApproachQ(timed):
         )
     )
 
+    fig = genResultGraphQPDF(jugaadTitleQ(best_third_ssr),best_third_ssr, recentlyPruned,hover_data,color="FMADDs/core")
+    more_figs.append(fig)
     x_col = "fmaddsPerCore"
     y_col = "dma"
     more_figs.append(
@@ -1285,30 +1463,6 @@ def pruneApproachQ(timed):
         hover_data,
         "n/k > 1"
         )
-    
-    # x_col = "SSR Configs"
-    # y_col = "dma"
-    # more_figs.append(
-    #     scatterWithColor(
-    #         n_k_lt_one,
-    #         x_col,
-    #         y_col,
-    #         "Regular Loads",
-    #         hover_data,
-    #         "Prune out n/k > 1, THEN order by SSR configs and tie-break with Regular Loads??",
-    #         "symbol-marker",
-    #     )
-    # )
-    # addScatterFlatColorMarker(
-    #     more_figs[-1],
-    #     n_k_ge_one,
-    #     x_col,
-    #     y_col,
-    #     "gray",
-    #     "circle-open",
-    #     hover_data,
-    #     "n/k > 1"
-    #     )
 
     x_col = "Regular Loads"
     y_col = "dma"
@@ -1334,183 +1488,8 @@ def pruneApproachQ(timed):
         "n/k > 1"
         )
   
-    # addScatterFlatColorMarker(
-    #     special_figs[-1],
-    #     n_k_ge_one,
-    #     x_col,
-    #     y_col,
-    #     "gray",
-    #     "circle",
-    #     hover_data,
-    #     "n\k >= 1"
-    # )
-     
-
-     
-    #  # step 5: identify nice m remainders and keep 'em, also keep nice m sizes
-
-    #  niceM_timed=timed[timed["niceM"]==True]
-    #  niceMrem_timed=timed[timed["niceMRem"]==True] 
-    #  niceM_ut=ut[ut["niceM"]==True]
-    #  niceMrem_ut=ut[ut["niceMRem"]==True]
-
-    #  nice_timed=timed[timed["bothNice"]==True]
-    #  nice_ut=ut[ut["bothNice"]==True]
-
-    #  meanM_timed=timed[timed["niceM"]==False]
-    #  meanMRem_timed=timed[timed["niceMRem"]==False] 
-    #  meanM_ut=ut[ut["niceM"]==False]
-    #  meanMRem_ut=niceM_ut[niceM_ut["niceMRem"]==False]
-
-     
-    #  x_col = "Global Sim E2E_dma" #"Avg n'_sz / k_size"
-    #  y_col = "mRem"
-    #  special_figs.append(
-    #     scatterWithFlatColor(
-    #         nice_timed,
-    #         x_col,
-    #         y_col,
-    #         "black",
-    #         hover_data,
-    #         "1.2) Pruned Search Space (black points are timed); prune out all m boundary tiles (blue x); worst case CL boundary tiles (red x)",
-    #         "symbolMarker",
-    #     )
-    # )
-    #  addScatterFlatColorMarker(
-    #     special_figs[-1],
-    #     nice_ut,
-    #     x_col,
-    #     y_col,
-    #     "gray",
-    #     "circle",
-    #     hover_data,
-    #     "untimed w/ nice m "
-    # )
-    #  addScatterFlatColorMarker(
-    #     special_figs[-1],
-    #     meanM_ut,
-    #     x_col,
-    #     y_col,
-    #     "blue",
-    #     "x",
-    #     hover_data,
-    #     "untimed w/ m not evenly divided by 8"
-    # )
-    #  addScatterFlatColorMarker(
-    #     special_figs[-1],
-    #     meanM_timed,
-    #     x_col,
-    #     y_col,
-    #     "blue",
-    #     "x",
-    #     hover_data,
-    #     "timed w/ m not evenly divided by 8"
-    # )
-    #  addScatterFlatColorMarker(
-    #     special_figs[-1],
-    #     meanMRem_ut,
-    #     x_col,
-    #     y_col,
-    #     "red",
-    #     "x",
-    #     hover_data,
-    #     "untimed w/ worst case m remainder"
-    # )
-    #  addScatterFlatColorMarker(
-    #     special_figs[-1],
-    #     meanMRem_timed,
-    #     x_col,
-    #     y_col,
-    #     "red",
-    #     "x",
-    #     hover_data,
-    #     "timed w/ worst case m remainder"
-    # )
-     
-    #  x_col = "Time (cycles)"
-    #  y_col = "Avg n'_sz / k_size"#"Avg n'_sz / k_size"
-    #  special_figs.append(
-    #     scatterWithColor(
-    #         nice_timed,
-    #         x_col,
-    #         y_col,
-    #         "Avg n'_sz / k_size",
-    #         hover_data,
-    #         "1.2) Pruned by n/k < 1 (threshold line in green)",
-    #         "symbolMarker",
-    #     )
-    # )
-    #  addScatterFlatColorMarker(
-    #     special_figs[-1],
-    #     nice_ut,
-    #     x_col,
-    #     y_col,
-    #     "gray",
-    #     "circle",
-    #     hover_data,
-    #     "untimed w/ nice m "
-    # )
-    #  special_figs[-1].add_hline(y=1.0, line_width=2, line_dash="dash", line_color="green")
-
-    #  nice_timed_reduced = nice_timed[hover_data]
-    #  nice_ut_reduced = nice_ut[hover_data]  
-
-    #  nice_timed_lt1=nice_timed_reduced[nice_timed_reduced["Avg n'_sz / k_size"]<1.0]
-    #  nice_ut_lt1=nice_ut_reduced[nice_ut_reduced["Avg n'_sz / k_size"]<1]
-    #  nice_timed_gte1 = nice_timed_reduced[nice_timed_reduced["Avg n'_sz / k_size"]<=1.0]
-    #  x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
-    #  y_col = "Time (cycles)"
-    #  special_figs.append(
-    #     scatterWithColor(
-    #         nice_timed_lt1,
-    #         x_col,
-    #         y_col,
-    #         "mRem",#"Avg n'_sz / k_size",
-    #         hover_data,
-    #         "1.2) Pruned Search Space (black points are timed); identify worst case CL boundary tiles (marked with red x)",
-    #         "symbolMarker",
-    #     )
-    # )
-    #  addScatterFlatColorMarker(
-    #     special_figs[-1],
-    #     nice_ut_lt1,
-    #     x_col,
-    #     y_col,
-    #     "gray",
-    #     "circle",
-    #     hover_data,
-    #     "untimed w/ nice m "
-    # )
-     
-    #  x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
-    #  y_col = "Time (cycles)"#"Global Sim E2E_dma"
-    #  special_figs.append(scatterWithColorSymbol(
-    #      nice_timed_lt1,
-    #         x_col,
-    #         y_col,
-    #         "n / k",
-    #         hover_data,
-    #         "web version of result graph",
-    #         "timeout",
-    #         ["circle","cross"]
-    #  ))
-    #  addScatterFlatColorMarker(
-    #     special_figs[-1],
-    #     nice_ut_lt1,
-    #     x_col,
-    #     y_col,
-    #     "gray",
-    #     "circle",
-    #     hover_data,
-    #     "untimed w/ nice m AND mRem "
-    # )
-     
-     
-     #result graph
-    #  x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
-    #  y_col = "Time (cycles)"#"Global Sim E2E_dma"
     #  resultGraph = genResultGraphPDF(jugaadTitle(timed),nice_timed_lt1,nice_ut_lt1,nice_timed_gte1,hover_data,"n / k")
-    #  printFinalRanking(nice_timed_lt1,"n / k")
+    printFinalRankingQ(jugaadTitleQ(best_third_ssr),best_third_ssr,"fmaddsPerCore")
     #  special_figs.append(resultGraph)     
     return special_figs,more_figs
 

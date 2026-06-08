@@ -31,7 +31,6 @@ def main():
 
     # Read in the timed CSV file
     df = pd.read_csv(timed)
-    df["dma"] = df["Total Time"]
     ae.addExtrasQ(df)
 
     # Find the row timeout row if it exists, and pull out its dma cycle value
