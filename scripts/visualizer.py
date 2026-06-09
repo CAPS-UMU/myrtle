@@ -469,12 +469,12 @@ def printFinalRanking(title,df,colorCol):
                print(f"FMADDS: {fmadds} w/ len {len(group_df)}")
                pointsPrinted = pointsPrinted + len(group_df)
                sorted = group_df.sort_values(colorCol,ascending=True)
-               print(sorted[["JSON Name","timeout","timed",colorCol,"Time (cycles)","diff"]])
+               #print(sorted[["JSON Name","timeout","timed",colorCol,"Time (cycles)","diff"]])
                latexList.append(df_to_latex_rows(sorted))
     
     print("-------------------- FOR LATEX")
     latexList.append(subfigEpi)
-   # print(''.join(latexList))
+    print(''.join(latexList))
 #     pointsPrinted = 0
 #     for fmadds, group_df in df.groupby("FMADDsMULsPerCore",sort=False):
 #           if pointsPrinted < 5:
@@ -1221,12 +1221,54 @@ def pruneApproach1(timed, analyzed, full):
      more_figs.append(resultGraph)   
      return special_figs,more_figs
 
-def pruneApproachQ(timed):
+def pruneApproachQ(timed,noPrune=False):
     # prunePoint = ssr_prune_frac(timed,3)
     # pruned = timed[timed["SSR Config Count"] < prunePoint]
     
     sorted_ssr =timed.sort_values("SSR Configs", ascending=True)
     best_third_ssr = sorted_ssr.iloc[range(0, len(sorted_ssr)//3)]
+
+    hover_data = [
+        "JSON Name",
+        "timeout",
+        "absoluteRank",
+        "dma",
+        "fmaddsPerCore",
+        "n/k",
+        "SSR Configs"
+    ]
+
+    if noPrune:
+        special_figs=[]
+        x_col = "dma"#"Avg n'_sz / k_size"
+        y_col = "dma"#"Global Sim E2E_dma"
+        special_figs.append(scatterWithColorSymbol(
+            timed,
+                x_col,
+                y_col,
+                "SSR Config Count",
+                hover_data,
+                "Reality Check. Make sure fastest point is ranked 1.",
+                "timeout",
+                ["circle","circle"]
+        ))
+        x_col = "SSR Configs"
+        y_col = "dma"
+        special_figs.append(
+            scatterWithColor(
+                timed,
+                x_col,
+                y_col,
+                "SSR Configs",
+                hover_data,
+                "1) Full search space (divisor tiles only).",
+                "symbolMarker",
+            )
+        )
+        more_figs=[]
+        return special_figs,more_figs
+
+    
     ssr_thresh = max(best_third_ssr["SSR Configs"].values)
     recentlyPruned =  timed[~timed["FakeNN JSON Name"].isin(best_third_ssr["FakeNN JSON Name"])]
    
@@ -1238,15 +1280,7 @@ def pruneApproachQ(timed):
     # print("prune approach 2 statistics:")
     # print(f"full: {len(full)} pruned:{len(pruned)} % analyzed:{len(pruned)/len(full)}")
     # print(f"ann: {len(analyzed)} pruned: {len(pruned)} timed: {len(timed)} % timed:{len(timed)/len(pruned)}")
-    hover_data = [
-        "JSON Name",
-        "timeout",
-        "absoluteRank",
-        "dma",
-        "fmaddsPerCore",
-        "n/k",
-        "SSR Configs"
-    ]
+   
     special_figs=[]
     x_col = "dma"#"Avg n'_sz / k_size"
     y_col = "dma"#"Global Sim E2E_dma"
@@ -1520,7 +1554,11 @@ def visualizePruningQ(timed,titleOfWebpage):
     special_figs = []
     more_figs = []
 
-    special_figs,more_figs = pruneApproachQ(timed)
+    #jugaad
+    if titleOfWebpage == "1x400x161-myrtle-pruning":
+        special_figs,more_figs = pruneApproachQ(timed,noPrune=True)
+    else:
+        special_figs,more_figs = pruneApproachQ(timed,noPrune=False)
     # special_figs=special_figs+more_figs
 
      #more_figs = pruneApproach2(timed,analyzed,full)
