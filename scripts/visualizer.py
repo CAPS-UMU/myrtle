@@ -95,8 +95,7 @@ def genResultGraphPDF(title,timed, untimed, recentlyPruned,hover_data,color="n /
             hover_data,
             "testing short title",
             "timeout",
-            ["circle","cross"]
-    )
+            ["circle","cross"]    )
     matching_rows = timed.loc[timed["timeout"] == True, "dma"]
     if not matching_rows.empty:
         # plot timeout threshold
@@ -173,8 +172,7 @@ def genResultGraphPDF(title,timed, untimed, recentlyPruned,hover_data,color="n /
         size=14,
         color="black"
     ),
-    template="plotly_white"
-)
+    template="plotly_white")
     # Scale it by 3x upon export to achieve 300 DPI crispness.
     # This keeps the text, lines, and markers perfectly proportioned!
     fig.update_layout(
@@ -271,8 +269,7 @@ def genResultGraphQPDF(title,timed, recentlyPruned,hover_data,color="fmaddsPerCo
         size=14,
         color="black"
     ),
-    template="plotly_white"
-)
+    template="plotly_white")
     # Scale it by 3x upon export to achieve 300 DPI crispness.
     # This keeps the text, lines, and markers perfectly proportioned!
     fig.update_layout(
@@ -469,7 +466,7 @@ def printFinalRanking(title,df,colorCol):
                print(f"FMADDS: {fmadds} w/ len {len(group_df)}")
                pointsPrinted = pointsPrinted + len(group_df)
                sorted = group_df.sort_values(colorCol,ascending=True)
-               #print(sorted[["JSON Name","timeout","timed",colorCol,"Time (cycles)","diff"]])
+               print(sorted[["JSON Name","timeout","timed",colorCol,"Time (cycles)","diff"]])
                latexList.append(df_to_latex_rows(sorted))
     
     print("-------------------- FOR LATEX")
@@ -892,11 +889,18 @@ def pruneApproach2(timed, analyzed, full):
      special_figs.append(resultGraph)     
      return special_figs
 
+def printMethodologyStats(full, pruned, timed):
+    print(f"full ss has size {len(full)}")
+    print(f"pruned has size {len(pruned)}")
+    print(f"timed has size {len(timed)}")
+    print("what percentage of SPM used in timed points vs pruned points?")
+
 def pruneApproach1(timed, analyzed, full):
      prunePoint = ssr_prune_frac(full,3)
     # we assume untimed points are a subset of the pruned search space
      ut = analyzed[~analyzed["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])]
      pruned = full[full["SSR Config Count"] < prunePoint]
+     printMethodologyStats(full, pruned, timed)
      hover_data = [
         "JSON Name",
         "timeout",
@@ -1217,7 +1221,7 @@ def pruneApproach1(timed, analyzed, full):
      print(len(nice_timed_reduced_lt1.columns))
      print(len(nice_ut_reduced_lt1.columns))
      combined=pd.concat([nice_timed_reduced_lt1,nice_ut_reduced_lt1])
-     printFinalRanking(jugaadTitle(timed),combined,"mRem")
+     #printFinalRanking(jugaadTitle(timed),combined,"mRem")
      more_figs.append(resultGraph)   
      return special_figs,more_figs
 
@@ -1338,11 +1342,7 @@ def pruneApproachQ(timed,noPrune=False):
             "symbolMarker",
         )
     )
-
-
-# more experiments
-
-
+    # more experiments
     more_figs=[]
 
     x_col = "Regular Loads"
