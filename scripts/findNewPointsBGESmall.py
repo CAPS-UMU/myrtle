@@ -21,14 +21,14 @@ def main():
     nD["timedOut"]= nD["dma"] == -1
     print(f"old data has length {len(oD)}, while new data has length {len(nD)}")
     newPoints =  nD[~nD["FakeNN JSON Name"].isin(oD["FakeNN JSON Name"])]
-    print(newPoints[["FakeNN JSON Name","dma"]])
-    didAllTimeout = newPoints[["timedOut"]].all()
-    print(f"Did all new points timeout? {didAllTimeout}")
-    print(newPoints[newPoints["timedOut"]==False][["FakeNN JSON Name","dma"]])
-    newPoints.to_csv("out/BGESmallNewPoints.csv",index=False)
-
-
-    
+    print(f"newPoints has length {len(newPoints)}")
+    oldPlusNewPoints = pd.concat([oD,newPoints])
+    print(f"old and new points together has length {len(oldPlusNewPoints)} which is {len(newPoints)+len(oD)}")
+    oldPlusNewPoints.to_csv("out/BGESmallOldPlusNewPoints.csv",index=False)
+    # print(newPoints[["FakeNN JSON Name","dma"]])
+    # didAllTimeout = newPoints[["timedOut"]].all()
+    # print(f"Did all new points timeout? {didAllTimeout}")
+    # print(newPoints[newPoints["timedOut"]==False][["FakeNN JSON Name","dma"]])  
 
    # print(oD.columns)
 
