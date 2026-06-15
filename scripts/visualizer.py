@@ -38,9 +38,9 @@ def df_to_latex_rows(df):
 
 
 def jugaadTitle(df):
-    M=int(df["M"][0])
-    N=int(df["N"][0])
-    K=int(df["K"][0])
+    M=int(df["M"][2])
+    N=int(df["N"][2])
+    K=int(df["K"][2])
     dims=f"{M}x{N}x{K}"
     t="Transformer"
     if (M == 128) and (N == 128) and (K == 128):
@@ -1221,7 +1221,6 @@ def pruneApproach1(timed, analyzed, full):
      print(len(nice_timed_reduced_lt1.columns))
      print(len(nice_ut_reduced_lt1.columns))
      combined=pd.concat([nice_timed_reduced_lt1,nice_ut_reduced_lt1])
-     #printFinalRanking(jugaadTitle(timed),combined,"mRem")
      more_figs.append(resultGraph)   
      return special_figs,more_figs
 
@@ -1529,28 +1528,7 @@ def pruneApproachQ(timed,noPrune=False):
 
 def visualizePruningQ(timed,titleOfWebpage):
     timed["Total CC Tiles"] = timed["SSR Config Count"]
-    #  timed["FMADDsMULsPerCore"] = timed["FMADDsMULs"] / timed["Total CC Tiles"]
-    #  timed["1/FMADDS"]=1/timed["FMADDsMULsPerCore"]
-    #  timed["Overlap Stall Time Per Core"] = timed["Overlap Stall Time Total"] / timed["Total CC Tiles"]
-    #  timed["mRem"] = timed["M"] % timed["m"]
-    #  timed["1/mRem"]=1/timed["mRem"]
-    #  timed["niceM"] = timed["m"].apply(lambda r: True if r % 8 == 0 else False)
-    #  timed["niceMRem"] = timed["mRem"].apply(lambda r: True if r == 0 or r % 8 == 0 else False)
-    #  timed["bothNice"]=timed[["niceM", "niceMRem"]].apply(lambda r: True if r["niceM"] & r["niceMRem"] else False,axis=1)
-    #  timed["howNice"] = timed["mRem"].apply(lambda r: "zero" if r == 0 else ("divisBy8" if r % 8 == 0 else "mean"))
-    #  timed["hypotenuse"] = timed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
-    timed["Time (cycles)"]=timed["dma"]
-    #  timed["n / k"]=timed["Avg n'_sz / k_size"]
-    
-    #  timed["remainderTiles"] = timed["remainderTiles"].apply(lambda x: "000" if x == 0 else f"{x}")
-    #  timed["symbolMarker"] = timed["remainderTiles"].apply(lambda x: "O" if x == "000" else "^")
-    #  timed = timed.sort_values(by="symbolMarker", ascending=True)
-    #  timed["flatColor"] = "pink"
-    #  timed["timedData"] = True
-
-    
-  
-     
+    timed["Time (cycles)"]=timed["dma"]       
     special_figs = []
     more_figs = []
 
