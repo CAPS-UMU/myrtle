@@ -497,7 +497,7 @@ def printFinalRankingQ(title,df,colorCol):
           if pointsPrinted < 5:
                print(f"REGULAR LDS: {regLoads} w/ len {len(group_df)}")
                pointsPrinted = pointsPrinted + len(group_df)
-               sorted = group_df.sort_values(colorCol,ascending=True)
+               sorted = group_df.sort_values(colorCol,ascending=False)
                print(sorted[["JSON Name",colorCol,"Time (cycles)","diff"]])               
                latexList.append(df_to_latex_rows(sorted))
     
