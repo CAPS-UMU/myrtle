@@ -38,6 +38,7 @@ class TSG_C_Div_Rem(TileSizeGenerator):
         l1MemoryBytes=100000,
         bank_size=1024,
         dualBuff=True,
+        optSPM=False,
     ):
         self.M=M_dim
         self.N=N_dim
@@ -46,6 +47,7 @@ class TSG_C_Div_Rem(TileSizeGenerator):
         self.kernelName = dispatchName
         self.bankSizeBytes = bank_size
         self.dualBuff = dualBuff
+        self.optSPM = optSPM
 
     def dividesIntoM(self, num):
         return self.M % num == 0
@@ -197,14 +199,14 @@ class TSG_C_Div_Rem(TileSizeGenerator):
         valid_options_l1 = list(
             filter(lambda d: d["Space Remaining"] >= 0, annotated_options)
         )
-
-        # filter out tile sizes that do not fit within 8 banks
-        eb = 8 * self.bankSizeBytes # eb stands for "eight banks"
-        valid_options_8_banks = list(
-            filter(lambda d: max(d["tileA"],d["tileB"],d["tileC"]) <= eb, annotated_options)
-        )
-        # print(f"ignoring 8 bank constraint - 8 banks BTW takes up {self.bankSizeBytes} bytes")
-        # valid_options_8_banks = valid_options_l1
+        if self.optSPM:
+            # filter out tile sizes that do not fit within 8 banks
+            eb = 8 * self.bankSizeBytes # eb stands for "eight banks"
+            valid_options = list(
+                filter(lambda d: max(d["tileA"],d["tileB"],d["tileC"]) <= eb, annotated_options)
+            )
+        else:
+            print(f"ignoring 8 bank constraint - 8 banks BTW takes up {self.bankSizeBytes} bytes")
 
         if debug:
             valid_options= list(
@@ -217,9 +219,9 @@ class TSG_C_Div_Rem(TileSizeGenerator):
             )
             print("\tTSG: options that fit in L1 AND comform to 8-bank constraint are ", end="")
             print(valid_options)
-        if len(valid_options_8_banks) == 0:
+        if len(valid_options_l1) == 0:
             raise Exception("Cannot find a valid tiling scheme!")
-        return valid_options_8_banks
+        return valid_options_l1
 
     def annnotateRemainderTileStatus(self, d):
         m = d["id"][0]
