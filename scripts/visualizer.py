@@ -1224,10 +1224,22 @@ def pruneApproach1(timed, analyzed, full):
      more_figs.append(resultGraph)   
      return special_figs,more_figs
 
+
+def unrollAndJamFactor(tobeUnrolledDim):
+        options = [7, 6, 5, 4, 3, 2]
+        factor = 1
+        for option in options:
+            if tobeUnrolledDim / 8 % option == 0:
+                factor = option
+                break
+        return factor
+
 def pruneApproachQ(timed,noPrune=False):
     # prunePoint = ssr_prune_frac(timed,3)
     # pruned = timed[timed["SSR Config Count"] < prunePoint]
-    
+    #print(timed[["M"]])
+    #timed["niceMRem"] = timed["mRem"].apply(lambda r: True if r == 0 or r % 8 == 0 else False)
+    timed["UaJ"]=timed["n"].apply(unrollAndJamFactor)
     sorted_ssr =timed.sort_values("SSR Configs", ascending=True)
     best_third_ssr = sorted_ssr.iloc[range(0, len(sorted_ssr)//3)]
 
@@ -1238,7 +1250,9 @@ def pruneApproachQ(timed,noPrune=False):
         "dma",
         "fmaddsPerCore",
         "n/k",
-        "SSR Configs"
+        "SSR Configs",
+        "UaJ",
+        "Regular Loads"
     ]
 
     if noPrune:
@@ -1378,12 +1392,53 @@ def pruneApproachQ(timed,noPrune=False):
     y_col = "dma"
     more_figs.append(
         scatterWithColor(
+            best_third_ssr,
+            x_col,
+            y_col,
+            "UaJ",
+            hover_data,
+            "3) What if we DON'T prune by L1 usage, just order by regular loads and tie break by UaJ factor?",
+            "symbolMarker",
+        )
+    )
+
+    x_col = "Regular Loads"
+    y_col = "dma"
+    more_figs.append(
+        scatterWithColor(
             timed,
             x_col,
             y_col,
             "fmaddsPerCore",
             hover_data,
             "Completely unpruned",
+            "symbolMarker",
+        )
+    )
+
+    x_col = "Regular Loads"
+    y_col = "dma"
+    more_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "UaJ",
+            hover_data,
+            "Completely unpruned, tie break with uaJ?",
+            "symbolMarker",
+        )
+    )
+    x_col = "Regular Loads"
+    y_col = "UaJ"
+    more_figs.append(
+        scatterWithColor(
+            timed,
+            x_col,
+            y_col,
+            "dma",
+            hover_data,
+            "reg loads = n_tiles * n / UaJ",
             "symbolMarker",
         )
     )
@@ -1522,7 +1577,7 @@ def pruneApproachQ(timed,noPrune=False):
         )
   
     #  resultGraph = genResultGraphPDF(jugaadTitle(timed),nice_timed_lt1,nice_ut_lt1,nice_timed_gte1,hover_data,"n / k")
-    printFinalRankingQ(jugaadTitleQ(best_third_ssr),best_third_ssr,"fmaddsPerCore")
+    #printFinalRankingQ(jugaadTitleQ(best_third_ssr),best_third_ssr,"fmaddsPerCore")
     #  special_figs.append(resultGraph)     
     return special_figs,more_figs
 
