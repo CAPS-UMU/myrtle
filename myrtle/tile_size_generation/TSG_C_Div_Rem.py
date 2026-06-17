@@ -63,16 +63,29 @@ class TSG_C_Div_Rem(TileSizeGenerator):
         max = self.M
         min = 8 if self.M >= 8 else 1
         exhaustive = list(range(min, max + 1))
-        if (self.M % 2) != 0:
-            print(f"WARNING: M = {self.M} is NOT divisible by 2!")
         return exhaustive
     
     def kDimOptions(self):
-        max = self.K
-        min = 8 if self.K >= 8 else 3 # min is 3 due to prologue and epilogue of HW Loop in assembly
-        exhaustive = list(range(min, max + 1))
-        if (self.N % 2) != 0:
-            print(f"WARNING: K = {self.K} is NOT divisible by 2!")
+        if self.optSPM:
+            # cannot tile in K-dim at all if using optimized SPM layout, apparently.
+            if self.K % 8 != 0:
+                return []
+            else:
+             return [self.K]
+            # max = self.K
+            # min = 8
+            # multiples = list(range(min, max+1,8))
+            # def k_remDivisibleBy8(k):
+            #     rem = self.K % k
+            #     if rem != 0:
+            #         return rem % 8 == 0
+            #     return True
+            # exhaustive = list(filter(k_remDivisibleBy8, multiples))
+            # return exhaustive
+        else:
+            max = self.K
+            min = 8 if self.K >= 8 else 3 # min is 3 due to prologue and epilogue of HW Loop in assembly
+            exhaustive = list(range(min, max + 1))
         return exhaustive
     
     def remainderKGreaterThanTwo(self, num):
@@ -83,6 +96,11 @@ class TSG_C_Div_Rem(TileSizeGenerator):
             return True
 
     def nDimOptions(self):
+        if self.optSPM:
+            if self.N % 8 == 0:
+                return []
+            else:
+                return [self.N]
         hardware_loop_body_options = [8]  # extend to 8,5 later
         max = self.N  # hides built-in max function
         # ASSUMES hardware loop body options are listed LEAST to GREATEST
@@ -202,23 +220,18 @@ class TSG_C_Div_Rem(TileSizeGenerator):
         if self.optSPM:
             # filter out tile sizes that do not fit within 8 banks
             eb = 8 * self.bankSizeBytes # eb stands for "eight banks"
-            valid_options = list(
+            valid_options_l1 = list(
                 filter(lambda d: max(d["tileA"],d["tileB"],d["tileC"]) <= eb, annotated_options)
             )
+            print("\tTSG: ",end='')
+            print("using optimized SPM layout")
         else:
-            print(f"ignoring 8 bank constraint - 8 banks BTW takes up {self.bankSizeBytes} bytes")
+            print("\tTSG: ",end='')
+            print(f"using regular SPM layout, so ignoring 8 bank constraint - 8 banks BTW takes up {self.bankSizeBytes} bytes")
 
         if debug:
-            valid_options= list(
-                map(lambda tup: self.dictToTuple(tup),  valid_options_l1)
-            )
-            print("\tTSG: options that fit in L1 are ", end="")
-            print(valid_options)
-            valid_options= list(
-                map(lambda tup: self.dictToTuple(tup),  valid_options_8_banks)
-            )
             print("\tTSG: options that fit in L1 AND comform to 8-bank constraint are ", end="")
-            print(valid_options)
+            print(valid_options_l1)
         if len(valid_options_l1) == 0:
             raise Exception("Cannot find a valid tiling scheme!")
         return valid_options_l1

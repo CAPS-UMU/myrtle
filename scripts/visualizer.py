@@ -3,6 +3,7 @@ import plotly.io as pio
 import plotly.graph_objects as go
 import pandas as pd
 import math
+import re
 # theColorBar="ylorrd_r"
 theColorBar="haline"
 
@@ -38,9 +39,9 @@ def df_to_latex_rows(df):
 
 
 def jugaadTitle(df):
-    M=int(df["M"][2])
-    N=int(df["N"][2])
-    K=int(df["K"][2])
+    M=int(df["M"][0])
+    N=int(df["N"][0])
+    K=int(df["K"][0])
     dims=f"{M}x{N}x{K}"
     t="Transformer"
     if (M == 128) and (N == 128) and (K == 128):
@@ -527,7 +528,34 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      timed["hypotenuse"] = timed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
      timed["Time (cycles)"]=timed["Global Sim E2E_dma"]
      timed["n / k"]=timed["Avg n'_sz / k_size"]
-    
+     def parseDimM(nm):
+         if nm=="timeout":
+            return -1
+         else:
+            expNameRegex = re.compile(
+                r"(\d+)x(\d+)x(\d+)w(\d+)-(\d+)-(\d+)"
+            )
+         return expNameRegex.search(nm).groups()[0]
+     def parseDimN(nm):
+         if nm=="timeout":
+            return -1
+         else:
+            expNameRegex = re.compile(
+                r"(\d+)x(\d+)x(\d+)w(\d+)-(\d+)-(\d+)"
+            )
+         return expNameRegex.search(nm).groups()[1]
+     def parseDimK(nm):
+        if nm=="timeout":
+            return -1
+        else:
+            expNameRegex = re.compile(
+                r"(\d+)x(\d+)x(\d+)w(\d+)-(\d+)-(\d+)"
+            )
+            return expNameRegex.search(nm).groups()[2]
+
+     timed["M"] = timed["FakeNN JSON Name"].apply(parseDimM)
+     timed["N"] = timed["FakeNN JSON Name"].apply(parseDimN)
+     timed["K"] = timed["FakeNN JSON Name"].apply(parseDimK)    
    
      analyzed["mRem"] = analyzed["M"] % analyzed["m"]
      analyzed["1/mRem"]=1/analyzed["mRem"]
@@ -1217,10 +1245,10 @@ def pruneApproach1(timed, analyzed, full):
      x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
      y_col = "Time (cycles)"#"Global Sim E2E_dma"
      resultGraph = genResultGraphPDF(jugaadTitle(timed),nice_timed_reduced_lt1,nice_ut_reduced_lt1,nice_timed_reduced_gte1,hover_data,"mRem")
-     
      print(len(nice_timed_reduced_lt1.columns))
      print(len(nice_ut_reduced_lt1.columns))
      combined=pd.concat([nice_timed_reduced_lt1,nice_ut_reduced_lt1])
+     printFinalRanking(jugaadTitle(timed),combined,"mRem")
      more_figs.append(resultGraph)   
      return special_figs,more_figs
 

@@ -60,7 +60,7 @@ def main():
         dispatchNickName = f"{M}x{N}x{K}wm-n-k"
     prune = False
     skipTSG = False
-    if len(sys.argv) == 5:
+    if len(sys.argv) >= 5:
      if sys.argv[4] == "prune":
         prune=True
      else:
@@ -69,7 +69,7 @@ def main():
           print("Using search space passed in from command line.")
           options_as_df = pd.read_csv(searchSpaceCSVName)
           skipTSG = True
-
+    spm_opt=sys.argv[5] == "optSPM"
     # Quidditch Backend
     if quidditch:
      # generate options
@@ -115,7 +115,7 @@ def main():
         analyzed = ann.analyze_options(remOptions_as_df)
         analyzedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
     else:
-        jen = TSG_C_Div_Rem(int(M),int(N),int(K),dispatchName=dispatchName,l1MemoryBytes = 112 * 1024, bank_size=1024, dualBuff=True)
+        jen = TSG_C_Div_Rem(int(M),int(N),int(K),dispatchName=dispatchName,l1MemoryBytes = 112 * 1024, bank_size=1024, dualBuff=True,optSPM=spm_opt)
         options = jen.validOptions()
         options_as_df = jen.convertOptionsToDF(dispatchNickName, options)
         annotated_options = ann.annotate_w_ssr_configs(options_as_df)

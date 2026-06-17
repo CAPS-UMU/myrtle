@@ -118,7 +118,8 @@ def main():
         outputFiles.append(fullSS)
         requestedFiles.append(requestedFile)
         #subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json"])
-        subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json", "prune"])
+        spmLayout = "optSPM"
+        subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json", "prune",spmLayout])
         
 
     for (a,b) in zip(kernelNames,outputFiles):
@@ -149,7 +150,9 @@ def main():
         # create compile script
         print("cd ..;",file=compileScript)
         print(f"export experimentDir=/repo/{topLevelOutputFolder};",file=compileScript)
-        print(f"export beta={beta_int};",file=compileScript) 
+        print(f"export beta={beta_int};",file=compileScript)
+        layout=int(spmLayout == "optSPM")
+        print(f"export spm_opt={layout};",file=compileScript)
         print(f"bash myrtle-experiments/many_gemms.sh {ss} compile no no no > ./{topLevelOutputFolder}/compile-{basename}.txt;",file=compileScript)
         print(f"cd {topLevelOutputFolder};", file=compileScript)
 
