@@ -1,4 +1,4 @@
-USER="hoppip"
+USER="emily"
 DATAROOT="/home/$USER/myrtle/sensitivity-analysis"
 BOTHTIMEDDIR="$DATAROOT/remainder-vs-divisor/both/timed"
 BOTHANNDIR="$DATAROOT/remainder-vs-divisor/both/untimed"
@@ -11,8 +11,8 @@ BETA0DIR="$DATAROOT/beta=0/"
 # graph each
 # 128 cube beta = 0
 # wc -l "$BOTHTIMEDDIR/128x128x128-bertTiny-results.csv"
-# wc -l "$BETA0DIR/spm-reg/timed/128x128x128wm-n-k_ss_c_rem_div_ana_pruned-results-200-reg-spm.csv"
-# python concatCSVs.py "$BOTHTIMEDDIR/128x128x128-bertTiny-results.csv" "$BETA0DIR/spm-reg/timed/128x128x128wm-n-k_ss_c_rem_div_ana_pruned-results-200-reg-spm.csv" "out/128x128x128-reg-SPM-results.csv"
+# wc -l "$BETA0DIR/spm-reg/timed/128x128x128wm-n-k_ss_c_rem_div_ana_pruned-results-208-reg-spm.csv"
+# python concatCSVs.py "$BOTHTIMEDDIR/128x128x128-bertTiny-results.csv" "$BETA0DIR/spm-reg/timed/128x128x128wm-n-k_ss_c_rem_div_ana_pruned-results-208-reg-spm.csv" "out/128x128x128-reg-SPM-results.csv"
 # wc -l "out/128x128x128-reg-SPM-results.csv"
 #/home/hoppip/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/128x128x128wm-n-k_ss_c_rem_div_ana_pruned-results-200-reg-spm.csv
 

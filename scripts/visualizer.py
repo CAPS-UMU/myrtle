@@ -472,7 +472,7 @@ def printFinalRanking(title,df,colorCol):
     
     print("-------------------- FOR LATEX")
     latexList.append(subfigEpi)
-    print(''.join(latexList))
+    #print(''.join(latexList))
 #     pointsPrinted = 0
 #     for fmadds, group_df in df.groupby("FMADDsMULsPerCore",sort=False):
 #           if pointsPrinted < 5:
@@ -504,7 +504,7 @@ def printFinalRankingQ(title,df,colorCol):
     
     print("-------------------- FOR LATEX")
     latexList.append(subfigEpi)
-    print(''.join(latexList))
+   # print(''.join(latexList))
 #     pointsPrinted = 0
 #     for fmadds, group_df in df.groupby("FMADDsMULsPerCore",sort=False):
 #           if pointsPrinted < 5:
@@ -1236,7 +1236,7 @@ def pruneApproach1(timed, analyzed, full):
             y_col,
             "mRem",
             hover_data,
-            "testing short title",
+            "Final Cost Model selection: max. by Fmadds, tie break with smaller mRem",
             "timeout",
             ["circle","cross"]
      ))
