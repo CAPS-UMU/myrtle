@@ -67,11 +67,7 @@ class TSG_C_Div_Rem(TileSizeGenerator):
     
     def kDimOptions(self):
         if self.optSPM:
-            # cannot tile in K-dim at all if using optimized SPM layout, apparently.
-            if self.K % 8 != 0:
-                return []
-            else:
-             return [self.K]
+            return [self.K]
             # max = self.K
             # min = 8
             # multiples = list(range(min, max+1,8))
@@ -97,10 +93,7 @@ class TSG_C_Div_Rem(TileSizeGenerator):
 
     def nDimOptions(self):
         if self.optSPM:
-            if self.N % 8 != 0:
-                return []
-            else:
-                return [self.N]
+            return [self.N]
         hardware_loop_body_options = [8]  # extend to 8,5 later
         max = self.N  # hides built-in max function
         # ASSUMES hardware loop body options are listed LEAST to GREATEST
