@@ -97,7 +97,7 @@ class TSG_C_Div_Rem(TileSizeGenerator):
 
     def nDimOptions(self):
         if self.optSPM:
-            if self.N % 8 == 0:
+            if self.N % 8 != 0:
                 return []
             else:
                 return [self.N]
@@ -134,7 +134,7 @@ class TSG_C_Div_Rem(TileSizeGenerator):
     
     def ssr_prune_bestX(df,x):
         df_sorted = df.sort_values("SSR Config Count", ascending=True, ignore_index=True)
-        df_best_X = df_sorted.iloc[range(0, x)]
+        df_best_X = df_sorted.head(x)
         return df_best_X
     
     def ssr_prune_rank(df,x):
@@ -221,7 +221,7 @@ class TSG_C_Div_Rem(TileSizeGenerator):
             # filter out tile sizes that do not fit within 8 banks
             eb = 8 * self.bankSizeBytes # eb stands for "eight banks"
             valid_options_l1 = list(
-                filter(lambda d: max(d["tileA"],d["tileB"],d["tileC"]) <= eb, annotated_options)
+                filter(lambda d: max(d["tileA"],d["tileB"],d["tileC"]) <= eb, valid_options_l1)
             )
             print("\tTSG: ",end='')
             print("using optimized SPM layout")

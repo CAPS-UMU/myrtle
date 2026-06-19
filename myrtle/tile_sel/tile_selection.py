@@ -8,7 +8,7 @@ def takeNSmallestX(df, x, n):
     df_sorted = df.sort_values(x, ascending=True)
     # take best N
     #df_best_n = df_sorted.iloc[range(0, len(df_sorted)//n)]
-    df_best_n = df_sorted.iloc[range(0, n)]
+    df_best_n = df_sorted.head(n)
     return df_best_n
 
 def labelThenTakeNSmallestX(df, x, n, df_record, label_name, label_val):
