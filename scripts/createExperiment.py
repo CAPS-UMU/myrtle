@@ -80,7 +80,7 @@ def get_lines_from_file(file_name):
 def main():
     inputSizes = sys.argv[1]
     outputFolder = sys.argv[2]
-    fullSuffix = "_ss_c_ana"
+    fullSuffix = "_ss_c_rem_div_ana"
     sortedL1Suffix = "_c_ord_L1"
     top10Suffix = "_top10_c_L1"
     suffix = top10Suffix # by default
@@ -117,9 +117,9 @@ def main():
         kernelNames.append(kernelName)
         outputFiles.append(fullSS)
         requestedFiles.append(requestedFile)
-        #subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json"])
         spmLayout = "regular"
-        subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json", "prune", spmLayout])
+        #subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json", "prune", spmLayout])
+        subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json", "NoPrune", spmLayout])
         
 
     for (a,b) in zip(kernelNames,outputFiles):
