@@ -1,7 +1,7 @@
 import sys
 import json
 from tile_size_generation.TSG_Quidditch import TSG_Quidditch
-from tile_size_generation.TSG_C import TSG_C,NoDivisorTiles, NoDivisorTilesInAnyDim
+from tile_size_generation.TSG_C import TSG_C, NoDivisorTiles, NoDivisorTilesInAnyDim
 from tile_static_analysis.TSA_Quidditch import TSA_Quidditch
 from tile_static_analysis.TSA_C_Remainder import TSA_C_Remainder
 from tile_size_generation.TSG_C_Remainder import TSG_C_Remainder
@@ -10,6 +10,7 @@ import tile_sel.tile_selection as tss
 import re
 import pandas as pd
 import pathlib
+import os.path
 
 
 def tileSelection(analyzedSearchSpaceCSVName, dispatchName, mode, outputFile):
@@ -61,92 +62,104 @@ def main():
     prune = False
     skipTSG = False
     if len(sys.argv) >= 5:
-     if sys.argv[4] == "prune":
-        prune=True
-     else:
-          searchSpaceCSVName = sys.argv[4]
-          print("myrtle: ", end="")
-          print("Using search space passed in from command line.")
-          options_as_df = pd.read_csv(searchSpaceCSVName)
-          skipTSG = True
-    spm_opt=sys.argv[5] == "optSPM"
+        if sys.argv[4] == "prune":
+            prune = True
+        else:
+            searchSpaceCSVName = sys.argv[4]
+            print("myrtle: ", end="")
+            print("Using search space passed in from command line.")
+            if not os.path.exists(searchSpaceCSVName):
+                print("myrtle: ", end="")
+                print(
+                    "Can't find search space file. Continuing with automatic search space generation..."
+                )
+            else:
+                options_as_df = pd.read_csv(searchSpaceCSVName)
+                skipTSG = True
+        spm_opt = sys.argv[5] == "optSPM"
+
     # Quidditch Backend
     if quidditch:
-     # generate options
-     if not skipTSG:
-          jen = TSG_Quidditch(int(M), int(N), int(K), dispatchName, l1MemoryBytes=100000)
-          options = jen.validOptions(debug=False)
-          options_as_df = jen.convertOptionsToDF(dispatchNickName, options)
-          searchSpaceCSVName = jen.exportOptionsToCSV(dispatchNickName, options_as_df)
-     # analyze tiling options
-     ann = TSA_Quidditch()
-     analyzed = ann.analyze_options(options_as_df)
-     analyzedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
-     # select best tiling scheme using mode
-     tileSelection(
-         analyzedSearchSpaceCSVName, dispatchName, sys.argv[2], sys.argv[3]
-     )
-     return
-    
+        # generate options
+        if not skipTSG:
+            jen = TSG_Quidditch(
+                int(M), int(N), int(K), dispatchName, l1MemoryBytes=100000
+            )
+            options = jen.validOptions(debug=False)
+            options_as_df = jen.convertOptionsToDF(dispatchNickName, options)
+            searchSpaceCSVName = jen.exportOptionsToCSV(dispatchNickName, options_as_df)
+        # analyze tiling options
+        ann = TSA_Quidditch()
+        analyzed = ann.analyze_options(options_as_df)
+        analyzedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
+        # select best tiling scheme using mode
+        tileSelection(
+            analyzedSearchSpaceCSVName, dispatchName, sys.argv[2], sys.argv[3]
+        )
+        return
+
     # Manual C Backend
     ann = TSA_C_Remainder(8, 8)
-    if not prune:
-        # generate options (divisors only)
-        try:
-          jen = TSG_C(int(M),int(N),int(K),dispatchName=dispatchName,l1MemoryBytes = 112 * 1024, bank_size=1024, dualBuff=True)
-          options = jen.validOptions(debug=False)
-          options_as_df = jen.convertOptionsToDF(dispatchNickName, options)
-          searchSpaceCSVName = jen.exportOptionsToCSV(dispatchNickName, options_as_df)
-          # analyze tiling options
-          analyzed = ann.analyze_options(options_as_df)
-          analyzedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
-        except NoDivisorTiles:
-          print("myrtle: ", end="")
-          print("Warning: Cannot find a tile size (other than 1) that divides evenly into one or both of first two input dimensions.")
-        except NoDivisorTilesInAnyDim:
-          print("myrtle: ", end="")
-          print("Warning: Cannot find a tile size (other than 1) that divides evenly into ANY of the input dimensions.")
-        # generate options (remainders only)
-        gen = TSG_C_Remainder(int(M),int(N),int(K),dispatchName=dispatchName,l1MemoryBytes = 112 * 1024, bank_size=1024, dualBuff=True)
-        remOptions = gen.validOptions(debug=False)
-        remOptions_as_df = gen.convertOptionsToDF(dispatchNickName, remOptions)
-        remSearchSpaceCSVName = gen.exportOptionsToCSV(dispatchNickName, remOptions_as_df)
-        # analyze options
-        analyzed = ann.analyze_options(remOptions_as_df)
-        analyzedSearchSpaceCSVName = ann.exportAnalysisToCSV(dispatchNickName, analyzed)
-    else:
-        jen = TSG_C_Div_Rem(int(M),int(N),int(K),dispatchName=dispatchName,l1MemoryBytes = 112 * 1024, bank_size=1024, dualBuff=True,optSPM=spm_opt)
-        options = jen.validOptions()
-        options_as_df = jen.convertOptionsToDF(dispatchNickName, options)
-        annotated_options = ann.annotate_w_ssr_configs(options_as_df)
-        sorted_options= annotated_options.sort_values("SSR Config Count", ascending=True)
-        searchSpaceCSVName = jen.exportOptionsToCSV(dispatchNickName, sorted_options)
-        # print out entire search space before pruning
-        filename = f"{pathlib.Path(__file__).parent.resolve()}/out/{dispatchNickName}_ss_c_rem_div.csv"
-        sorted_options.to_csv(filename,
-                index=False,)
-        prunePoint = TSG_C_Div_Rem.ssr_prune_frac(sorted_options,3)
+
+    jen = TSG_C_Div_Rem(
+        int(M),
+        int(N),
+        int(K),
+        dispatchName=dispatchName,
+        l1MemoryBytes=112 * 1024,
+        bank_size=1024,
+        dualBuff=True,
+        optSPM=spm_opt,
+    )
+    options = jen.validOptions()
+    options_as_df = jen.convertOptionsToDF(dispatchNickName, options)
+    annotated_options = ann.annotate_w_ssr_configs(options_as_df)
+    sorted_options = annotated_options.sort_values("SSR Config Count", ascending=True)
+    searchSpaceCSVName = jen.exportOptionsToCSV(dispatchNickName, sorted_options)
+    # print out entire search space before pruning
+    filename = f"{pathlib.Path(__file__).parent.resolve()}/out/{dispatchNickName}_ss_c_rem_div.csv"
+    sorted_options.to_csv(
+        filename,
+        index=False,
+    )
+    if prune:
+        suffix = "_ss_c_rem_div_pruned"
+        prunePoint = TSG_C_Div_Rem.ssr_prune_frac(sorted_options, 3)
         # now that we know the prune point, go ahead and prune
-        pruned_options=annotated_options[annotated_options["SSR Config Count"] <= prunePoint]
-       # pruned_options = TSG_C_Div_Rem.ssr_prune_bestX(sorted_options,45)        
-        if(pruned_options.shape[0] < 20):
-             pruned_options = TSG_C_Div_Rem.ssr_prune_bestX(annotated_options,20)
-        sorted_pruned= pruned_options.sort_values("SSR Config Count", ascending=True)
-        filename = f"{pathlib.Path(__file__).parent.resolve()}/out/{dispatchNickName}_ss_c_rem_div_pruned.csv"
+        pruned_options = annotated_options[
+            annotated_options["SSR Config Count"] <= prunePoint
+        ]
+        # pruned_options = TSG_C_Div_Rem.ssr_prune_bestX(sorted_options,45)
+        if pruned_options.shape[0] < 20:
+            pruned_options = TSG_C_Div_Rem.ssr_prune_bestX(annotated_options, 20)
+        sorted_pruned = pruned_options.sort_values("SSR Config Count", ascending=True)
+        filename = f"{pathlib.Path(__file__).parent.resolve()}/out/{dispatchNickName}{suffix}.csv"
         sorted_pruned.to_csv(
-                filename,
-                index=False,
+            filename,
+            index=False,
         )
         # only analyze points that survive pruning
+        suffix = "_rem_div_ana_pruned"
         analyzed = ann.analyze_options(sorted_pruned)
-        analyzed = analyzed.sort_values("SSR Config Count", ascending=True, ignore_index=True)
-        filename = f"{pathlib.Path(__file__).parent.resolve()}/out/{dispatchNickName}_ss_c_rem_div_ana_pruned.csv"
-        analyzed.to_csv(
-                filename,
-                index=False,
+        analyzed = analyzed.sort_values(
+            "SSR Config Count", ascending=True, ignore_index=True
         )
-        analyzedSearchSpaceCSVName = filename
+    else:
+        suffix = "_ss_c_rem_div_ana"
+        # analyze all the points
+        analyzed = ann.analyze_options(sorted_options)
+        analyzed = analyzed.sort_values(
+            "SSR Config Count", ascending=True, ignore_index=True
+        )
 
+    filename = (
+        f"{pathlib.Path(__file__).parent.resolve()}/out/{dispatchNickName}{suffix}.csv"
+    )
+    analyzed.to_csv(
+        filename,
+        index=False,
+    )
+    analyzedSearchSpaceCSVName = filename
     # select best tiling scheme using mode
     tileSelection(analyzedSearchSpaceCSVName, dispatchName, sys.argv[2], sys.argv[3])
 
