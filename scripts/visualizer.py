@@ -284,7 +284,68 @@ def genResultGraphQPDF(title,timed, recentlyPruned,hover_data,color="fmaddsPerCo
     #fig.write_image(f"out/{title}.pdf", width=widthPx, height=heightPx)
     return fig
 
-def saveFigsInHTML(special_figs, more_figs, titleOfWebpage):
+def stack_dfs_to_html(df_list, titles, columns_subset, main_title=None, include_index=False):
+    """
+    Concatenates multiple DataFrames into a single HTML string with section titles.
+    Rows are conditionally colored based on the 'diff' column:
+    - 'diff' == 0.0 -> Red background
+    - 'diff' <= 5.0 -> Blue background
+    """
+    if len(df_list) != len(titles):
+        raise ValueError("The number of DataFrames must match the number of titles.")
+        
+    html_sections = []
+    
+    # 1. Add the main title at the very top
+    if main_title:
+        main_title_style = "style='font-family: Arial, sans-serif; margin-bottom: 30px; color: #111; border-bottom: 2px solid #333; padding-bottom: 10px;'"
+        html_sections.append(f"<h1 {main_title_style}>{main_title}</h1>")
+    
+    title_style = "style='font-family: Arial, sans-serif; margin-top: 25px; margin-bottom: 10px; color: #333;'"
+    table_style = "style='border-collapse: collapse; width: 50%; font-family: Arial, sans-serif; margin-bottom: 20px;'"
+
+    # Internal helper function to apply the row colors
+    def color_rows_by_diff(row):
+        # Default styles (no background color)
+        styles = [''] * len(row)
+        
+        # Check the 'diff' value for this specific row
+        diff_val = row['diff']
+        
+        if diff_val == 0.0:
+            # Light red background with dark red text for readability
+            styles = ['background-color: #ffcccc; color: #990000;'] * len(row)
+        elif diff_val <= 5.0:
+            # Light blue background with dark blue text
+            styles = ['background-color: #d9ecff; color: #004085;'] * len(row)
+            
+        return styles
+
+    for df, title in zip(df_list, titles):
+        html_sections.append(f"<h3 {title_style}>{title}</h3>")
+        
+        try:
+            # 2. Filter to the requested subset of columns
+            filtered_df = df[columns_subset]
+            
+            # 3. Use pandas Styler to apply conditional row coloring
+            # axis=1 applies the function row-by-row
+            styled_html = (filtered_df.style
+                           .apply(color_rows_by_diff, axis=1)
+                           .hide(axis='index' if not include_index else None)
+                           .to_html())
+            
+            # Inject our custom width and border styling into the Styler-generated table
+            styled_html = styled_html.replace('<table', f'<table border="1" {table_style}')
+            
+            html_sections.append(styled_html)
+            
+        except KeyError as e:
+            html_sections.append(f"<p style='color: red;'>Error rendering table: Missing column {e}</p>")
+            
+    return "\n".join(html_sections)
+
+def saveFigsInHTML(special_figs, more_figs, titleOfWebpage,table=""):
     # --- Convert each figure to HTML div ---
     special_divs = []
     for f in special_figs:
@@ -331,7 +392,8 @@ def saveFigsInHTML(special_figs, more_figs, titleOfWebpage):
     <a href="index.html" >Back to Landing Page</a>
     <div class="dashboard">
       {specialDivsAsHTML} 
-        {"<div>More Experiments</div>"}
+<span>{table}</span>
+        {"<div>Pruning Step by Step</div>"}
         {moreDivsAsHTML}        
         </div>
         <span id="bottom"><a href="#top" >Back to Top</a></span>
@@ -455,19 +517,28 @@ def printFinalRanking(title,df,colorCol):
     df=df.sort_values("Time (cycles)",ascending=True)
     df = df.reset_index(drop=True)
     best=df["Time (cycles)"][0]
-    print(f"best observed: {best} cycles")
+    title=f"best observed: {best} cycles"
+    print(title)
     df=df.sort_values("FMADDsMULsPerCore",ascending=False)
     df["diff"] = df["Time (cycles)"].apply(lambda x: (x - best)/best * 100)
  #   print(df[["JSON Name","FMADDsMULsPerCore","timeout","Time (cycles)","diff"]][0:9])
     print("--------------------")
     latexList=[subFigPro(title)]
     pointsPrinted = 0
+    my_columns = ["JSON Name","timeout","timed","Avg n'_sz / k_size","tileB",colorCol,"Time (cycles)","diff",]
+    my_dfs = []
+    my_titles = []
+    containsFast128Tile = False #"64-24-64"
     for fmadds, group_df in df.groupby("FMADDsMULsPerCore",sort=False):
-          if pointsPrinted < 5:
-               print(f"FMADDS: {fmadds} w/ len {len(group_df)}")
+        if pointsPrinted < 5 or not containsFast128Tile:
+               containsFast128Tile = (group_df ['JSON Name'] == '64-24-64').any()
+               subtitle = f"FMADDS: {fmadds} w/ len {len(group_df)}"
+               print(subtitle)
+               my_titles.append(subtitle)
                pointsPrinted = pointsPrinted + len(group_df)
                sorted = group_df.sort_values(colorCol,ascending=True)
-               print(sorted[["JSON Name","timeout","timed",colorCol,"Time (cycles)","diff"]])
+               my_dfs.append(sorted)
+               print(sorted[my_columns])
                latexList.append(df_to_latex_rows(sorted))
     
     print("-------------------- FOR LATEX")
@@ -481,6 +552,9 @@ def printFinalRanking(title,df,colorCol):
 #                sorted = group_df.sort_values(colorCol,ascending=True)
 #                print(sorted[["JSON Name","Time (cycles)","diff"]])
     print("-------------- ^^^^ ------------\n")
+    # Generate the an HTML version of ranking table
+    table = stack_dfs_to_html(my_dfs, my_titles, my_columns,title)
+    return table
 
 def printFinalRankingQ(title,df,colorCol):
     print("\tFinal ranking:")
@@ -618,14 +692,17 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      
      special_figs = []
      more_figs = []
+     table=""
 
-     special_figs,more_figs = pruneApproach1(timed,analyzed,full)
+     #special_figs,more_figs, table = pruneApproach1FewerGraphs(timed,analyzed,full)
+     special_figs,more_figs, table = pruneApproach1(timed,analyzed,full)
     # special_figs=special_figs+more_figs
 
      #more_figs = pruneApproach2(timed,analyzed,full)
      
-     return saveFigsInHTML(special_figs, more_figs, titleOfWebpage)
+     return saveFigsInHTML(special_figs, more_figs, titleOfWebpage,table)
 
+# prune out ALL m boundary tiles (Aggressive pruning!!)
 def pruneApproach2(timed, analyzed, full):
      prunePoint = ssr_prune_frac(full,3)
     # we assume untimed points are a subset of the pruned search space
@@ -921,7 +998,8 @@ def printMethodologyStats(full, pruned, timed):
     print(f"full ss has size {len(full)}")
     print(f"pruned has size {len(pruned)}")
     print(f"timed has size {len(timed)}")
-    print("what percentage of SPM used in timed points vs pruned points?")
+    print(f"what percentage of SPM used in timed points vs pruned points? {len(timed)/len(pruned)*100.0} %")
+
 
 def pruneApproach1(timed, analyzed, full):
      prunePoint = ssr_prune_frac(full,3)
@@ -950,7 +1028,7 @@ def pruneApproach1(timed, analyzed, full):
         "Avg CC Tile Size",
         "mRem",
         "Avg L3 Loads",
-        "Avg L3 Stores",
+        "tileB",
         "Avg n'_sz / k_size",
         "timedData",
      ]
@@ -960,9 +1038,11 @@ def pruneApproach1(timed, analyzed, full):
         "L1 Usage",       
      ]
      special_figs=[]
+     more_figs = []
+     #reality check
      x_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
      y_col = "Global Sim E2E_dma"#"Global Sim E2E_dma"
-     special_figs.append(scatterWithColorSymbol(
+     more_figs.append(scatterWithColorSymbol(
          timed,
             x_col,
             y_col,
@@ -976,7 +1056,7 @@ def pruneApproach1(timed, analyzed, full):
      # step 0: full search space
      x_col = "L1 Usage"
      y_col = "SSR Configs"
-     special_figs.append(
+     more_figs.append(
          scatterWithFlatColor(
             full,
             x_col,
@@ -992,7 +1072,7 @@ def pruneApproach1(timed, analyzed, full):
     # step 1: pruned search space
      x_col = "L1 Usage"
      y_col = "SSR Configs"
-     special_figs.append(
+     more_figs.append(
         scatterWithColor(
             pruned,
             x_col,
@@ -1004,7 +1084,7 @@ def pruneApproach1(timed, analyzed, full):
         )
     )
      addScatterFlatColorMarker(
-        special_figs[-1],
+        more_figs[-1],
         full,
         x_col,
         y_col,
@@ -1014,64 +1094,46 @@ def pruneApproach1(timed, analyzed, full):
         "full search space"
     )
      
-     # step 3: timed vs untimed points
-     x_col = "SSR Configs"
-     y_col = "L1 Usage"
-     special_figs.append(
+     x_col = "L1 Usage"
+     y_col = "SSR Configs"
+     more_figs.append(
         scatterWithColor(
-            timed,
+            pruned,
             x_col,
             y_col,
             "SSR Configs",
             minimal_hover,
-            "1) Pruned Search Space (multicolor points are timed)",
+            "0.1) Pruned search space (black points are timed)",
             "symbolMarker",
         )
     )
      addScatterFlatColorMarker(
-        special_figs[-1],
-        ut,
+        more_figs[-1],
+        timed,
         x_col,
         y_col,
-        "gray",
+        "black",
         "circle",
         minimal_hover,
-        "untimed"
+        "timed"
     )
      
-     # step 4: order by n'/k
-     x_col = "Avg n'_sz / k_size"
-     y_col = "Global Sim E2E_dma"
-     special_figs.append(
-        scatterWithFlatColor(
-            timed,
-            x_col,
-            y_col,
-            "black",
-            hover_data,
-            "1.1) Pruned Search Space (black points are timed); sort by n'/k ratio",
-            "symbolMarker",
-        )
-    )
-     addScatterFlatColorMarker(
-        special_figs[-1],
-        ut,
-        x_col,
-        y_col,
-        "gray",
-        "circle",
-        hover_data,
-        "untimed"
-    )
      
      # step 5: identify nice m remainders
+     timed=timed.sort_values("Time (cycles)",ascending=True)
+     timed = timed.reset_index(drop=True)
+     best=timed["Global Sim E2E_dma"][0]
+     timed["diff"] = timed["Time (cycles)"].apply(lambda x: (x - best)/best * 100)
+     timed["n/k<1"] = timed["Avg n'_sz / k_size"].apply(lambda x: x < 1.0)
+     timed["diff<0.5"] = timed["diff"].apply(lambda x: x <= 0.5)
+
      nice_timed=timed[timed["niceMRem"]]
      nice_ut=ut[ut["niceMRem"]]
      mean_timed=timed[timed["niceMRem"]==False]
      mean_ut=ut[ut["niceMRem"]==False]
      x_col = "Avg n'_sz / k_size"
      y_col = "Global Sim E2E_dma"
-     special_figs.append(
+     more_figs.append(
         scatterWithFlatColor(
             nice_timed,
             x_col,
@@ -1083,7 +1145,7 @@ def pruneApproach1(timed, analyzed, full):
         )
     )
      addScatterFlatColorMarker(
-        special_figs[-1],
+        more_figs[-1],
         nice_ut,
         x_col,
         y_col,
@@ -1093,7 +1155,7 @@ def pruneApproach1(timed, analyzed, full):
         "untimed w/ nice m remainder"
     )
      addScatterFlatColorMarker(
-        special_figs[-1],
+        more_figs[-1],
         mean_ut,
         x_col,
         y_col,
@@ -1103,7 +1165,7 @@ def pruneApproach1(timed, analyzed, full):
         "untimed w/ worst case m remainder"
     )
      addScatterFlatColorMarker(
-        special_figs[-1],
+        more_figs[-1],
         mean_timed,
         x_col,
         y_col,
@@ -1113,79 +1175,85 @@ def pruneApproach1(timed, analyzed, full):
         "timed w/ worst case m remainder"
     )
      
-     # step 5: Keep nice m-remainders (prune out CL boundary tiles with 0 < m-dim < 8)
-     x_col = "Avg n'_sz / k_size"
-     y_col = "Global Sim E2E_dma"
-     special_figs.append(scatterWithFlatColorSymbol(
+    
+     # let's include % from best just to see if pruning is right
+   
+    # step 1: pruned search space
+    #  x_col = "diff"
+    #  y_col = "Global Sim E2E_dma"
+    #  more_figs.append(
+    #     scatterWithColor(
+    #         nice_timed,
+    #         x_col,
+    #         y_col,
+    #         "Avg n'_sz / k_size",
+    #         hover_data,
+    #         "Worst-case CL boundary tiles pruned out; only nice ones remain. Is pruning by n/k = 1 a good idea?",
+    #         "symbolMarker",
+    #     )
+    # )
+    #  x_col = "diff"
+    #  y_col = "Global Sim E2E_dma"
+    #  more_figs.append(scatterWithColorSymbol(
+    #      nice_timed,
+    #         x_col,
+    #         y_col,
+    #         "Avg n'_sz / k_size",
+    #         hover_data,
+    #         "Is pruning by n/k = 1 a good idea?",
+    #         "n/k<1",
+    #         ["circle","triangle-up"]
+    #  ))
+     nice_timed=nice_timed.sort_values("FMADDsMULsPerCore",ascending=False)
+     y_col = "Avg n'_sz / k_size"
+     x_col = "Global Sim E2E_dma"
+     more_figs.append(scatterWithColorSymbol(
          nice_timed,
             x_col,
             y_col,
-            "black",
+            "diff<0.5",
             hover_data,
-            "2) prune out worst-case CL boundary tiles; only nice ones remain.",
-            "mRem",
+            "Is pruning by n/k = 1 a good idea? circle is n/k < 1. orange is diff < 0.5 from best/",
+            "n/k<1",
+            ["triangle-up","circle"]
      ))
-     mRem_shape_map = {"zero": "circle", "divisBy8": "triangle-up","mean":"diamond"}
-     for status_name, group_df in nice_ut.groupby("howNice"):
-          special_figs[-1].add_scatter(
-               x=group_df[x_col],
-               y=group_df[y_col],
-               mode="markers",
-               name=status_name,  # Sets the legend label
-               marker=dict(
-                    symbol=mRem_shape_map[status_name], color="gray"  
-               ),
-          )
-          
-     # step 6: tie-break with FMADDMULS per Core   
-     nice_timed_reduced = nice_timed[hover_data].copy()
-     nice_ut_reduced = nice_ut[hover_data].copy()
-     nice_timed_reduced["timed"]=True
-     nice_ut_reduced["timed"] = False
-     combined = pd.concat([nice_timed_reduced,nice_ut_reduced],axis=0, ignore_index=True)
-   
-     x_col = "Avg n'_sz / k_size"
-     y_col = "Global Sim E2E_dma"
-     special_figs.append(scatterWithColorSymbol(
-         combined,
-            x_col,
-            y_col,
-            "FMADDsMULsPerCore",
-            hover_data,
-            "3) Take left most. Tie break by maximizing FMADDS per core. SQUARES are untimed.",
-            "timedData",
-            ["circle","square"]
-     ))
-     more_figs = []
+     more_figs[-1].add_hline(y=1.0, line_width=2, line_dash="dash", line_color="red")
+     more_figs[-1].update_traces(showlegend=False)
 
-
-
-     # more figs
-     y_col = "mRem"
      x_col = "Global Sim E2E_dma"
-     timed.sort_values("howNice")
+     y_col = "k"
      more_figs.append(scatterWithColorSymbol(
-         timed,
+         nice_timed,
             x_col,
             y_col,
-            "mRem",
+            "tileB",
             hover_data,
-            "Is it ever worth it to includle boundary tiles? Emily, fix marker symbols (not working right)",
-            "howNice",
-            ["circle","triangle-up","x",]
+            "Can I just maximize k?",
+            "n/k<1",
+            ["circle","circle"]
      ))
-     addScatterFlatColorMarker(
-        more_figs[-1],
-        ut,
-        x_col,
-        y_col,
-        "gray",
-        "square",
-        hover_data,
-        "untimed"
-    )
+     more_figs[-1].update_traces(showlegend=False)
+    #  x_col = "FMADDsMULsPerCore"
+    #  y_col = "diff"
+    #  more_figs.append(scatterWithColorSymbol(
+    #      nice_timed,
+    #         x_col,
+    #         y_col,
+    #         "Avg n'_sz / k_size",
+    #         hover_data,
+    #         "Is pruning by n/k = 1 a good idea?",
+    #         "n/k<1",
+    #         ["circle","triangle-up"]
+    #  ))
+     
 
-    # print(f"before appending: len of more_figs is {len(more_figs)}")
+
+
+
+
+    
+     
+     # marking pruning by ratio
      x_col = "Avg n'_sz / k_size"
      y_col = "Global Sim E2E_dma"
      mRem_shape_map = {"zero": "circle", "divisBy8": "triangle-up","mean":"diamond"}
@@ -1220,7 +1288,13 @@ def pruneApproach1(timed, analyzed, full):
                ),
           )
      more_figs[-1].add_vline(x=1.0, line_width=2, line_dash="dash", line_color="red")
-    
+
+     
+     nice_timed_reduced = nice_timed[hover_data].copy()
+     nice_ut_reduced = nice_ut[hover_data].copy()
+     nice_timed_reduced["timed"]=True
+     nice_ut_reduced["timed"] = False
+     combined = pd.concat([nice_timed_reduced,nice_ut_reduced],axis=0, ignore_index=True)
      # prune to less than n/k = 1
      #combined = combined[combined["Avg n'_sz / k_size"] < 1.0]
      nice_timed_reduced_lt1 = nice_timed_reduced[nice_timed_reduced["Avg n'_sz / k_size"] < 1.0]
@@ -1240,17 +1314,31 @@ def pruneApproach1(timed, analyzed, full):
             "timeout",
             ["circle","cross"]
      ))
+     more_figs[-1].update_traces(showlegend=False)
+
+     special_figs.append(scatterWithColorSymbol(
+         nice_timed_reduced_lt1,
+            x_col,
+            y_col,
+            "mRem",
+            hover_data,
+            "Final Cost Model selection: max. by Fmadds, tie break with smaller mRem",
+            "timeout",
+            ["circle","cross"]
+     ))
+     special_figs[-1].update_traces(showlegend=False)
      
      #result graph
      x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
      y_col = "Time (cycles)"#"Global Sim E2E_dma"
      resultGraph = genResultGraphPDF(jugaadTitle(timed),nice_timed_reduced_lt1,nice_ut_reduced_lt1,nice_timed_reduced_gte1,hover_data,"mRem")
-     print(len(nice_timed_reduced_lt1.columns))
-     print(len(nice_ut_reduced_lt1.columns))
+    #  print(len(nice_timed_reduced_lt1.columns))
+    #  print(len(nice_ut_reduced_lt1.columns))
      combined=pd.concat([nice_timed_reduced_lt1,nice_ut_reduced_lt1])
-     printFinalRanking(jugaadTitle(timed),combined,"mRem")
-     more_figs.append(resultGraph)   
-     return special_figs,more_figs
+     table=printFinalRanking(jugaadTitle(timed),combined,"mRem")
+     special_figs.append(resultGraph) 
+      
+     return special_figs,more_figs,table
 
 
 def unrollAndJamFactor(tobeUnrolledDim):
