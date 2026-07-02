@@ -131,7 +131,7 @@ def printFinalRankingTwoShelves(title,df,colorCol):
         processed_dfs.append(processed_slice)
         myTitle=f"FMADDS: {fmadd_value} w/ len {len(processed_slice)}"
         my_titles.append(myTitle)
-    table = stack_dfs_to_html(processed_dfs, my_titles, my_columns,title)
+    table = stack_dfs_to_html(processed_dfs[0:4], my_titles[0:4], my_columns,title)
     return table
 
 def printMethodologyStats(full, pruned, timed):
@@ -336,7 +336,8 @@ def pruneApproach3(timed, analyzed, full):
      #resultGraph = genResultGraphPDF(jugaadTitle(timed),nice_timed_reduced_lt1,nice_ut_reduced_lt1,nice_timed_reduced_gte1,hover_data,"mRem")
   
      combined=pd.concat([nice_timed,nice_ut])
-     table=printFinalRanking("",combined,"tileB")
+     #table=printFinalRanking("",combined,"tileB")
+     table = ""
      table2=printFinalRankingTwoShelves("(prioritizing mRem = 0, then larger nxk = tileB)",combined,"tileB")
      
      

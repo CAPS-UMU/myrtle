@@ -106,11 +106,11 @@ def printFinalRanking(title,df,colorCol):
     df = df.reset_index(drop=True)
     best=df["Time (cycles)"][0]
     title=f"best observed: {best} cycles"
-    print(title)
+    #print(title)
     df=df.sort_values("FMADDsMULsPerCore",ascending=False)
     df["diff"] = df["Time (cycles)"].apply(lambda x: (x - best)/best * 100)
  #   print(df[["JSON Name","FMADDsMULsPerCore","timeout","Time (cycles)","diff"]][0:9])
-    print("--------------------")
+   # print("--------------------")
     latexList=[subFigPro(title)]
     pointsPrinted = 0
     my_columns = ["JSON Name","timeout","timed","Avg n'_sz / k_size","tileB",colorCol,"Time (cycles)","diff",]
@@ -121,15 +121,15 @@ def printFinalRanking(title,df,colorCol):
         if pointsPrinted < 5 or not containsFast128Tile:
                containsFast128Tile = (group_df ['JSON Name'] == '64-24-64').any()
                subtitle = f"FMADDS: {fmadds} w/ len {len(group_df)}"
-               print(subtitle)
+              # print(subtitle)
                my_titles.append(subtitle)
                pointsPrinted = pointsPrinted + len(group_df)
                sorted = group_df.sort_values(colorCol,ascending=True)
                my_dfs.append(sorted)
-               print(sorted[my_columns])
+           #    print(sorted[my_columns])
                latexList.append(df_to_latex_rows(sorted))
     
-    print("-------------------- FOR LATEX")
+ #   print("-------------------- FOR LATEX")
     latexList.append(subfigEpi)
     #print(''.join(latexList))
 #     pointsPrinted = 0
@@ -139,7 +139,7 @@ def printFinalRanking(title,df,colorCol):
 #                pointsPrinted = pointsPrinted + len(group_df)
 #                sorted = group_df.sort_values(colorCol,ascending=True)
 #                print(sorted[["JSON Name","Time (cycles)","diff"]])
-    print("-------------- ^^^^ ------------\n")
+   # print("-------------- ^^^^ ------------\n")
     # Generate the an HTML version of ranking table
     table = stack_dfs_to_html(my_dfs, my_titles, my_columns,title)
     return table
@@ -176,28 +176,28 @@ def printFinalRankingQ(title,df,colorCol):
 #                print(sorted[["JSON Name","Time (cycles)","diff"]])
     print("-------------- ^^^^ ------------\n")
 
-def visualizePruning(timed, analyzed, full, titleOfWebpage):
-     timed["Total CC Tiles"] = timed["SSR Config Count"]
-     timed["FMADDsMULsPerCore"] = timed["FMADDsMULs"] / timed["Total CC Tiles"]
-     timed["1/FMADDS"]=1/timed["FMADDsMULsPerCore"]
-     timed["Overlap Stall Time Per Core"] = timed["Overlap Stall Time Total"] / timed["Total CC Tiles"]
-     timed["mRem"] = timed["M"] % timed["m"]
-     timed["nRem"] = timed["N"] % timed["n"]
-     timed["kRem"] = timed["K"] % timed["k"]
-     target_cols = ["M", "N", "K", "m", "n", "k","mRem","nRem","kRem"]
-     nan_rows = timed[timed[target_cols].isna().any(axis=1)]
 
-# Display the rows
-     print(nan_rows)
-     timed["mnkRem"] = timed[["mRem","nRem","kRem"]].apply(lambda x: (int(x["mRem"]),int(x["nRem"]),int(x["kRem"])),axis=1)
-     timed["1/mRem"]=1/timed["mRem"]
-     timed["niceM"] = timed["m"].apply(lambda r: True if r % 8 == 0 else False)
-     timed["niceMRem"] = timed["mRem"].apply(lambda r: True if r == 0 or r % 8 == 0 else False)
-     timed["bothNice"]=timed[["niceM", "niceMRem"]].apply(lambda r: True if r["niceM"] & r["niceMRem"] else False,axis=1)
-     timed["howNice"] = timed["mRem"].apply(lambda r: "zero" if r == 0 else ("divisBy8" if r % 8 == 0 else "mean"))
-     timed["hypotenuse"] = timed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
-     timed["Time (cycles)"]=timed["Global Sim E2E_dma"]
-     timed["n / k"]=timed["Avg n'_sz / k_size"]
+def handle_timeouts(df):
+    """
+    Checks the DataFrame for rows where the 'FakeNN JSON' column equals 'timeout'.
+    If found, sets the values for columns 'M', 'N', 'K', 'm', 'n', and 'k' to -1 
+    for those specific rows. Modifies the DataFrame in place.
+    """
+    target_cols = ["M", "N", "K", "m", "n", "k"]
+    
+    # Check if the target columns exist in the dataframe to prevent KeyErrors
+    existing_cols = [col for col in target_cols if col in df.columns]
+    
+    if "FakeNN JSON Name" in df.columns and existing_cols:
+        # Create a boolean mask for rows where the column equals 'timeout'
+        timeout_mask = df["FakeNN JSON Name"] == "timeout"
+        
+        # .loc[row_indexer, column_indexer] targets exactly what we need
+        df.loc[timeout_mask, existing_cols] = -1
+        
+    return df
+
+def visualizePruning(timed, analyzed, full, titleOfWebpage):
      def parseDimM(nm):
          if nm=="timeout":
             return -1
@@ -222,14 +222,70 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
                 r"(\d+)x(\d+)x(\d+)w(\d+)-(\d+)-(\d+)"
             )
             return expNameRegex.search(nm).groups()[2]
-
+     def applyRemainderSize(df,nm,D,d):
+         df[nm] = df[[D,d]].apply(lambda x: int(x[D]) % int(x[d]) if x[d] != -1 and x[d] != -1 else -1,axis=1)
+         return df
+         
+     timed["Total CC Tiles"] = timed["SSR Config Count"]
+     timed["FMADDsMULsPerCore"] = timed["FMADDsMULs"] / timed["Total CC Tiles"]
+     timed["1/FMADDS"]=1/timed["FMADDsMULsPerCore"]
+     timed["Overlap Stall Time Per Core"] = timed["Overlap Stall Time Total"] / timed["Total CC Tiles"]
+     timed=handle_timeouts(timed)
      timed["M"] = timed["FakeNN JSON Name"].apply(parseDimM)
      timed["N"] = timed["FakeNN JSON Name"].apply(parseDimN)
-     timed["K"] = timed["FakeNN JSON Name"].apply(parseDimK)    
-   
-     analyzed["mRem"] = analyzed["M"] % analyzed["m"]
-     analyzed["nRem"] = analyzed["N"] % analyzed["n"]
-     analyzed["kRem"] = analyzed["K"] % analyzed["k"]
+     timed["K"] = timed["FakeNN JSON Name"].apply(parseDimK)
+     timed = applyRemainderSize(timed,"mRem","M","m") 
+     timed = applyRemainderSize(timed,"nRem","N","n") 
+     timed = applyRemainderSize(timed,"kRem","K","k") 
+    #  timed["mRem"] = timed[["M","m"]].apply(lambda x: int(x["M"]) % x["m"] if x["m"] != -1 and x["m"] != -1 else -1,axis=1)
+    #  timed["nRem"] = timed[["N","n"]].apply(lambda x: x["N"] % x["n"] if x["n"] != -1 and x["n"] != -1 else -1,axis=1)
+    #  timed["kRem"] = timed[["K","k"]].apply(lambda x: x["K"] % x["k"] if x["k"] != -1 and x["k"] != -1 else -1,axis=1)
+    #  timed["mRem"] = timed["M"] % timed["m"]
+    #  timed["nRem"] = timed["N"] % timed["n"]
+    #  timed["kRem"] = timed["K"] % timed["k"]
+     
+#      target_cols = ["M", "N", "K", "m", "n", "k","mRem","nRem","kRem"]
+#      nan_rows = timed[timed[target_cols].isna().any(axis=1)]
+
+# # Display the rows
+#      print(nan_rows)
+     timed["mnkRem"] = timed[["mRem","nRem","kRem"]].apply(lambda x: (int(x["mRem"]),int(x["nRem"]),int(x["kRem"])),axis=1)
+     timed["1/mRem"]=1/timed["mRem"]
+     timed["niceM"] = timed["m"].apply(lambda r: True if r % 8 == 0 else False)
+     timed["niceMRem"] = timed["mRem"].apply(lambda r: True if r == 0 or r % 8 == 0 else False)
+     timed["bothNice"]=timed[["niceM", "niceMRem"]].apply(lambda r: True if r["niceM"] & r["niceMRem"] else False,axis=1)
+     timed["howNice"] = timed["mRem"].apply(lambda r: "zero" if r == 0 else ("divisBy8" if r % 8 == 0 else "mean"))
+     timed["hypotenuse"] = timed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
+     timed["Time (cycles)"]=timed["Global Sim E2E_dma"]
+     timed["n / k"]=timed["Avg n'_sz / k_size"]
+     
+
+ 
+    #  timed[timed["FakeNN JSON Name"]=="timeout"]["M"] = -1
+    #  timed[timed["FakeNN JSON Name"]=="timeout"]["N"] = -1
+    #  timed[timed["FakeNN JSON Name"]=="timeout"]["K"] = -1
+    #  analyzed[analyzed["FakeNN JSON Name"]=="timeout"]["M"] = -1
+    #  analyzed[analyzed["FakeNN JSON Name"]=="timeout"]["N"] = -1
+    #  analyzed[analyzed["FakeNN JSON Name"]=="timeout"]["K"] = -1
+     analyzed=handle_timeouts(analyzed)
+     target_cols = ["M", "N", "K", "m", "n", "k","mRem","nRem","kRem"]
+     nan_rows = timed[timed[target_cols].isna().any(axis=1)]
+     print(nan_rows)
+     analyzed["M"] = analyzed["FakeNN JSON Name"].apply(parseDimM)
+     analyzed["N"] = analyzed["FakeNN JSON Name"].apply(parseDimN)
+     analyzed["K"] = analyzed["FakeNN JSON Name"].apply(parseDimK)
+     analyzed= applyRemainderSize(analyzed,"mRem","M","m") 
+     analyzed= applyRemainderSize(analyzed,"nRem","N","n") 
+     analyzed = applyRemainderSize(analyzed,"kRem","K","k") 
+    #  analyzed["mRem"] = analyzed[["M","m"]].apply(lambda x: x["M"] % x["m"] if x["m"] != -1 and x["m"] != -1 else -1,axis=1)
+    #  analyzed["nRem"] = analyzed[["N","n"]].apply(lambda x: x["N"] % x["n"] if x["n"] != -1 and x["n"] != -1 else -1,axis=1)
+    #  analyzed["kRem"] = analyzed[["K","k"]].apply(lambda x: x["K"] % x["k"] if x["k"] != -1 and x["k"] != -1 else -1,axis=1)   
+    #  analyzed["mRem"] = analyzed[["M","m"]].apply(lambda x: x["M"] % x["m"] if x["m"] != -1 else -1,axis=1)
+    #  analyzed["nRem"] = analyzed[["N","n"]].apply(lambda x: x["N"] % x["n"] if x["n"] != -1 else -1,axis=1)
+    #  analyzed["kRem"] = analyzed[["K","k"]].apply(lambda x: x["K"] % x["k"] if x["k"] != -1 else -1,axis=1)
+    # #  analyzed["mRem"] = analyzed["M"] % analyzed["m"]
+    #  analyzed["nRem"] = analyzed["N"] % analyzed["n"]
+    #  analyzed["kRem"] = analyzed["K"] % analyzed["k"]
      analyzed["mnkRem"] = analyzed[["mRem","nRem","kRem"]].apply(lambda x: (int(x["mRem"]),int(x["nRem"]),int(x["kRem"])),axis=1)
      analyzed["1/mRem"]=1/analyzed["mRem"]
      analyzed["niceM"] = timed["m"].apply(lambda r: True if r % 8 == 0 else False)
