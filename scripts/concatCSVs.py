@@ -38,7 +38,9 @@ def main():
         raise Exception("Error: the to csv files contain differing number of columns")
 
     lr = pd.concat([l[list(l.columns)],r[list(l.columns)]],axis=0, ignore_index=True)
+    print(f"Rows in concatted file: {len(lr)}")
     df_cleaned = lr.drop_duplicates(subset=["FakeNN JSON Name"])
+    print(f"Rows in concatted file (after removing duplicates): {len(df_cleaned)}")
     df_cleaned.to_csv(outputName, index=False)
 
 
