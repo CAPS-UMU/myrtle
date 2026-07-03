@@ -237,18 +237,6 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      timed = applyRemainderSize(timed,"mRem","M","m") 
      timed = applyRemainderSize(timed,"nRem","N","n") 
      timed = applyRemainderSize(timed,"kRem","K","k") 
-    #  timed["mRem"] = timed[["M","m"]].apply(lambda x: int(x["M"]) % x["m"] if x["m"] != -1 and x["m"] != -1 else -1,axis=1)
-    #  timed["nRem"] = timed[["N","n"]].apply(lambda x: x["N"] % x["n"] if x["n"] != -1 and x["n"] != -1 else -1,axis=1)
-    #  timed["kRem"] = timed[["K","k"]].apply(lambda x: x["K"] % x["k"] if x["k"] != -1 and x["k"] != -1 else -1,axis=1)
-    #  timed["mRem"] = timed["M"] % timed["m"]
-    #  timed["nRem"] = timed["N"] % timed["n"]
-    #  timed["kRem"] = timed["K"] % timed["k"]
-     
-#      target_cols = ["M", "N", "K", "m", "n", "k","mRem","nRem","kRem"]
-#      nan_rows = timed[timed[target_cols].isna().any(axis=1)]
-
-# # Display the rows
-#      print(nan_rows)
      timed["mnkRem"] = timed[["mRem","nRem","kRem"]].apply(lambda x: (int(x["mRem"]),int(x["nRem"]),int(x["kRem"])),axis=1)
      timed["1/mRem"]=1/timed["mRem"]
      timed["niceM"] = timed["m"].apply(lambda r: True if r % 8 == 0 else False)
@@ -258,34 +246,13 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      timed["hypotenuse"] = timed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
      timed["Time (cycles)"]=timed["Global Sim E2E_dma"]
      timed["n / k"]=timed["Avg n'_sz / k_size"]
-     
-
- 
-    #  timed[timed["FakeNN JSON Name"]=="timeout"]["M"] = -1
-    #  timed[timed["FakeNN JSON Name"]=="timeout"]["N"] = -1
-    #  timed[timed["FakeNN JSON Name"]=="timeout"]["K"] = -1
-    #  analyzed[analyzed["FakeNN JSON Name"]=="timeout"]["M"] = -1
-    #  analyzed[analyzed["FakeNN JSON Name"]=="timeout"]["N"] = -1
-    #  analyzed[analyzed["FakeNN JSON Name"]=="timeout"]["K"] = -1
      analyzed=handle_timeouts(analyzed)
-     target_cols = ["M", "N", "K", "m", "n", "k","mRem","nRem","kRem"]
-     nan_rows = timed[timed[target_cols].isna().any(axis=1)]
-     print(nan_rows)
      analyzed["M"] = analyzed["FakeNN JSON Name"].apply(parseDimM)
      analyzed["N"] = analyzed["FakeNN JSON Name"].apply(parseDimN)
      analyzed["K"] = analyzed["FakeNN JSON Name"].apply(parseDimK)
      analyzed= applyRemainderSize(analyzed,"mRem","M","m") 
      analyzed= applyRemainderSize(analyzed,"nRem","N","n") 
      analyzed = applyRemainderSize(analyzed,"kRem","K","k") 
-    #  analyzed["mRem"] = analyzed[["M","m"]].apply(lambda x: x["M"] % x["m"] if x["m"] != -1 and x["m"] != -1 else -1,axis=1)
-    #  analyzed["nRem"] = analyzed[["N","n"]].apply(lambda x: x["N"] % x["n"] if x["n"] != -1 and x["n"] != -1 else -1,axis=1)
-    #  analyzed["kRem"] = analyzed[["K","k"]].apply(lambda x: x["K"] % x["k"] if x["k"] != -1 and x["k"] != -1 else -1,axis=1)   
-    #  analyzed["mRem"] = analyzed[["M","m"]].apply(lambda x: x["M"] % x["m"] if x["m"] != -1 else -1,axis=1)
-    #  analyzed["nRem"] = analyzed[["N","n"]].apply(lambda x: x["N"] % x["n"] if x["n"] != -1 else -1,axis=1)
-    #  analyzed["kRem"] = analyzed[["K","k"]].apply(lambda x: x["K"] % x["k"] if x["k"] != -1 else -1,axis=1)
-    # #  analyzed["mRem"] = analyzed["M"] % analyzed["m"]
-    #  analyzed["nRem"] = analyzed["N"] % analyzed["n"]
-    #  analyzed["kRem"] = analyzed["K"] % analyzed["k"]
      analyzed["mnkRem"] = analyzed[["mRem","nRem","kRem"]].apply(lambda x: (int(x["mRem"]),int(x["nRem"]),int(x["kRem"])),axis=1)
      analyzed["1/mRem"]=1/analyzed["mRem"]
      analyzed["niceM"] = timed["m"].apply(lambda r: True if r % 8 == 0 else False)
@@ -303,7 +270,6 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      analyzed["hypotenuse"] = analyzed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
      analyzed["Time (cycles)"]=analyzed["Global Sim E2E_dma"]
      analyzed["n / k"]=analyzed["Avg n'_sz / k_size"]
-     
      timed["remainderTiles"] = timed["remainderTiles"].apply(lambda x: "000" if x == 0 else f"{x}")
      timed["symbolMarker"] = timed["remainderTiles"].apply(lambda x: "O" if x == "000" else "^")
      timed = timed.sort_values(by="symbolMarker", ascending=True)
@@ -315,7 +281,6 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      timed["diff"] = timed["Time (cycles)"].apply(lambda x: (x - best)/best * 100)
      timed["n/k<1"] = timed["Avg n'_sz / k_size"].apply(lambda x: x < 1.0)
      timed["diff<0.5"] = timed["diff"].apply(lambda x: x <= 0.5)
-
      full["SSR Configs"] = full["SSR Config Count"]
      full["L1 Usage"] = full["Space Needed in L1"]
      full = addFakeTime(full,timed)

@@ -1,5 +1,6 @@
 from graphUtils import scatterWithColorSymbol, scatterWithFlatColorSymbol, scatterWithFlatColor, scatterWithColor, addScatterFlatColorMarker, stack_dfs_to_html, genResultGraphPDF
 import pandas as pd
+pd.set_option('display.max_rows', None)
 def jugaadTitle(df):
     M=int(df["M"][0])
     N=int(df["N"][0])
@@ -97,31 +98,33 @@ def printFinalRanking(title,df,colorCol):
 #     table = stack_dfs_to_html(my_dfs, my_titles, my_columns,title)
 #     return table
 
-def printFinalRankingTwoShelves(title,df,colorCol):
+def printFinalRankingTwoShelves(title, df, colorCol):
     """
     1. Sorts and slices unique 'FMADDsMULsPerCore' values from smallest to largest.
-    2. Groups rows by 'mRem' (ascending) and 'tileB' (descending) within each slice.
-    3. Returns two parallel lists: 
-       - fmadd_values: The sorted 'FMADDsMULsPerCore' identifiers.
-       - processed_dfs: The corresponding sorted DataFrames.
+    2. Groups rows by 'mRem' (ascending) and 'colorCol' (descending) within each slice.
+    3. Concatenates all processed slices into a single DataFrame.
+    4. Filters the concatenated DataFrame to keep only rows where 'timed' is False.
+    5. Returns the HTML table, the full concatenated DataFrame, and the filtered DataFrame.
     """
-    df=df.sort_values("Time (cycles)",ascending=True)
+    df = df.sort_values("Time (cycles)", ascending=True)
     df = df.reset_index(drop=True)
-    best=df["Time (cycles)"][0]
-    title=f"best observed: {best} cycles {title}"
+    best = df["Time (cycles)"][0]
+    title = f"best observed: {best} cycles {title}"
+    
     fmadd_values = []
     processed_dfs = []
     my_titles = []
-    my_columns = ["JSON Name","mnkRem","timed","Avg n'_sz / k_size",colorCol,"Time (cycles)","diff",]
+    my_columns = ["JSON Name", "mnkRem", "timed", "Avg n'_sz / k_size", colorCol, "Time (cycles)", "diff"]
+    
     # Get unique FMADD values, sort them from smallest to largest
-    sorted_fmadd_keys = sorted(df['FMADDsMULsPerCore'].unique(),reverse=True)
+    sorted_fmadd_keys = sorted(df['FMADDsMULsPerCore'].unique(), reverse=True)
     
     # Process each FMADD slice in ascending order
     for fmadd_value in sorted_fmadd_keys:
         # Extract the slice for the current FMADD value
         fmadd_group = df[df['FMADDsMULsPerCore'] == fmadd_value]
         
-        # Sort by 'mRem' (Smallest to Largest) and then 'tileB' (Largest to Smallest)
+        # Sort by 'mRem' (Smallest to Largest) and then colorCol (Largest to Smallest)
         processed_slice = fmadd_group.sort_values(
             by=['mRem', colorCol], 
             ascending=[True, False]
@@ -129,10 +132,21 @@ def printFinalRankingTwoShelves(title,df,colorCol):
         # Append to our parallel output lists
         fmadd_values.append(fmadd_value)
         processed_dfs.append(processed_slice)
-        myTitle=f"FMADDS: {fmadd_value} w/ len {len(processed_slice)}"
+        myTitle = f"FMADDS: {fmadd_value} w/ len {len(processed_slice)}"
         my_titles.append(myTitle)
-    table = stack_dfs_to_html(processed_dfs[0:4], my_titles[0:4], my_columns,title)
-    return table
+        
+    # 1. Concatenate all processed slices into a single DataFrame by stacking rows
+    # (ignoring index ensures a clean, continuous index for the combined df)
+    concatenated_df = pd.concat(processed_dfs, ignore_index=True) if processed_dfs else pd.DataFrame()
+    
+    # 2. Filter for rows where 'timed' value is False
+    filtered_df = concatenated_df[concatenated_df['timed'] == False]
+    
+    # Generate the usual HTML table
+    table = stack_dfs_to_html(processed_dfs[0:4], my_titles[0:4], my_columns, title)
+    
+    # 3. Return all three values
+    return table, concatenated_df, filtered_df
 
 def printMethodologyStats(full, pruned, timed):
     print(f"full ss has size {len(full)}")
@@ -338,8 +352,9 @@ def pruneApproach3(timed, analyzed, full):
      combined=pd.concat([nice_timed,nice_ut])
      #table=printFinalRanking("",combined,"tileB")
      table = ""
-     table2=printFinalRankingTwoShelves("(prioritizing mRem = 0, then larger nxk = tileB)",combined,"tileB")
-     
+     table2, asDF, filteredDF =printFinalRankingTwoShelves("(prioritizing mRem = 0, then larger nxk = tileB)",combined,"tileB")
+    #  print(filteredDF[["FakeNN JSON Name","FMADDsMULsPerCore","mRem","tileB"]].head(100))
+    #  filteredDF[["FakeNN JSON Name","FMADDsMULsPerCore","mRem","tileB"]].head(100).to_csv("out/toTime.csv")
      
      #special_figs.append(resultGraph) 
       
