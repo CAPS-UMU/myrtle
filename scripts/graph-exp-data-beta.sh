@@ -3,6 +3,7 @@ WEBPAGES40ishPoints=""
 USER="emily"
 
 #bash graph-both-data.sh dims-csv-name-line-by-line.input both
+# bash graph-exp-data-beta.sh dims-csv-name-line-by-line-expanded-SS.input expanded-SS-db
 
 
 graph(){

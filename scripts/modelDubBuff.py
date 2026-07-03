@@ -61,42 +61,6 @@ def printFinalRanking(title,df,colorCol):
     table = stack_dfs_to_html(my_dfs, my_titles, my_columns,title)
     return table
 
-# def printFinalRankingTwoShelves(title,df,colorCol):
-#     print("\tFinal ranking:")
-#     df=df.sort_values("Time (cycles)",ascending=True)
-#     df = df.reset_index(drop=True)
-#     best=df["Time (cycles)"][0]
-#     title=f"best observed: {best} cycles {title}"
-#     print(title)
-#     df=df.sort_values("FMADDsMULsPerCore",ascending=False)
-#     df["diff"] = df["Time (cycles)"].apply(lambda x: (x - best)/best * 100)
-#  #   print(df[["JSON Name","FMADDsMULsPerCore","timeout","Time (cycles)","diff"]][0:9])
-#     print("--------------------")
-#     #latexList=[subFigPro(title)]
-#     pointsPrinted = 0
-#     my_columns = ["JSON Name","mRem","timed","Avg n'_sz / k_size",colorCol,"Time (cycles)","diff",]
-#     my_dfs = []
-#     my_titles = []
-#     containsFast128Tile = False #"64-24-64"
-#     for fmadds, group_df in df.groupby("FMADDsMULsPerCore",sort=False):
-#             subtitle = f"FMADDS: {fmadds} w/ len {len(group_df)}"
-#             pointsPrinted = pointsPrinted + len(group_df)
-#             containsFast128Tile = (group_df ['JSON Name'] == '64-24-64').any()
-#             if pointsPrinted < 5 or not containsFast128Tile:
-#                 my_titles.append(subtitle)
-#                 print(subtitle)
-#                 toConcat = []
-#                 for mRem, shelf2 in group_df.groupby("mRem",sort=False):
-                    
-#                         mRemCat=shelf2.sort_values(colorCol,ascending=False)
-#                         toConcat.append(mRemCat)
-                        
-#                 concatted = pd.concat(toConcat)     
-#                 print(concatted) 
-#                 my_dfs.append(concatted)
-#     # Generate the an HTML version of ranking table
-#     table = stack_dfs_to_html(my_dfs, my_titles, my_columns,title)
-#     return table
 
 def printFinalRankingTwoShelves(title, df, colorCol):
     """
@@ -114,7 +78,7 @@ def printFinalRankingTwoShelves(title, df, colorCol):
     fmadd_values = []
     processed_dfs = []
     my_titles = []
-    my_columns = ["JSON Name", "mnkRem", "timed", "Avg n'_sz / k_size", colorCol, "Time (cycles)", "diff"]
+    my_columns = ["JSON Name", "mnkRem", "timed", "Avg n'_sz / k_size",colorCol, "Time (cycles)", "diff"]
     
     # Get unique FMADD values, sort them from smallest to largest
     sorted_fmadd_keys = sorted(df['FMADDsMULsPerCore'].unique(), reverse=True)
@@ -226,6 +190,7 @@ def pruneApproach3(timed, analyzed, full):
         "tileB",
         "Avg n'_sz / k_size",
         "timedData",
+        "comp/memxfer",
      ]
      minimal_hover = [
         "JSON Name",       
@@ -234,6 +199,21 @@ def pruneApproach3(timed, analyzed, full):
      ]
      special_figs=[]
      more_figs = []
+
+     y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
+     x_col = "comp/memxfer"#"Global Sim E2E_dma"
+     special_figs.append(scatterWithColorSymbol(
+         timed,
+            x_col,
+            y_col,
+            "diff",
+            hover_data,
+            "Reality Check. Make sure fastest point is ranked 1.",
+            "timedData",
+            ["circle","circle"]
+     ))
+
+
      #reality check
      x_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
      y_col = "Global Sim E2E_dma"#"Global Sim E2E_dma"

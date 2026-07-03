@@ -246,6 +246,7 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      timed["hypotenuse"] = timed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
      timed["Time (cycles)"]=timed["Global Sim E2E_dma"]
      timed["n / k"]=timed["Avg n'_sz / k_size"]
+     timed["comp/memxfer"]=timed["FMADDsMULsPerCore"]/timed["tileA"]+timed["tileB"]+timed["tileC"]
      analyzed=handle_timeouts(analyzed)
      analyzed["M"] = analyzed["FakeNN JSON Name"].apply(parseDimM)
      analyzed["N"] = analyzed["FakeNN JSON Name"].apply(parseDimN)
@@ -270,6 +271,7 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      analyzed["hypotenuse"] = analyzed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
      analyzed["Time (cycles)"]=analyzed["Global Sim E2E_dma"]
      analyzed["n / k"]=analyzed["Avg n'_sz / k_size"]
+     analyzed["comp/memxfer"]=analyzed["FMADDsMULsPerCore"]/timed["tileA"]+timed["tileB"]+timed["tileC"]
      timed["remainderTiles"] = timed["remainderTiles"].apply(lambda x: "000" if x == 0 else f"{x}")
      timed["symbolMarker"] = timed["remainderTiles"].apply(lambda x: "O" if x == "000" else "^")
      timed = timed.sort_values(by="symbolMarker", ascending=True)
@@ -290,7 +292,7 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
         "timeout",
         "absoluteRank",
         "dma",
-        "HW Loops",
+        "comp/memxfer",
         "SSR Configs",
         "FMADDsMULs",
         "FMADDsMULsPerCore",
