@@ -34,4 +34,4 @@ INDEX_SUMMARY="Experimental Pruning points timed."
 echo $INDEX_TITLE > tempTitle.txt
 echo $INDEX_SUMMARY > tempSummary.txt
 python generate-html-index.py "./out/$2" $WEBPAGES40ishPoints tempTitle.txt tempSummary.txt
-rm -rf tempTitle.txt tempSummary.txt
+#rm -rf tempTitle.txt tempSummary.txt

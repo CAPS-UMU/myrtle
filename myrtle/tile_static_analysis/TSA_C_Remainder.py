@@ -82,6 +82,8 @@ class TSA_C_Remainder(TileSizeAnalyzer):
         info["Avg A'"] =  info["A'"] / info["Total CL Tiles"]
         info["Avg m'_sz / k_size"] = info["m'_sz / k_size"] / cc_tile_count
         info["Avg n'_sz / k_size"] = info["n'_sz / k_size"] / cc_tile_count
+        info["Avg m'_sz*n_sz / k_sz"] = info["m'_sz*n_sz / k_sz"] / cc_tile_count
+        info["Avg m_sz*n_sz / k_sz"] = info["m_sz*n_sz / k_sz"] / cc_tile_count
         info["remainderTiles"] = ts.remainderTiles
         return info
 

@@ -53,6 +53,8 @@ class ComputeCoreTile():
         info["(A''+ B') / C''"] = (info["A''"]+info["B'"] )/ info["C''"]
         info["m'_sz / k_size"] = self.m_prime_sz / self.l1Tile.k_sz
         info["n'_sz / k_size"] = self.l1Tile.n_sz / self.l1Tile.k_sz
+        info["m'_sz*n_sz / k_sz"] = self.m_prime_sz * self.l1Tile.n_sz / self.l1Tile.k_sz 
+        info["m_sz*n_sz / k_sz"] = self.l1Tile.m_sz * self.l1Tile.n_sz / self.l1Tile.k_sz 
         # not so helpful
         info["myRegPerStream"] =self.l1Tile.m_sz*self.l1Tile.n_sz / (128*self.l1Tile.k_sz) # old reg per stream metric that didn't use CC tile shape
         info["HW Loops / SSR Loads"] = self.m_prime_sz * self.l1Tile.n_sz / (16 * self.l1Tile.k_sz)# deprecated
@@ -85,6 +87,8 @@ class ComputeCoreTile():
         info["(A''+ B') / C''"] = 0
         info["m'_sz / k_size"] = 0
         info["n'_sz / k_size"] = 0
+        info["m'_sz*n_sz / k_sz"] = 0 
+        info["m_sz*n_sz / k_sz"] = 0
         # not as helpful
         info["myRegPerStream"] =0
         info["HW Loops / SSR Loads"] = 0

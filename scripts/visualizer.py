@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 import pandas as pd
 import math
 import re
-from graphUtils import genResultGraphPDF, saveFigsInHTML, scatterWithColorSymbol, scatterWithFlatColorSymbol, scatterWithFlatColor, scatterWithColor, addScatterFlatColorMarker, stack_dfs_to_html
+from graphUtils import genResultGraphPDF, saveFigsInHTML, scatterWithColorSymbol, scatterWithFlatColorSymbol, scatterWithFlatColor, scatterWithColor, addScatterFlatColorMarker, stack_dfs_to_html, genResultGraphQPDF
 from modelDubBuff import pruneApproach3
 
 subfigEpi=r"""
@@ -1315,9 +1315,9 @@ def pruneApproachQ(timed,noPrune=False):
         "n/k > 1"
         )
   
-    #  resultGraph = genResultGraphPDF(jugaadTitle(timed),nice_timed_lt1,nice_ut_lt1,nice_timed_gte1,hover_data,"n / k")
+    #resultGraph = genResultGraphPDF(jugaadTitle(timed),nice_timed_lt1,nice_ut_lt1,nice_timed_gte1,hover_data,"n / k")
     #printFinalRankingQ(jugaadTitleQ(best_third_ssr),best_third_ssr,"fmaddsPerCore")
-    #  special_figs.append(resultGraph)     
+    #special_figs.append(resultGraph)     
     return special_figs,more_figs
 
 def visualizePruningQ(timed,titleOfWebpage):

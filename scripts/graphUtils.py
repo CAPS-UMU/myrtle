@@ -389,7 +389,7 @@ def genResultGraphQPDF(title,timed, recentlyPruned,hover_data,color="fmaddsPerCo
     
 
 
-    #fig.write_image(f"out/{title}.pdf", width=1200, height=800, scale=3)
+    fig.write_image(f"out/{title}.pdf", width=1200, height=800, scale=3)
     # I have a 7x10 paper, so 1/3 of the width is approx 2.3 inches
     # let's try 600 dpi for the scale
     # plotly graph is 7 wide and 8 tall

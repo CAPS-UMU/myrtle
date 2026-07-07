@@ -1,6 +1,101 @@
 from graphUtils import scatterWithColorSymbol, scatterWithFlatColorSymbol, scatterWithFlatColor, scatterWithColor, addScatterFlatColorMarker, stack_dfs_to_html, genResultGraphPDF
 import pandas as pd
+from typing import List
+import numpy as np
 pd.set_option('display.max_rows', None)
+
+def generate_latex_table(
+    df: pd.DataFrame, 
+    columns_to_include: List[str], 
+    output_headers: List[str],
+    index: bool = False
+) -> str:
+    # 1. Extract the first 5 rows
+    top_5 = df.head(6).copy()
+    
+    # 2. Find the row where diff == 0.0
+    diff_zero_row = df[df['diff'] == 0.0].head(1).copy()
+    
+    # Combine the selections, ensuring no duplicates if the 0.0 row falls in the top 5
+    if not diff_zero_row.empty and diff_zero_row.index[0] not in top_5.index:
+        selected_df = pd.concat([top_5, diff_zero_row])
+    else:
+        selected_df = top_5
+    
+    # 3. Filter and order data based strictly on user input data frame columns
+    selected_df = selected_df[[c for c in columns_to_include if c in selected_df.columns]]
+    
+    # 4. Build the LaTeX string pieces
+    latex_lines = []
+    latex_lines.append(r"\begin{table}[h]")
+    latex_lines.append(r"\centering")
+    
+    # Dynamic column alignment string (e.g., |l|r|r|...) based on df column selection
+    alignments = []
+    
+    # Prepend alignment for the index column if requested
+    if index:
+        alignments.append('r')
+        
+    for col in selected_df.columns:
+        if col == 'FakeNN JSON Name':
+            alignments.append('l')
+        else:
+            alignments.append('r')
+    col_alignment_str = f"|{'|'.join(alignments)}|"
+    
+    latex_lines.append(f"\\begin{{tabular}}{{{col_alignment_str}}}")
+    latex_lines.append(r"\hline")
+    
+    # Header Row using the custom output headers list
+    display_headers = output_headers if len(output_headers) == len(selected_df.columns) else selected_df.columns
+    headers = display_headers#[f"\\textbf{{{str(h).replace('_', r'\\_')}}}" for h in display_headers]
+    
+    # Prepend "Index" header if index=True
+    if index:
+        headers.insert(0, r"\textbf{Index}")
+        
+    header_row = " & ".join(headers) + r" \\"
+    latex_lines.append(header_row)
+    latex_lines.append(r"\hline")
+    
+    # 5. Populate rows dynamically
+    for idx, (original_idx, row) in enumerate(selected_df.iterrows()):
+        row_elements = []
+        
+        # Add the original dataframe index value if requested
+        if index:
+            row_elements.append(str(original_idx))
+            
+        for col in selected_df.columns:
+            val = row[col]
+            
+            # Safely check for Python float or NumPy float variants
+            if isinstance(val, (float, np.floating)):
+                val_str = f"{val:.2f}"
+            # Sanitize string columns from throwing LaTeX syntax crashes
+            elif isinstance(val, str):
+                val_str = val.replace("_", r"\_")
+            else:
+                val_str = str(val)
+                
+            row_elements.append(val_str)
+            
+        row_str = " & ".join(row_elements) + r" \\"
+        
+        # Apply yellow background color ONLY to the second row (the first data row, idx == 0)
+        if idx == 0:
+            row_str = r"\rowcolor{yellow} " + row_str
+            
+        latex_lines.append(row_str)
+        
+    latex_lines.append(r"\hline")
+    latex_lines.append(r"\end{tabular}")
+    latex_lines.append(r"\caption{Neural Network Performance Metrics}")
+    latex_lines.append(r"\end{table}")
+    
+    return "\n".join(latex_lines)
+
 def jugaadTitle(df):
     M=int(df["M"][0])
     N=int(df["N"][0])
@@ -78,7 +173,7 @@ def printFinalRankingTwoShelves(title, df, colorCol):
     fmadd_values = []
     processed_dfs = []
     my_titles = []
-    my_columns = ["JSON Name", "mnkRem", "timed", "Avg n'_sz / k_size",colorCol, "Time (cycles)", "diff"]
+    my_columns = ["JSON Name", "mnkRem", "timed", "Avg n'_sz / k_size","m'_sz*n_sz / k_sz",colorCol,"Avg B'", "Time (cycles)", "diff"]
     
     # Get unique FMADD values, sort them from smallest to largest
     sorted_fmadd_keys = sorted(df['FMADDsMULsPerCore'].unique(), reverse=True)
@@ -107,7 +202,8 @@ def printFinalRankingTwoShelves(title, df, colorCol):
     filtered_df = concatenated_df[concatenated_df['timed'] == False]
     
     # Generate the usual HTML table
-    table = stack_dfs_to_html(processed_dfs[0:4], my_titles[0:4], my_columns, title)
+    # table = stack_dfs_to_html(processed_dfs[0:6], my_titles[0:6], my_columns, title)
+    table = stack_dfs_to_html(processed_dfs, my_titles, my_columns, title)
     
     # 3. Return all three values
     return table, concatenated_df, filtered_df
@@ -315,7 +411,7 @@ def pruneApproach3(timed, analyzed, full):
          nice_timed,
             x_col,
             y_col,
-            "mRem",
+            "tileB",
             hover_data,
             "Final Cost Model selection: max. by Fmadds, tie break with smaller mRem",
             "timeout",
@@ -330,11 +426,125 @@ def pruneApproach3(timed, analyzed, full):
      #resultGraph = genResultGraphPDF(jugaadTitle(timed),nice_timed_reduced_lt1,nice_ut_reduced_lt1,nice_timed_reduced_gte1,hover_data,"mRem")
   
      combined=pd.concat([nice_timed,nice_ut])
+     #print(combined[["JSON Name","Avg n'_sz / k_size","Avg m'_sz / k_size"]])
+     #print("after pruning:")
+     combined=combined[combined["Avg n'_sz / k_size"]<=1.0]
+     combined = combined.sort_values(by="FMADDsMULsPerCore",ascending=False)
+     #print(combined[["JSON Name","Avg n'_sz / k_size"]])
      #table=printFinalRanking("",combined,"tileB")
      table = ""
      table2, asDF, filteredDF =printFinalRankingTwoShelves("(prioritizing mRem = 0, then larger nxk = tileB)",combined,"tileB")
-    #  print(filteredDF[["FakeNN JSON Name","FMADDsMULsPerCore","mRem","tileB"]].head(100))
+    #  print(asDF[["JSON Name","FMADDsMULsPerCore","mRem","tileB","diff"]].head(10))
     #  filteredDF[["FakeNN JSON Name","FMADDsMULsPerCore","mRem","tileB"]].head(100).to_csv("out/toTime.csv")
+    # print(generate_latex_table(asDF,["FakeNN JSON Name","FMADDsMULsPerCore","mRem","tileB","Time (cycles)","diff"]))
+    #  dfCols = ["FakeNN JSON Name","FMADDsMULsPerCore","mRem","tileB","Time (cycles)","diff"]
+   #"SSR Config Time Total","Sum Compute + SSR Configs Total"
+    #  specialHover = [ "JSON Name",
+    #     "timeout",
+    #     "diff",
+    #     "dma",
+    #     "HW Loops",
+    #     "SSR Configs",
+    #     "FMADDsMULs",
+    #     "FMADDsMULsPerCore",
+    #     "Time (cycles)",#"SSR Loads per HW Loop",
+    #     "HW Loops / SSR Loads per HW Loop",
+    #     "remainderTiles",
+    #     "Global Sim E2E_dma",
+    #     "Total CL Tiles",
+    #     "L1 Usage",
+    #     "Avg CC Tile Size",
+    #     "mRem",
+    #     "tileB",
+    #     "Avg n'_sz / k_size",
+    #     "timedData",
+    #     "comp/memxfer",]
+     specialHover = [ "JSON Name",
+        "diff",
+        "SSR Configs",
+        "FMADDsMULsPerCore",
+        "Time (cycles)",#"SSR Loads per HW Loop",
+        "Total CL Tiles",
+        "L1 Usage",
+        "Avg CC Tile Size",
+        "mRem",
+        "tileB",
+        "comp/memxfer",]
+
+    #  dfCols = ["JSON Name","Time (cycles)","diff","Overlap Stall Time Total","Raw Compute Time Total"]
+     dfCols = ["JSON Name","Time (cycles)","diff"]
+     tableCols = ["m-n-k", "Time (cycles)", "\\% from Best"]
+     #print(print(asDF[dfCols].head(11)))
+    #  y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
+    #  x_col = "Raw Compute Time Total"#"Global Sim E2E_dma"
+    #  special_figs.append(scatterWithColorSymbol(
+    #      timed,
+    #         x_col,
+    #         y_col,
+    #         "tileB",
+    #         specialHover,
+    #         "What about overlap stall time and other metrics?",
+    #         "timedData",
+    #         ["circle","circle"]
+    #  ))
+    #  special_figs[-1].update_traces(showlegend=False)
+    #  y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
+    #  x_col = "Raw Compute Time Total"#"Global Sim E2E_dma"
+    #  special_figs.append(scatterWithColorSymbol(
+    #      asDF.head(11),
+    #         x_col,
+    #         y_col,
+    #         "tileB",
+    #         specialHover,
+    #         "What about overlap stall time and other metrics? 10 first on shelf",
+    #         "timedData",
+    #         ["circle","circle"]
+    #  ))
+    #  special_figs[-1].update_traces(showlegend=False)
+
+    #  y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
+    #  x_col = "comp/memxfer"#"Global Sim E2E_dma"
+    #  special_figs.append(scatterWithColorSymbol(
+    #      asDF.head(45),
+    #         x_col,
+    #         y_col,
+    #         "tileB",
+    #         specialHover,
+    #         "Coarse double buff metrix? 10 first on shelf",
+    #         "timedData",
+    #         ["circle","circle"]
+    #  ))
+    #  special_figs[-1].update_traces(showlegend=False)
+
+     y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
+     x_col = "m'_sz*n_sz / k_sz"#"Global Sim E2E_dma"
+     special_figs.append(scatterWithColorSymbol(
+         asDF.head(50),
+            x_col,
+            y_col,
+            "mRem",
+            specialHover,
+            "avg mn/k ",
+            "timedData",
+            ["circle","circle"]
+     ))
+     special_figs[-1].update_traces(showlegend=False)
+     
+
+    #  y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
+    #  x_col = "Overlap Stall Time Total"#"Global Sim E2E_dma"
+    #  special_figs.append(scatterWithColorSymbol(
+    #      asDF.head(11),
+    #         x_col,
+    #         y_col,
+    #         "tileB",
+    #         hover_data,
+    #         "What about overlap stall time and other metrics? 10 first on shelf",
+    #         "timedData",
+    #         ["circle","circle"]
+    #  ))
+    #  special_figs[-1].update_traces(showlegend=False)
+     print(generate_latex_table(asDF,dfCols,tableCols,index=True))
      
      #special_figs.append(resultGraph) 
       
