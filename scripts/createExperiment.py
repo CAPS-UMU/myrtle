@@ -118,8 +118,8 @@ def main():
         outputFiles.append(fullSS)
         requestedFiles.append(requestedFile)
         #subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json"])
-        spmLayout = "optSPM"
-        subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json", "prune",spmLayout])
+        spmLayout = "regular"
+        subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json", "prune", spmLayout])
         
 
     for (a,b) in zip(kernelNames,outputFiles):
