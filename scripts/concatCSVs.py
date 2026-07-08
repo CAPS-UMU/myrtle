@@ -27,18 +27,25 @@ def main():
         print(len(r.columns))
         print(l.columns)
         print(r.columns)
-        print("missing from left:")
+        print("missing from right:")
         for x in l.columns:
             if x not in r.columns:
                 print(x)
-        print("missing from right:")
+        print("missing from left:")
         for x in r.columns:
             if x not in l.columns:
-                print(x)           
-        raise Exception("Error: the to csv files contain differing number of columns")
+                print(x)
+        common = [c for c in l.columns if c in r.columns]
+        if "FakeNN JSON Name" not in common:
+            raise Exception("Error: 'FakeNN JSON Name' column is required in both csv files")
+        print("Warning: column sets differ, merging on the intersection of columns above")
+    else:
+        common = list(l.columns)
 
-    lr = pd.concat([l[list(l.columns)],r[list(l.columns)]],axis=0, ignore_index=True)
-    df_cleaned = lr.drop_duplicates(subset=["FakeNN JSON Name"])
+    lr = pd.concat([l[common],r[common]],axis=0, ignore_index=True)
+    # left (first argument) is treated as the newer/authoritative file, so on
+    # duplicate keys its row is kept over the right file's
+    df_cleaned = lr.drop_duplicates(subset=["FakeNN JSON Name"], keep='first')
     df_cleaned.to_csv(outputName, index=False)
 
 
