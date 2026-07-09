@@ -153,25 +153,30 @@ def main():
         print(f"export beta={beta_int};",file=compileScript)
         layout=int(spmLayout == "optSPM")
         print(f"export spm_opt={layout};",file=compileScript)
+        print(f"export TRACE_DMA_ONLY={1};",file=compileScript)
         print(f"bash myrtle-experiments/many_gemms.sh {ss} compile no no no > ./{topLevelOutputFolder}/compile-{basename}.txt;",file=compileScript)
         print(f"cd {topLevelOutputFolder};", file=compileScript)
 
         # create run script 
         print("cd ..;",file=runScript)    
         print(f"export experimentDir=/repo/{topLevelOutputFolder};",file=runScript)  
-        print(f"export TIMEOUT={timeout};",file=runScript)  
+        print(f"export TRACE_DMA_ONLY={1};",file=runScript)
+        print(f"export CYCLE_TIMEOUT={timeout};",file=runScript)  
+        print("export WALL_TIMEOUT=0;",file=runScript)  
         print(f"bash myrtle-experiments/many_gemms.sh {ss} check run no no > ./{topLevelOutputFolder}/run-{basename}.txt;",file=runScript)
         print(f"cd {topLevelOutputFolder};", file=runScript)
      
         # create check script
         print("cd ..;",file=checkScript)
         print(f"export experimentDir=/repo/{topLevelOutputFolder};",file=checkScript)
+        print(f"export TRACE_DMA_ONLY={1};",file=checkScript)
         print(f"bash myrtle-experiments/many_gemms.sh {ss} check no no no;",file=checkScript)
         print(f"cd {topLevelOutputFolder};", file=checkScript)
       
         # create extract script
         print("cd ..;",file=extractScript)
         print(f"export experimentDir=/repo/{topLevelOutputFolder};",file=extractScript)
+        print(f"export TRACE_DMA_ONLY={1};",file=extractScript)
         print(f"#bash myrtle-experiments/many_gemms.sh {ss} no no extract;",file=extractScript)
         print(f"python myrtle-experiments/combineTilingSchemeDataIntoSingleCSV.py {ss} $experimentDir;",file=extractScript)
         print(f"cd {topLevelOutputFolder};", file=extractScript)
