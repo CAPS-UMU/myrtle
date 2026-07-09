@@ -27,11 +27,11 @@ def main():
         print(len(r.columns))
         print(l.columns)
         print(r.columns)
-        print("missing from left:")
+        print("missing from right:")
         for x in l.columns:
             if x not in r.columns:
                 print(x)
-        print("missing from right:")
+        print("missing from left:")
         for x in r.columns:
             if x not in l.columns:
                 print(x)           
