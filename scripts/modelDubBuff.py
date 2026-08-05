@@ -172,8 +172,9 @@ def printFinalRankingTwoShelves(title, df, colorCol):
     
     fmadd_values = []
     processed_dfs = []
-    my_titles = []
-    my_columns = ["JSON Name", "mnkRem", "timed", "Avg n'_sz / k_size","m'_sz*n_sz / k_sz",colorCol,"Avg B'", "Time (cycles)", "diff"]
+    my_titles = [] #Avg m'_sz / k_size
+    #my_columns = ["JSON Name", "mnkRem", "timed", "Avg n'_sz / k_size","m'_sz*n_sz / k_sz",colorCol,"Avg B'", "Time (cycles)", "diff"]
+    my_columns = ["JSON Name", "mnkRem", "timed", "Avg n'_sz / k_size","Avg m'_sz / k_size",colorCol,"Avg B'", "Time (cycles)", "diff"]
     
     # Get unique FMADD values, sort them from smallest to largest
     sorted_fmadd_keys = sorted(df['FMADDsMULsPerCore'].unique(), reverse=True)
@@ -297,7 +298,7 @@ def pruneApproach3(timed, analyzed, full):
      more_figs = []
 
      y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
-     x_col = "comp/memxfer"#"Global Sim E2E_dma"
+     x_col = "Global Sim E2E_dma" #"comp/memxfer"
      special_figs.append(scatterWithColorSymbol(
          timed,
             x_col,
@@ -426,7 +427,7 @@ def pruneApproach3(timed, analyzed, full):
      #resultGraph = genResultGraphPDF(jugaadTitle(timed),nice_timed_reduced_lt1,nice_ut_reduced_lt1,nice_timed_reduced_gte1,hover_data,"mRem")
   
      combined=pd.concat([nice_timed,nice_ut])
-     #print(combined[["JSON Name","Avg n'_sz / k_size","Avg m'_sz / k_size"]])
+   #  print(combined[["JSON Name","Avg n'_sz / k_size","Avg m'_sz / k_size"]])
      #print("after pruning:")
      combined=combined[combined["Avg n'_sz / k_size"]<=1.0]
      combined = combined.sort_values(by="FMADDsMULsPerCore",ascending=False)
@@ -524,11 +525,25 @@ def pruneApproach3(timed, analyzed, full):
             y_col,
             "mRem",
             specialHover,
-            "avg mn/k ",
+            "sorting by avg mn/k after pruning by ssr configs, m-rem, and n/k<=1 ",
             "timedData",
             ["circle","circle"]
      ))
      special_figs[-1].update_traces(showlegend=False)
+     
+    #  y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
+    #  x_col = "Avg B'"#"Global Sim E2E_dma"
+    #  special_figs.append(scatterWithColorSymbol(
+    #      asDF.head(50),
+    #         x_col,
+    #         y_col,
+    #         "FMADDsMULsPerCore",
+    #         specialHover,
+    #         "sorting by avg B' after pruning by ssr configs, m-rem, and n/k<=1 ",
+    #         "timedData",
+    #         ["circle","circle"]
+    #  ))
+    #  special_figs[-1].update_traces(showlegend=False)
      
 
     #  y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
@@ -544,7 +559,8 @@ def pruneApproach3(timed, analyzed, full):
     #         ["circle","circle"]
     #  ))
     #  special_figs[-1].update_traces(showlegend=False)
-     print(generate_latex_table(asDF,dfCols,tableCols,index=True))
+     
+     # print(generate_latex_table(asDF,dfCols,tableCols,index=True))
      
      #special_figs.append(resultGraph) 
       

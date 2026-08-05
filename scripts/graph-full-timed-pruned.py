@@ -67,6 +67,11 @@ def main():
     #     print("M is missing from ann before the merge")
     df = df.merge(df_ann,how="left",on="FakeNN JSON Name")
    # print(f"after merge, df had {len(df.columns)} cols")
+    dfContainsNaNs = df[df.isna().any(axis=1)]
+    if not dfContainsNaNs.empty:
+        if dfContainsNaNs.shape[0] != 1: # it's okay if one row contains NaNs; that is likely the timeout row
+            print(dfContainsNaNs[["FakeNN JSON Name","m","n","k","FMADDsMULs","Total CC Tiles","SSR Config Count"]])
+            raise Exception("data frame of timed merged w/ ann contains NaNs!")
 
     # give analyzed points fake time data
     df_ann = ae.addFakeKernelTime(df_ann, df)

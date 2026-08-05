@@ -223,7 +223,7 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
             )
             return expNameRegex.search(nm).groups()[2]
      def applyRemainderSize(df,nm,D,d):
-         df[nm] = df[[D,d]].apply(lambda x: int(x[D]) % int(x[d]) if x[d] != -1 and x[d] != -1 else -1,axis=1)
+         df[nm] = df[[D,d]].apply(lambda x: int(x[D]) % int(x[d]) if (x[D] != -1 and x[d] != -1) else -1,axis=1)
          return df
          
      timed["Total CC Tiles"] = timed["SSR Config Count"]
@@ -234,6 +234,12 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      timed["M"] = timed["FakeNN JSON Name"].apply(parseDimM)
      timed["N"] = timed["FakeNN JSON Name"].apply(parseDimN)
      timed["K"] = timed["FakeNN JSON Name"].apply(parseDimK)
+    #  print(timed[timed.isna().any(axis=1)][["FakeNN JSON Name","M","N","K","m","n","k","FMADDsMULs"]])
+     timedContainsNaNs = timed[timed.isna().any(axis=1)]
+     if not timedContainsNaNs.empty:
+        if timedContainsNaNs.shape[0] != 1:
+            print(timedContainsNaNs[["FakeNN JSON Name","m","n","k","FMADDsMULs","Total CC Tiles","SSR Config Count"]])
+            raise Exception("data frame of timed values contains NaNs!")
      timed = applyRemainderSize(timed,"mRem","M","m") 
      timed = applyRemainderSize(timed,"nRem","N","n") 
      timed = applyRemainderSize(timed,"kRem","K","k") 
@@ -247,6 +253,7 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      timed["Time (cycles)"]=timed["Global Sim E2E_dma"]
      timed["n / k"]=timed["Avg n'_sz / k_size"]
      timed["comp/memxfer"]=timed["FMADDsMULsPerCore"]/timed["tileA"]+timed["tileB"]+timed["tileC"]
+     
      analyzed=handle_timeouts(analyzed)
      analyzed["M"] = analyzed["FakeNN JSON Name"].apply(parseDimM)
      analyzed["N"] = analyzed["FakeNN JSON Name"].apply(parseDimN)
@@ -272,6 +279,7 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      analyzed["Time (cycles)"]=analyzed["Global Sim E2E_dma"]
      analyzed["n / k"]=analyzed["Avg n'_sz / k_size"]
      analyzed["comp/memxfer"]=analyzed["FMADDsMULsPerCore"]/timed["tileA"]+timed["tileB"]+timed["tileC"]
+     
      timed["remainderTiles"] = timed["remainderTiles"].apply(lambda x: "000" if x == 0 else f"{x}")
      timed["symbolMarker"] = timed["remainderTiles"].apply(lambda x: "O" if x == "000" else "^")
      timed = timed.sort_values(by="symbolMarker", ascending=True)

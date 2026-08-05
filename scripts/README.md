@@ -53,3 +53,14 @@ Instead of "_ss_c_rem_div_ana_pruned", you can use "all" to query myrtle for the
    ```
 
 3. Copy this entire output folder to the `web` folder to view online from myrtle's github website.
+
+### Most up to date graphs
+
+We use input file `scripts/dims-csv-name-line-by-line-expanded-SS.input` and the bash script `scripts/graph-exp-data-beta.sh`.
+
+Example graphing run:
+
+```
+clear;bash graph-exp-data-beta.sh dims-csv-name-line-by-line-expanded-SS.input expanded-SS-db
+```
+
