@@ -118,13 +118,12 @@ def main():
         outputFiles.append(fullSS)
         requestedFiles.append(requestedFile)
         spmLayout = "regular"
-        #subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json", "prune", spmLayout])
-        subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json", "NoPrune", spmLayout])
+        subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json", "prune", spmLayout])
+        #subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json", "NoPrune", spmLayout])
         
 
     for (a,b) in zip(kernelNames,outputFiles):
         print(f'Generated SS for {a}')
-        print(f'Myrtle Output file is {b}')
     
     subprocess.call(['cp']+ requestedFiles+[ "-t", f"./{outputFolder}"])
     
