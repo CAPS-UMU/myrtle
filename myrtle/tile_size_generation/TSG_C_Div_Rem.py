@@ -139,61 +139,26 @@ class TSG_C_Div_Rem(TileSizeGenerator):
         print(unique_ssr_configs)
         prunePoint = unique_ssr_configs[x-1]  # prune to X smallest groups of ssr_configs 
         return prunePoint
-    
-    # returns a search space of divisor tiles (AND remainder tiles if no other option)
-    # def validDivisorTileOptions(self,pruned=False, debug=False, threshold=0):
+
+
+    # def validOptions(self):
     #     # all possible values for m, n, and k
     #     little_m_options = self.mDimOptions()
     #     little_n_options = self.nDimOptions()
     #     little_k_options = self.kDimOptions()
-
-    #     # filter for m's, n's and k's that divide evenly into M, N and K respectively
-    #     # fall back on remainder tiles if we have to
-    #     # M dim
-    #     little_m_no_pad = list(filter(lambda x: self.dividesIntoM(x), little_m_options))
-    #     m_options = little_m_no_pad
-    #     if len(little_m_no_pad) < 1:  # no options that divide evenly
-    #         little_m_rem = list(filter(lambda x: not self.dividesIntoM(x), little_m_options))
-    #         m_options = little_m_rem
-    #     # N dim
-    #     little_n_no_pad = list(filter(lambda x: self.dividesIntoN(x), little_n_options))
-    #     n_options = little_n_no_pad
-    #     if len(little_n_no_pad) < 1:  # no options that divide evenly
-    #         little_n_rem = list(filter(lambda x: not self.dividesIntoN(x), little_n_options))
-    #         n_options = little_n_rem
-    #     # K dim
-    #     little_k_no_pad = list(filter(lambda x: self.dividesIntoK(x), little_k_options))
-    #     k_options = little_k_no_pad
-    #     if len(little_k_no_pad) < 1:  # no options that divide evenly
-    #         # since we need the remainder tile options, make sure the remainder tile in the k dim is >= 3
-    #         little_k_rem = list(filter(lambda x: self.remainderKGreaterThanTwo(x), little_k_options))
-    #         k_options = little_k_rem        
-    #     # enumerate all divisor (or remainder, if forced) tile possibilities
-    #     mnk = list(product(m_options, n_options, k_options)) 
+    #     # since we include the remainder tile options, make sure the remainder tile in the k dim is >= 3
+    #     little_k_options = list(filter(lambda x: self.remainderKGreaterThanTwo(x), little_k_options))   
+    #     # print(f"m options are {little_m_options}") 
+    #     # print(f"n options are {little_n_options}")  
+    #     # print(f"k options are {little_k_options}")            
+    #     # enumerate all divisor and remainder tile possibilities
+    #     mnk = list(product(little_m_options, little_n_options, little_k_options)) 
     #     # remove duplicates
     #     options = set(mnk) 
     #     options_as_triples = list(options)
-    #     pruned_for_size = self.filterForSizeConstraints(options_as_triples, debug)        
-    #     return pruned_for_size
-
-    def validOptions(self):
-        # all possible values for m, n, and k
-        little_m_options = self.mDimOptions()
-        little_n_options = self.nDimOptions()
-        little_k_options = self.kDimOptions()
-        # since we include the remainder tile options, make sure the remainder tile in the k dim is >= 3
-        little_k_options = list(filter(lambda x: self.remainderKGreaterThanTwo(x), little_k_options))   
-        # print(f"m options are {little_m_options}") 
-        # print(f"n options are {little_n_options}")  
-        # print(f"k options are {little_k_options}")            
-        # enumerate all divisor and remainder tile possibilities
-        mnk = list(product(little_m_options, little_n_options, little_k_options)) 
-        # remove duplicates
-        options = set(mnk) 
-        options_as_triples = list(options)
-       # print(options_as_triples)
-        only_valid_sizes = self.filterForSizeConstraints(options_as_triples) 
-        return only_valid_sizes
+    #    # print(options_as_triples)
+    #     only_valid_sizes = self.filterForSizeConstraints(options_as_triples) 
+    #     return only_valid_sizes
 
     def filterForSizeConstraints(self, options_as_triples, debug = False):
         options_as_dicts = list(map(lambda tup: {"id":tup}, options_as_triples))
@@ -228,6 +193,46 @@ class TSG_C_Div_Rem(TileSizeGenerator):
         if len(valid_options_l1) == 0:
             raise Exception("Cannot find a valid tiling scheme!")
         return valid_options_l1
+
+    def annotateAndValidateSize(self, tup):
+        """
+        Annotates a single (m, n, k) tuple and returns the dictionary 
+        if it satisfies size constraints, otherwise returns None.
+        """
+        d = {"id": tup}
+        d = self.annnotateRemainderTileStatus(d)
+        d = self.annotateOptionWL1Usage(d)
+
+        # Check L1 space constraint
+        if d["Space Remaining"] < 0:
+            return None
+
+        # Check 8-bank SPM constraint if enabled
+        if self.optSPM:
+            eb = 8 * self.bankSizeBytes
+            if max(d["tileA"], d["tileB"], d["tileC"]) > eb:
+                return None
+
+        return d
+    
+    def validOptions(self):
+        m_options = set(self.mDimOptions())
+        n_options = set(self.nDimOptions())
+        k_options = {k for k in self.kDimOptions() if self.remainderKGreaterThanTwo(k)}
+
+        # Generate and filter in a single list comprehension
+        valid_options = [
+            opt
+            for m in m_options
+            for n in n_options
+            for k in k_options
+            if (opt := self.annotateAndValidateSize((m, n, k))) is not None
+        ]
+
+        if not valid_options:
+            raise Exception("Cannot find a valid tiling scheme!")
+
+        return valid_options
 
     def annnotateRemainderTileStatus(self, d):
         m = d["id"][0]
