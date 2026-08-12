@@ -17,7 +17,7 @@ import interactiveGraphs as ig
 # concatCSVs.py /home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/192x384x384-bgeSmall-reg-SPM-results.csv /home/emily/myrtle/sensitivity-analysis/beta=0/192x384x384wm-n-k_ss_c_rem_div_ana_pruned-results-unskipped.csv out/bge-concatted.csv
 # concatCSVs.py \
 # /home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/128x768x768-roberta-reg-SPM-results.csv \
-# /home/emily/myrtle/sensitivity-analysis/beta=0/128x768x768wm-n-k_ss_c_rem_div_ana-results-unskipped.csv \
+# /home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/128x768x768wm-n-k_ss_c_rem_div_ana-results-unskipped.csv \
 # out/roberta-concatted.csv
 
 def main():

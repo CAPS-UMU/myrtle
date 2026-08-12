@@ -203,8 +203,10 @@ def printFinalRankingTwoShelves(title, df, colorCol):
     filtered_df = concatenated_df[concatenated_df['timed'] == False]
     
     # Generate the usual HTML table
-    # table = stack_dfs_to_html(processed_dfs[0:6], my_titles[0:6], my_columns, title)
-    table = stack_dfs_to_html(processed_dfs, my_titles, my_columns, title)
+    # don't print all the shelves, in fact print a max of 6
+    finalShelf = min(10,len(processed_dfs)-1)
+    table = stack_dfs_to_html(processed_dfs[0:finalShelf], my_titles[0:finalShelf], my_columns, title)
+    #table = stack_dfs_to_html(processed_dfs, my_titles, my_columns, title)
     
     # 3. Return all three values
     return table, concatenated_df, filtered_df
@@ -259,8 +261,9 @@ def illustrate_ssr_pruning(pruned, full, more_figs,minimal_hover):
 
 def pruneApproach3(timed, analyzed, full):
      prunePoint = ssr_prune_frac(full,3)
-    # we assume untimed points are a subset of the pruned search space
      ut = analyzed[~analyzed["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])]
+     # make sure untimed points are a subset of the pruned search space
+     ut = ut[ut["SSR Config Count"] < prunePoint].copy()
      pruned = full[full["SSR Config Count"] < prunePoint]
      printMethodologyStats(full, pruned, timed)
      hover_data = [
@@ -326,28 +329,28 @@ def pruneApproach3(timed, analyzed, full):
      ))
 
     # illustrate_ssr_pruning(pruned, full, more_figs,minimal_hover)
-    #  y_col = "SSR Configs"
-    #  x_col = "L1 Usage"
-    #  fig = scatterWithFlatColor(
-    #         pruned,
-    #         x_col,
-    #         y_col,
-    #         "pink",
-    #         minimal_hover,
-    #         "1.2) Pruned Search Space (black points are timed); identify worst case CL boundary tiles",
-    #         "symbolMarker",
-    #     )
-    #  more_figs.append(fig)
-    #  addScatterFlatColorMarker(
-    #     more_figs[-1],
-    #     timed,
-    #     x_col,
-    #     y_col,
-    #     "black",
-    #     "circle",
-    #     minimal_hover,
-    #     "timed"
-    # )
+     y_col = "SSR Configs"
+     x_col = "L1 Usage"
+     fig = scatterWithFlatColor(
+            ut,
+            x_col,
+            y_col,
+            "pink",
+            minimal_hover,
+            f"Pruned Search Space to SSR configs <= {prunePoint} (black points are timed)",
+            "symbolMarker",
+        )
+     more_figs.append(fig)
+     addScatterFlatColorMarker(
+        more_figs[-1],
+        timed,
+        x_col,
+        y_col,
+        "black",
+        "circle",
+        minimal_hover,
+        "timed"
+    )
      
      
      
@@ -369,7 +372,7 @@ def pruneApproach3(timed, analyzed, full):
             y_col,
             "black",
             hover_data,
-            "1.2) Pruned Search Space (black points are timed); identify worst case CL boundary tiles (marked with red x)",
+            "1.2) Pruned out worst case CL boundary tiles (marked with red x)",
             "symbolMarker",
         )
     )
@@ -404,23 +407,6 @@ def pruneApproach3(timed, analyzed, full):
         "timed w/ worst case m remainder"
     )
      
-       
-     x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
-     y_col = "Time (cycles)"#"Global Sim E2E_dma"
-    # print(f"before appending: len of more_figs is {len(more_figs)}")
-     more_figs.append(scatterWithColorSymbol(
-         nice_timed,
-            x_col,
-            y_col,
-            "tileB",
-            hover_data,
-            "Final Cost Model selection: max. by Fmadds, tie break with smaller mRem",
-            "timeout",
-            ["circle","cross"]
-     ))
-     more_figs[-1].update_traces(showlegend=False)
-
-     
      #result graph
      x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
      y_col = "Time (cycles)"#"Global Sim E2E_dma"
@@ -430,36 +416,24 @@ def pruneApproach3(timed, analyzed, full):
    #  print(combined[["JSON Name","Avg n'_sz / k_size","Avg m'_sz / k_size"]])
      #print("after pruning:")
      combined=combined[combined["Avg n'_sz / k_size"]<=1.0]
+
+     combined = combined.sort_values(by="timed",ascending=False)
+     more_figs.append(scatterWithColorSymbol(
+         combined,
+            x_col,
+            y_col,
+            "tileB",
+            hover_data,
+            "Pruned to n/k <= 1: Maximize by Fmadds, tie break with smaller mRem first, then larger B tile",
+            "timeout",
+            ["circle","cross"]
+     ))
+     more_figs[-1].update_traces(showlegend=False)
+
      combined = combined.sort_values(by="FMADDsMULsPerCore",ascending=False)
-     #print(combined[["JSON Name","Avg n'_sz / k_size"]])
-     #table=printFinalRanking("",combined,"tileB")
      table = ""
      table2, asDF, filteredDF =printFinalRankingTwoShelves("(prioritizing mRem = 0, then larger nxk = tileB)",combined,"tileB")
-    #  print(asDF[["JSON Name","FMADDsMULsPerCore","mRem","tileB","diff"]].head(10))
-    #  filteredDF[["FakeNN JSON Name","FMADDsMULsPerCore","mRem","tileB"]].head(100).to_csv("out/toTime.csv")
-    # print(generate_latex_table(asDF,["FakeNN JSON Name","FMADDsMULsPerCore","mRem","tileB","Time (cycles)","diff"]))
-    #  dfCols = ["FakeNN JSON Name","FMADDsMULsPerCore","mRem","tileB","Time (cycles)","diff"]
-   #"SSR Config Time Total","Sum Compute + SSR Configs Total"
-    #  specialHover = [ "JSON Name",
-    #     "timeout",
-    #     "diff",
-    #     "dma",
-    #     "HW Loops",
-    #     "SSR Configs",
-    #     "FMADDsMULs",
-    #     "FMADDsMULsPerCore",
-    #     "Time (cycles)",#"SSR Loads per HW Loop",
-    #     "HW Loops / SSR Loads per HW Loop",
-    #     "remainderTiles",
-    #     "Global Sim E2E_dma",
-    #     "Total CL Tiles",
-    #     "L1 Usage",
-    #     "Avg CC Tile Size",
-    #     "mRem",
-    #     "tileB",
-    #     "Avg n'_sz / k_size",
-    #     "timedData",
-    #     "comp/memxfer",]
+    
      specialHover = [ "JSON Name",
         "diff",
         "SSR Configs",
@@ -472,51 +446,6 @@ def pruneApproach3(timed, analyzed, full):
         "tileB",
         "comp/memxfer",]
 
-    #  dfCols = ["JSON Name","Time (cycles)","diff","Overlap Stall Time Total","Raw Compute Time Total"]
-     dfCols = ["JSON Name","Time (cycles)","diff"]
-     tableCols = ["m-n-k", "Time (cycles)", "\\% from Best"]
-     #print(print(asDF[dfCols].head(11)))
-    #  y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
-    #  x_col = "Raw Compute Time Total"#"Global Sim E2E_dma"
-    #  special_figs.append(scatterWithColorSymbol(
-    #      timed,
-    #         x_col,
-    #         y_col,
-    #         "tileB",
-    #         specialHover,
-    #         "What about overlap stall time and other metrics?",
-    #         "timedData",
-    #         ["circle","circle"]
-    #  ))
-    #  special_figs[-1].update_traces(showlegend=False)
-    #  y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
-    #  x_col = "Raw Compute Time Total"#"Global Sim E2E_dma"
-    #  special_figs.append(scatterWithColorSymbol(
-    #      asDF.head(11),
-    #         x_col,
-    #         y_col,
-    #         "tileB",
-    #         specialHover,
-    #         "What about overlap stall time and other metrics? 10 first on shelf",
-    #         "timedData",
-    #         ["circle","circle"]
-    #  ))
-    #  special_figs[-1].update_traces(showlegend=False)
-
-    #  y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
-    #  x_col = "comp/memxfer"#"Global Sim E2E_dma"
-    #  special_figs.append(scatterWithColorSymbol(
-    #      asDF.head(45),
-    #         x_col,
-    #         y_col,
-    #         "tileB",
-    #         specialHover,
-    #         "Coarse double buff metrix? 10 first on shelf",
-    #         "timedData",
-    #         ["circle","circle"]
-    #  ))
-    #  special_figs[-1].update_traces(showlegend=False)
-
      y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
      x_col = "m'_sz*n_sz / k_sz"#"Global Sim E2E_dma"
      special_figs.append(scatterWithColorSymbol(
@@ -525,43 +454,11 @@ def pruneApproach3(timed, analyzed, full):
             y_col,
             "mRem",
             specialHover,
-            "sorting by avg mn/k after pruning by ssr configs, m-rem, and n/k<=1 ",
+            "Best 50, sorting by avg mn/k after pruning by ssr configs, m-rem, and n/k<=1 ",
             "timedData",
             ["circle","circle"]
      ))
      special_figs[-1].update_traces(showlegend=False)
      
-    #  y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
-    #  x_col = "Avg B'"#"Global Sim E2E_dma"
-    #  special_figs.append(scatterWithColorSymbol(
-    #      asDF.head(50),
-    #         x_col,
-    #         y_col,
-    #         "FMADDsMULsPerCore",
-    #         specialHover,
-    #         "sorting by avg B' after pruning by ssr configs, m-rem, and n/k<=1 ",
-    #         "timedData",
-    #         ["circle","circle"]
-    #  ))
-    #  special_figs[-1].update_traces(showlegend=False)
-     
-
-    #  y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
-    #  x_col = "Overlap Stall Time Total"#"Global Sim E2E_dma"
-    #  special_figs.append(scatterWithColorSymbol(
-    #      asDF.head(11),
-    #         x_col,
-    #         y_col,
-    #         "tileB",
-    #         hover_data,
-    #         "What about overlap stall time and other metrics? 10 first on shelf",
-    #         "timedData",
-    #         ["circle","circle"]
-    #  ))
-    #  special_figs[-1].update_traces(showlegend=False)
-     
-     # print(generate_latex_table(asDF,dfCols,tableCols,index=True))
-     
-     #special_figs.append(resultGraph) 
       
      return special_figs,more_figs,f"<span>{table2}</span><span>{table}</span>"
