@@ -99,8 +99,9 @@ def main():
         return
 
     # Manual C Backend
+    # initialize the tile size analyzer
     ann = TSA_C_Remainder(8, 8)
-
+    # initialize the tile size generator
     jen = TSG_C_Div_Rem(
         int(M),
         int(N),
