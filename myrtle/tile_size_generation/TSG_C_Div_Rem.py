@@ -68,16 +68,6 @@ class TSG_C_Div_Rem(TileSizeGenerator):
     def kDimOptions(self):
         if self.optSPM:
             return [self.K]
-            # max = self.K
-            # min = 8
-            # multiples = list(range(min, max+1,8))
-            # def k_remDivisibleBy8(k):
-            #     rem = self.K % k
-            #     if rem != 0:
-            #         return rem % 8 == 0
-            #     return True
-            # exhaustive = list(filter(k_remDivisibleBy8, multiples))
-            # return exhaustive
         else:
             max = self.K
             min = 8 if self.K >= 8 else 3 # min is 3 due to prologue and epilogue of HW Loop in assembly
@@ -139,26 +129,6 @@ class TSG_C_Div_Rem(TileSizeGenerator):
         print(unique_ssr_configs)
         prunePoint = unique_ssr_configs[x-1]  # prune to X smallest groups of ssr_configs 
         return prunePoint
-
-
-    # def validOptions(self):
-    #     # all possible values for m, n, and k
-    #     little_m_options = self.mDimOptions()
-    #     little_n_options = self.nDimOptions()
-    #     little_k_options = self.kDimOptions()
-    #     # since we include the remainder tile options, make sure the remainder tile in the k dim is >= 3
-    #     little_k_options = list(filter(lambda x: self.remainderKGreaterThanTwo(x), little_k_options))   
-    #     # print(f"m options are {little_m_options}") 
-    #     # print(f"n options are {little_n_options}")  
-    #     # print(f"k options are {little_k_options}")            
-    #     # enumerate all divisor and remainder tile possibilities
-    #     mnk = list(product(little_m_options, little_n_options, little_k_options)) 
-    #     # remove duplicates
-    #     options = set(mnk) 
-    #     options_as_triples = list(options)
-    #    # print(options_as_triples)
-    #     only_valid_sizes = self.filterForSizeConstraints(options_as_triples) 
-    #     return only_valid_sizes
 
     def filterForSizeConstraints(self, options_as_triples, debug = False):
         options_as_dicts = list(map(lambda tup: {"id":tup}, options_as_triples))
@@ -409,12 +379,6 @@ class TSG_C_Div_Rem(TileSizeGenerator):
         filenameSorted = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_c_rem_gen{prune}_ord_L1.csv"
         sortedByL1=df.sort_values("Space Needed in L1", ascending=False)
         sortedByL1.to_csv(filenameSorted,index=False)
-        # filenameNoK = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_padded_c_no_K.csv"
-        # noK = df[df["Kpad"] == 0 ]
-        # noK.to_csv(filenameNoK,index=False)
-        # filenameOnlyK = f"{pathlib.Path(__file__).parent.resolve()}/../out/{dispatchNickName}_ss_padded_c_only_K.csv"
-        # noK = df[df["padding"] == "00K" ]
-        # noK.to_csv(filenameOnlyK,index=False)
         print("\t", end="")
         print("TSG: wrote remainder-tile search space to")
         print("\t", end="")
