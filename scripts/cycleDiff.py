@@ -1,13 +1,21 @@
 import pandas as pd
 
 # Load the CSV files
-file_a = '/home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/192x384x384-bgeSmall-reg-SPM-results.csv'
-file_b = '/home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/gaboost/192x384x384-bgeSmall-reg-SPM-results-GABoost.csv'
+# file_a = '/home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/192x384x384-bgeSmall-reg-SPM-results.csv'
+# file_b = '/home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/gaboost/192x384x384-bgeSmall-reg-SPM-results-GABoost.csv'
 
-file_a = '/home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/128x128x128-reg-SPM-results.csv'
-file_b = '/home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/gaboost/128x128x128-reg-SPM-results-GABoost.csv'
+# file_a = '/home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/128x128x128-reg-SPM-results.csv'
+# file_b = '/home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/gaboost/128x128x128-reg-SPM-results-GABoost.csv'
 # file_a = '/home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/128x768x768-roberta-reg-SPM-results.csv'
 # file_b = '/home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/gaboost/128x768x768-roberta-reg-SPM-results-GABoost.csv'
+
+# let's compare Dani's myrtle branch results with my local myrtle branch results:
+# file_a = "/home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/128x128x128wm-n-k_ss_c_rem_div_ana_pruned-results-local-myrtle.csv"
+# file_b = '/home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/gaboost/128x128x128-reg-SPM-results-GABoost.csv'
+
+# let's compare local myrtle branch results with 16 kb and 8 kb instruction caches
+file_a = "/home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/128x128x128wm-n-k_local-myrtle-icache-16.csv"
+file_b = "/home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/128x128x128wm-n-k_local-myrtle-icache-8.csv"
 
 df_a = pd.read_csv(file_a)
 df_b = pd.read_csv(file_b)
@@ -53,6 +61,7 @@ cols_to_display = [
     'Abs_Pct_Diff (%)'
 ]
 print(merged_df[cols_to_display].to_string(index=False))
+# merged_df["FakeNN JSON Name"].to_csv("commonRows.csv",index=False)
 
 # 6. Calculate and print summary statistics
 mean_diff = merged_df['Diff'].mean()

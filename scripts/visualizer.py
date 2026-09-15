@@ -5,7 +5,7 @@ import pandas as pd
 import math
 import re
 from graphUtils import genResultGraphPDF, saveFigsInHTML, scatterWithColorSymbol, scatterWithFlatColorSymbol, scatterWithFlatColor, scatterWithColor, addScatterFlatColorMarker, stack_dfs_to_html, genResultGraphQPDF
-from modelDubBuff import pruneApproach3
+from modelDubBuff import pruneApproach3,pruneApproach4
 
 subfigEpi=r"""
             \bottomrule
@@ -113,7 +113,8 @@ def printFinalRanking(title,df,colorCol):
    # print("--------------------")
     latexList=[subFigPro(title)]
     pointsPrinted = 0
-    my_columns = ["JSON Name","timeout","timed","Avg n'_sz / k_size","tileB",colorCol,"Time (cycles)","diff",]
+   # my_columns = ["JSON Name","timeout","timed","Avg n'_sz / k_size","tileB",colorCol,"Time (cycles)","diff",]
+    my_columns = ["JSON Name","timeout","timed","Avg n'_sz / k_size","tileB",colorCol,"mnk","Time (cycles)","diff",]
     my_dfs = []
     my_titles = []
     containsFast128Tile = False #"64-24-64"
@@ -244,15 +245,19 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      timed = applyRemainderSize(timed,"nRem","N","n") 
      timed = applyRemainderSize(timed,"kRem","K","k") 
      timed["mnkRem"] = timed[["mRem","nRem","kRem"]].apply(lambda x: (int(x["mRem"]),int(x["nRem"]),int(x["kRem"])),axis=1)
+     timed["mnk"] = timed[["m","n","k"]].apply(lambda x: int(x["m"])*int(x["n"])*int(x["k"]),axis=1)
      timed["1/mRem"]=1/timed["mRem"]
+     timed["m/mRem"]=timed["m"]/timed["mRem"]
+     timed["m % 8"]=timed["m"] % 8
      timed["niceM"] = timed["m"].apply(lambda r: True if r % 8 == 0 else False)
      timed["niceMRem"] = timed["mRem"].apply(lambda r: True if r == 0 or r % 8 == 0 else False)
+     #timed["niceMRem"] = timed["mRem"].apply(lambda r: True if r == 0 or r > 8 else False)
      timed["bothNice"]=timed[["niceM", "niceMRem"]].apply(lambda r: True if r["niceM"] & r["niceMRem"] else False,axis=1)
      timed["howNice"] = timed["mRem"].apply(lambda r: "zero" if r == 0 else ("divisBy8" if r % 8 == 0 else "mean"))
      timed["hypotenuse"] = timed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
      timed["Time (cycles)"]=timed["Global Sim E2E_dma"]
      timed["n / k"]=timed["Avg n'_sz / k_size"]
-     timed["comp/memxfer"]=timed["FMADDsMULsPerCore"]/timed["tileA"]+timed["tileB"]+timed["tileC"]
+     timed["comp/memxfer"]=timed["FMADDsMULsPerCore"]/timed["tileA"]+timed["tileB"] #+timed["tileC"]
      
      analyzed=handle_timeouts(analyzed)
      analyzed["M"] = analyzed["FakeNN JSON Name"].apply(parseDimM)
@@ -262,9 +267,13 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      analyzed= applyRemainderSize(analyzed,"nRem","N","n") 
      analyzed = applyRemainderSize(analyzed,"kRem","K","k") 
      analyzed["mnkRem"] = analyzed[["mRem","nRem","kRem"]].apply(lambda x: (int(x["mRem"]),int(x["nRem"]),int(x["kRem"])),axis=1)
+     analyzed["mnk"] = analyzed[["m","n","k"]].apply(lambda x: int(x["m"])*int(x["n"])*int(x["k"]),axis=1)
      analyzed["1/mRem"]=1/analyzed["mRem"]
+     analyzed["m/mRem"]=analyzed["m"]/analyzed["mRem"]
+     analyzed["m % 8"]=analyzed["m"] % 8
      analyzed["niceM"] = timed["m"].apply(lambda r: True if r % 8 == 0 else False)
      analyzed["niceMRem"] = analyzed["mRem"].apply(lambda r: True if r == 0 or r % 8 == 0 else False)
+     #analyzed["niceMRem"] = analyzed["mRem"].apply(lambda r: True if r == 0 or r > 8 else False)
      analyzed["howNice"] = analyzed["mRem"].apply(lambda r: "zero" if r == 0 else ("divisBy8" if r % 8 == 0 else "mean"))
      analyzed["bothNice"]=analyzed[["niceM", "niceMRem"]].apply(lambda r: True if r["niceM"] and r["niceMRem"] else False,axis=1)
      analyzed["Total CC Tiles"] = analyzed["SSR Config Count"]
@@ -278,7 +287,7 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      analyzed["hypotenuse"] = analyzed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
      analyzed["Time (cycles)"]=analyzed["Global Sim E2E_dma"]
      analyzed["n / k"]=analyzed["Avg n'_sz / k_size"]
-     analyzed["comp/memxfer"]=analyzed["FMADDsMULsPerCore"]/timed["tileA"]+timed["tileB"]+timed["tileC"]
+     analyzed["comp/memxfer"]=analyzed["FMADDsMULsPerCore"]/timed["tileA"]+timed["tileB"] #+timed["tileC"]
      
      timed["remainderTiles"] = timed["remainderTiles"].apply(lambda x: "000" if x == 0 else f"{x}")
      timed["symbolMarker"] = timed["remainderTiles"].apply(lambda x: "O" if x == "000" else "^")
@@ -334,6 +343,7 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      #special_figs,more_figs, table = pruneApproach1FewerGraphs(timed,analyzed,full)
     #  special_figs,more_figs, table = pruneApproach1(timed,analyzed,full)
      special_figs,more_figs, table = pruneApproach3(timed,analyzed,full)
+     #special_figs,more_figs, table = pruneApproach4(timed,analyzed,full)
     # special_figs=special_figs+more_figs
 
      #more_figs = pruneApproach2(timed,analyzed,full)
@@ -985,7 +995,6 @@ def pruneApproachQ(timed,noPrune=False):
     # prunePoint = ssr_prune_frac(timed,3)
     # pruned = timed[timed["SSR Config Count"] < prunePoint]
     #print(timed[["M"]])
-    #timed["niceMRem"] = timed["mRem"].apply(lambda r: True if r == 0 or r % 8 == 0 else False)
     timed["UaJ"]=timed["n"].apply(unrollAndJamFactor)
     sorted_ssr =timed.sort_values("SSR Configs", ascending=True)
     best_third_ssr = sorted_ssr.iloc[range(0, len(sorted_ssr)//3)]

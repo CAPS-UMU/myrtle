@@ -1,4 +1,4 @@
-from graphUtils import scatterWithColorSymbol, scatterWithFlatColorSymbol, scatterWithFlatColor, scatterWithColor, addScatterFlatColorMarker, stack_dfs_to_html, genResultGraphPDF
+from graphUtils import scatterWithColorSymbol, scatterWithFlatColorSymbol, scatterWithFlatColor, scatterWithColor, addScatterFlatColorMarker, stack_dfs_to_html, genResultGraphPDF,genShelfGraphPDF
 import pandas as pd
 from typing import List
 import numpy as np
@@ -9,7 +9,7 @@ def generate_latex_table(
     columns_to_include: List[str], 
     output_headers: List[str],
     index: bool = False
-) -> str:
+    ) -> str:
     # 1. Extract the first 5 rows
     top_5 = df.head(6).copy()
     
@@ -156,6 +156,60 @@ def printFinalRanking(title,df,colorCol):
     table = stack_dfs_to_html(my_dfs, my_titles, my_columns,title)
     return table
 
+#bash graph-exp-data-beta.sh dims-csv-name-line-by-line-expanded-SS.input expanded-SS-db3
+def printShelves(title, df, shelfVal, sliceVal, sliceSliceVal):
+    """
+    1. Sorts and slices unique 'shelfVal' values from smallest to largest.
+    2. Groups rows by 'sliceVal' (ascending) and 'sliceSliceVal' (descending) within each slice.
+    3. Concatenates all processed slices into a single DataFrame.
+    4. Filters the concatenated DataFrame to keep only rows where 'timed' is False.
+    5. Returns the HTML table, the full concatenated DataFrame, and the filtered DataFrame.
+    """
+    df = df.sort_values("Time (cycles)", ascending=True)
+    df = df.reset_index(drop=True)
+    best = df["Time (cycles)"][0]
+    title = f"best observed: {best} cycles {title}"
+    
+    fmadd_values = []
+    processed_dfs = []
+    my_titles = [] #Avg m'_sz / k_size
+    my_columns = ["JSON Name", "mnkRem", "timed", "Avg n'_sz / k_size","m'_sz*n_sz / k_sz",sliceSliceVal,"Avg B'", "Time (cycles)", "diff"]
+    my_columns = ["JSON Name", "mnkRem", "m/mRem", "Avg n'_sz / k_size","mnk",sliceSliceVal,"Total CL Tiles", "Time (cycles)", "diff"]
+    
+    # Get unique FMADD values, sort them from smallest to largest
+    sorted_fmadd_keys = sorted(df[shelfVal].unique(), reverse=False)
+    
+    # Process each FMADD slice in ascending order
+    for fmadd_value in sorted_fmadd_keys:
+        # Extract the slice for the current FMADD value
+        fmadd_group = df[df[shelfVal] == fmadd_value]
+        
+        # Sort by slice alue (Smallest to Largest) and then colorCol (SMALLEST TO LARGEST)
+        processed_slice = fmadd_group.sort_values(
+            by=[sliceVal, sliceSliceVal], 
+            ascending=[True, False]
+        )
+        # Append to our parallel output lists
+        fmadd_values.append(fmadd_value)
+        processed_dfs.append(processed_slice)
+        myTitle = f"{shelfVal}: {fmadd_value} w/ len {len(processed_slice)}"
+        my_titles.append(myTitle)
+        
+    # 1. Concatenate all processed slices into a single DataFrame by stacking rows
+    # (ignoring index ensures a clean, continuous index for the combined df)
+    concatenated_df = pd.concat(processed_dfs, ignore_index=True) if processed_dfs else pd.DataFrame()
+    
+    # 2. Filter for rows where 'timed' value is False
+    filtered_df = concatenated_df[concatenated_df['timed'] == False]
+    
+    # Generate the usual HTML table
+    # don't print all the shelves, in fact print a max of 6
+    finalShelf = min(20,len(processed_dfs)-1)
+    table = stack_dfs_to_html(processed_dfs[0:finalShelf], my_titles[0:finalShelf], my_columns, title)
+    #table = stack_dfs_to_html(processed_dfs, my_titles, my_columns, title)
+    
+    # 3. Return all three values
+    return table, concatenated_df, filtered_df
 
 def printFinalRankingTwoShelves(title, df, colorCol):
     """
@@ -173,8 +227,8 @@ def printFinalRankingTwoShelves(title, df, colorCol):
     fmadd_values = []
     processed_dfs = []
     my_titles = [] #Avg m'_sz / k_size
-    #my_columns = ["JSON Name", "mnkRem", "timed", "Avg n'_sz / k_size","m'_sz*n_sz / k_sz",colorCol,"Avg B'", "Time (cycles)", "diff"]
-    my_columns = ["JSON Name", "mnkRem", "timed", "Avg n'_sz / k_size","Avg m'_sz / k_size",colorCol,"Avg B'", "Time (cycles)", "diff"]
+    my_columns = ["JSON Name", "mnkRem", "timed", "Avg n'_sz / k_size","m'_sz*n_sz / k_sz",colorCol,"Avg B'", "Time (cycles)", "diff"]
+    my_columns = ["JSON Name", "timed", "Avg m'_sz*n_sz / k_sz", "FMADDsMULsPerCore","mRem","mnk",colorCol,"tileB", "Time (cycles)", "diff"]
     
     # Get unique FMADD values, sort them from smallest to largest
     sorted_fmadd_keys = sorted(df['FMADDsMULsPerCore'].unique(), reverse=True)
@@ -184,17 +238,18 @@ def printFinalRankingTwoShelves(title, df, colorCol):
         # Extract the slice for the current FMADD value
         fmadd_group = df[df['FMADDsMULsPerCore'] == fmadd_value]
         
-        # Sort by 'mRem' (Smallest to Largest) and then colorCol (Largest to Smallest)
+        # Sort by 'mRem' (Smallest to Largest) and then colorCol (SMALLEST TO LARGEST)
         processed_slice = fmadd_group.sort_values(
             by=['mRem', colorCol], 
-            ascending=[True, False]
+            ascending=[True, True]
         )
         # Append to our parallel output lists
         fmadd_values.append(fmadd_value)
         processed_dfs.append(processed_slice)
         myTitle = f"FMADDS: {fmadd_value} w/ len {len(processed_slice)}"
         my_titles.append(myTitle)
-        
+
+    three_shelves = dict(zip(fmadd_values[:3], processed_dfs[:3]))    
     # 1. Concatenate all processed slices into a single DataFrame by stacking rows
     # (ignoring index ensures a clean, continuous index for the combined df)
     concatenated_df = pd.concat(processed_dfs, ignore_index=True) if processed_dfs else pd.DataFrame()
@@ -204,12 +259,12 @@ def printFinalRankingTwoShelves(title, df, colorCol):
     
     # Generate the usual HTML table
     # don't print all the shelves, in fact print a max of 6
-    finalShelf = min(10,len(processed_dfs)-1)
+    finalShelf = min(20,len(processed_dfs)-1)
     table = stack_dfs_to_html(processed_dfs[0:finalShelf], my_titles[0:finalShelf], my_columns, title)
     #table = stack_dfs_to_html(processed_dfs, my_titles, my_columns, title)
     
-    # 3. Return all three values
-    return table, concatenated_df, filtered_df
+    # 3. Return all four values
+    return table, concatenated_df, filtered_df, three_shelves
 
 def printMethodologyStats(full, pruned, timed):
     print(f"full ss has size {len(full)}")
@@ -260,6 +315,242 @@ def illustrate_ssr_pruning(pruned, full, more_figs,minimal_hover):
     )
 
 def pruneApproach3(timed, analyzed, full):
+     prunePoint = ssr_prune_frac(full,3)
+     ut = analyzed[~analyzed["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])]
+     # make sure untimed points are a subset of the pruned search space
+     ut = ut[ut["SSR Config Count"] < prunePoint].copy()
+     pruned = full[full["SSR Config Count"] < prunePoint]
+     printMethodologyStats(full, pruned, timed)
+     hover_data = [
+        "JSON Name",
+        "timeout",
+        "absoluteRank",
+        "dma",
+        "HW Loops",
+        "SSR Configs",
+        "FMADDsMULs",
+        "FMADDsMULsPerCore",
+        "Time (cycles)",#"SSR Loads per HW Loop",
+        "HW Loops / SSR Loads per HW Loop",
+        "remainderTiles",
+        "Global Sim E2E_dma",
+        "Total CL Tiles",
+        "Total CC Tiles",
+        #"Overlap Stall Time Per Core",
+     #   "1/FMADDS",
+        "L1 Usage",
+        "Avg CC Tile Size",
+        "mnkRem",
+        "Avg L3 Loads",
+        "tileB",
+        "Avg n'_sz / k_size",
+        "timedData",
+        "comp/memxfer",
+     ]
+     minimal_hover = [
+        "JSON Name",       
+        "SSR Configs",
+        "L1 Usage",       
+     ]
+     special_figs=[]
+     more_figs = []
+
+     y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
+     x_col = "Global Sim E2E_dma" #"comp/memxfer"
+     special_figs.append(scatterWithColorSymbol(
+         timed,
+            x_col,
+            y_col,
+            "diff",
+            hover_data,
+            "Reality Check. Make sure fastest point is ranked 1.",
+            "timedData",
+            ["circle","circle"]
+     ))
+
+     y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
+     x_col = "FMADDsMULsPerCore" #"comp/memxfer"
+     special_figs.append(scatterWithColorSymbol(
+         timed,
+            x_col,
+            y_col,
+            "Total CL Tiles",
+            hover_data,
+            "Reality Check. Make sure CL tile count and fmadd are not the same thing...",
+            "timedData",
+            ["circle","circle"]
+     ))
+
+     
+     x_col = "diff" #"FMADDsMULsPerCore" #"comp/memxfer"
+     y_col = "comp/memxfer"#"Avg n'_sz / k_size"
+     special_figs.append(scatterWithColorSymbol(
+         timed,
+            x_col,
+            y_col,
+            "tileC",
+            hover_data,
+            "Can we see effect of double buffering?",
+            "timedData",
+            ["circle","circle"]
+     ))
+     special_figs[-1].add_hline(y=12000.0, line_width=0.75, line_dash="dash", line_color="black",layer="below")
+     special_figs[-1].add_hline(y=26000.0, line_width=0.75, line_dash="dash", line_color="black",layer="below")
+     special_figs[-1].add_vline(x=1.5, line_width=0.75, line_dash="dash", line_color="black",layer="below")
+    
+
+     
+     #reality check
+     x_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
+     y_col = "Global Sim E2E_dma"#"Global Sim E2E_dma"
+     more_figs.append(scatterWithColorSymbol(
+         timed,
+            x_col,
+            y_col,
+            "mRem",
+            hover_data,
+            "Reality Check. Make sure fastest point is ranked 1.",
+            "timedData",
+            ["circle","circle"]
+     ))
+
+    # illustrate_ssr_pruning(pruned, full, more_figs,minimal_hover)
+     y_col = "SSR Configs"
+     x_col = "L1 Usage"
+     fig = scatterWithFlatColor(
+            ut,
+            x_col,
+            y_col,
+            "pink",
+            minimal_hover,
+            f"Pruned Search Space to SSR configs <= {prunePoint} (black points are timed)",
+            "symbolMarker",
+        )
+     more_figs.append(fig)
+     addScatterFlatColorMarker(
+        more_figs[-1],
+        timed,
+        x_col,
+        y_col,
+        "black",
+        "circle",
+        minimal_hover,
+        "timed"
+    )
+     
+     
+     
+     # step 5: identify nice m remainders
+ 
+
+     nice_timed=timed[timed["niceMRem"]].copy()
+     nice_ut=ut[ut["niceMRem"]].copy()
+     nice_timed["timed"]=True
+     nice_ut["timed"] = False
+     mean_timed=timed[timed["niceMRem"]==False]
+     mean_ut=ut[ut["niceMRem"]==False]
+     x_col = "mRem"
+     y_col = "Global Sim E2E_dma"
+     more_figs.append(
+        scatterWithFlatColor(
+            nice_timed,
+            x_col,
+            y_col,
+            "black",
+            hover_data,
+            "1.2) Pruned out worst case CL boundary tiles (marked with red x)",
+            "symbolMarker",
+        )
+    )
+     addScatterFlatColorMarker(
+        more_figs[-1],
+        nice_ut,
+        x_col,
+        y_col,
+        "gray",
+        "circle",
+        hover_data,
+        "untimed w/ nice m remainder"
+    )
+     addScatterFlatColorMarker(
+        more_figs[-1],
+        mean_ut,
+        x_col,
+        y_col,
+        "red",
+        "x",
+        hover_data,
+        "untimed w/ worst case m remainder"
+    )
+     addScatterFlatColorMarker(
+        more_figs[-1],
+        mean_timed,
+        x_col,
+        y_col,
+        "red",
+        "x",
+        hover_data,
+        "timed w/ worst case m remainder"
+    )
+     
+     #result graph
+     x_col = "FMADDsMULsPerCore"#"Avg n'_sz / k_size"
+     y_col = "Time (cycles)"#"Global Sim E2E_dma"
+     #resultGraph = genResultGraphPDF(jugaadTitle(timed),nice_timed_reduced_lt1,nice_ut_reduced_lt1,nice_timed_reduced_gte1,hover_data,"mRem")
+  
+     combined=pd.concat([nice_timed,nice_ut])
+   #  print(combined[["JSON Name","Avg n'_sz / k_size","Avg m'_sz / k_size"]])
+     #print("after pruning:")
+    # combined=combined[combined["Avg n'_sz / k_size"]<=1.0]
+     #combined=combined[combined["m % 8"]==0]
+     combined = combined.sort_values(by="timed",ascending=False)
+     more_figs.append(scatterWithColorSymbol(
+         combined,
+            x_col,
+            y_col,
+            "tileB",
+            hover_data,
+            "Pruned to n/k <= 1: Maximize by Fmadds, tie break with smaller mRem first, then larger B tile",
+            "timeout",
+            ["circle","cross"]
+     ))
+     more_figs[-1].update_traces(showlegend=False)
+
+     combined = combined.sort_values(by="FMADDsMULsPerCore",ascending=False)
+     table = ""
+     #table2, asDF, filteredDF =printFinalRankingTwoShelves("(prioritizing mRem = 0, then larger nxk = tileB)",combined,"tileB")
+     table2, asDF, filteredDF, three_shelves =printFinalRankingTwoShelves("(prioritizing mRem = 0, then smaller m*n / k ratio)",combined,"m'_sz*n_sz / k_sz")
+    
+     help = genShelfGraphPDF(jugaadTitle(timed),three_shelves,hover_data,color="mRem")
+     specialHover = [ "JSON Name",
+        "diff",
+        "SSR Configs",
+        "FMADDsMULsPerCore",
+        "Time (cycles)",#"SSR Loads per HW Loop",
+        "Total CL Tiles",
+        "L1 Usage",
+        "Avg CC Tile Size",
+        "mRem",
+        "tileC",
+        "comp/memxfer",]
+
+     y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
+     x_col = "FMADDsMULsPerCore"#"m'_sz*n_sz / k_sz"#"Global Sim E2E_dma"
+     special_figs.append(scatterWithColorSymbol(
+         asDF.head(50),
+            x_col,
+            y_col,
+            "tileC",
+            specialHover,
+            "Best 50, maximize by FMADDsMULsPerCore, minimize by avg mn/k after pruning by ssr configs, m and m-rem ",
+            "timedData",
+            ["circle","circle"]
+     ))
+     special_figs[-1].update_traces(showlegend=False) 
+     return special_figs,more_figs,f"<span>{table2}</span><span>{table}</span>"
+
+
+def pruneApproach4(timed, analyzed, full):
      prunePoint = ssr_prune_frac(full,3)
      ut = analyzed[~analyzed["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])]
      # make sure untimed points are a subset of the pruned search space
@@ -415,8 +706,8 @@ def pruneApproach3(timed, analyzed, full):
      combined=pd.concat([nice_timed,nice_ut])
    #  print(combined[["JSON Name","Avg n'_sz / k_size","Avg m'_sz / k_size"]])
      #print("after pruning:")
-     combined=combined[combined["Avg n'_sz / k_size"]<=1.0]
-
+    # combined=combined[combined["Avg n'_sz / k_size"]<=1.0]
+     combined=combined[combined["m % 8"]==0]
      combined = combined.sort_values(by="timed",ascending=False)
      more_figs.append(scatterWithColorSymbol(
          combined,
@@ -424,15 +715,17 @@ def pruneApproach3(timed, analyzed, full):
             y_col,
             "tileB",
             hover_data,
-            "Pruned to n/k <= 1: Maximize by Fmadds, tie break with smaller mRem first, then larger B tile",
+            "Pruned to n/k <= 1: Maximize by Fmadds, tie break with smaller mRem first, then larger mn/k ratio.",
             "timeout",
             ["circle","cross"]
      ))
      more_figs[-1].update_traces(showlegend=False)
 
-     combined = combined.sort_values(by="FMADDsMULsPerCore",ascending=False)
      table = ""
-     table2, asDF, filteredDF =printFinalRankingTwoShelves("(prioritizing mRem = 0, then larger nxk = tileB)",combined,"tileB")
+     #combined = combined.sort_values(by="FMADDsMULsPerCore",ascending=False)
+     #table2, asDF, filteredDF =printFinalRankingTwoShelves("(prioritizing mRem = 0, then larger nxk = tileB)",combined,"tileB")
+     combined = combined.sort_values(by="m'_sz*n_sz / k_sz",ascending=True)
+     table2, asDF, filteredDF =printShelves("(prioritizing mRem = 0, then smaller m*n / k ratio)",combined,"m'_sz*n_sz / k_sz","mRem","FMADDsMULsPerCore")
     
      specialHover = [ "JSON Name",
         "diff",

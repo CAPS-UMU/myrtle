@@ -70,6 +70,26 @@ def addScatterFlatColorMarker(fig, df, x_col, y_col, color, marker, hover_data, 
         hovertemplate=(hoverTemplateString(df, hover_data, title)),
     )
 
+    def addCustomTextMarker(
+        fig, df, x_col, y_col, symbol_char, color, font_size, hover_data, title
+    ):
+        customData = df[hover_data].to_numpy()
+        fig.add_scatter(
+            x=df[x_col],
+            y=df[y_col],
+            mode="text",
+            text=[symbol_char] * len(df),
+            textfont=dict(
+                family="DejaVu Sans, Arial Unicode MS, Lucida Sans Unicode",
+                size=font_size,
+                color=color,  # Successfully recolors monochrome characters!
+            ),
+            showlegend=False,
+            name=title,
+            customdata=customData,
+            hovertemplate=hoverTemplateString(df, hover_data, title),
+        )
+
 def prunedScatter(df, x_col, y_col, color, hover_data, title, prunePoint, marker=""):
     df_mod = df
     if marker == "":
@@ -332,6 +352,128 @@ def genResultGraphPDF(title,timed, untimed, recentlyPruned,hover_data,color="n /
         cmax=colorMax        # Optional: You can also hardcode the maximum if you want
     )
     )
+
+    fig.write_image(f"out/{title}.pdf", scale=1)
+    #fig.write_image(f"out/{title}.pdf", width=widthPx, height=heightPx)
+    return fig
+
+def genShelfGraphPDF(title,dataDict,hover_data,color="mRem"):
+    colorCol=color
+    # colorMin=timed[colorCol].min()
+    # colorMax=timed[colorCol].max()
+    # # print(f"color min is {colorMin} with type{type(colorMin)}")
+    # # print(f"color max is {colorMax} with type{type(colorMax)}")
+    # if len(timed)<5:
+    #     rp_max=recentlyPruned["Time (cycles)"].max()
+    #     tm_max=timed["Time (cycles)"].max()
+    #     newFakeTime = max(tm_max,rp_max)
+    #     if newFakeTime==rp_max:
+    #         newFakeTime = rp_max*1.1
+    #     colorMin=min(colorMin,recentlyPruned[colorCol].min())
+    #     colorMax=max(colorMax,recentlyPruned[colorCol].max())
+    # else:
+    #     newFakeTime = timed["Time (cycles)"].max()*1.01
+    # # customize the height of the untimed points
+    # untimed = untimed.copy(deep=True)
+    # untimed["Time (cycles)"]=newFakeTime   
+   
+    first_key, shelf = next(iter(dataDict.items()))
+    x_col = "Avg m'_sz*n_sz / k_sz" #"FMADDsMULsPerCore"#"Avg n'_sz / k_size"
+    y_col = "diff" #"Time (cycles)"#"Global Sim E2E_dma"
+    fig=scatterWithColorSymbol(
+         shelf,
+            x_col,
+            y_col,
+            colorCol,
+            hover_data,
+            "testing short title",
+            "timeout",
+            ["circle","cross"]    )
+    # matching_rows = timed.loc[timed["timeout"] == True, "dma"]
+    # if not matching_rows.empty:
+    #     # plot timeout threshold
+    #     dma=matching_rows.values[0]
+    #     fig.add_hline(y=dma, line_width=0.75, line_dash="dash", line_color="black",layer="below")
+    # addScatterFlatColorMarker(
+    #     fig,
+    #     untimed,
+    #     x_col,
+    #     y_col,
+    #     "gray",
+    #     "square",
+    #     hover_data,
+    #     "untimed w/ nice m remainder, n/k < 1"
+    #     )
+    # if(len(timed)<5):
+    #     addScatterFlatColorMarker(
+    #     fig,
+    #     recentlyPruned,
+    #     x_col,
+    #     y_col,
+    #     "gray",
+    #     "circle-open",
+    #     hover_data,
+    #     "untimed w/ nice m remainder, n/k < 1"
+    #     )
+    fig.update_layout(
+        title=dict(
+            text=title,
+            x=0.5,             # Center point on a scale from 0 to 1
+            xanchor="center"   # Anchor the title string by its exact middle
+        )
+    )
+    fig.update_layout(
+    font=dict(
+       # family="CMU Serif",  # Tells Plotly to search your system for Computer Modern
+        family="CMU Serif, Computer Modern, Latin Modern Roman, Serif",
+        size=12,
+        color="black"
+    ),
+    )
+    fig.update_traces(showlegend=False)
+    
+
+
+    #fig.write_image(f"out/{title}.pdf", width=1200, height=800, scale=3)
+    # I have a 7x10 paper, so 1/3 of the width is approx 2.3 inches
+    # let's try 600 dpi for the scale
+    # plotly graph is 7 wide and 8 tall
+    dpi = 72 #300
+    widthPx=6*dpi
+    heightPx=4*dpi
+  
+    fig.update_layout(
+    # 1. Maintain your physical 6x4 inch PDF aspect ratio
+    width=widthPx,  
+    height=heightPx,
+    
+    # 2. Aggressively reduce the outer canvas padding
+    margin=dict(
+        l=30,  # Left margin (space for Y-axis titles/labels)
+        r=20,  # Right margin (space near your legend)
+        t=35,  # Top margin (just enough room for your centered title)
+        b=30   # Bottom margin (space for X-axis titles/labels)
+    ),
+    
+    # 3. Tell the axes to automatically expand only what they need
+    xaxis=dict(automargin=True),
+    yaxis=dict(automargin=True),
+    
+    # 4. Your clean, smaller font settings
+    font=dict(
+        family="CMU Sans Serif Demi Condensed,CMU Typewriter Text", 
+        size=14,
+        color="black"
+    ),
+    template="plotly_white")
+    # Scale it by 3x upon export to achieve 300 DPI crispness.
+    # This keeps the text, lines, and markers perfectly proportioned!
+    # fig.update_layout(
+    # coloraxis=dict(
+    #     cmin=colorMin,         # Force the scale to start exactly at 0
+    #     cmax=colorMax        # Optional: You can also hardcode the maximum if you want
+    # )
+    # )
 
     fig.write_image(f"out/{title}.pdf", scale=1)
     #fig.write_image(f"out/{title}.pdf", width=widthPx, height=heightPx)

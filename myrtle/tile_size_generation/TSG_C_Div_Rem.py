@@ -35,7 +35,7 @@ class TSG_C_Div_Rem(TileSizeGenerator):
         N_dim,
         K_dim,
         dispatchName="",
-        l1MemoryBytes=100000,
+        l1MemoryBytes=100000, # should be 112 * 1024
         bank_size=1024,
         dualBuff=True,
         optSPM=False,

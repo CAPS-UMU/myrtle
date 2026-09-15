@@ -1,3 +1,5 @@
+A is from padding branch - 8 icache
+B is from myrtle branch (Dani) - 16 icache
 (myrtle) emily@ProfessorPlum:~/myrtle/scripts$ python cycleDiff.py 
 Number of valid rows from A present in B (excluding -1 values): 6
 

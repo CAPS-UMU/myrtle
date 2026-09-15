@@ -1,1 +1,1 @@
-{"matmul_512x512x512_f64": {"loop-order": [[2, 0], [0, 0], [1, 0]], "tile-sizes": [[47], [64], [37]], "dual-buffer": true}}
+{"matmul_128x768x768_f64": {"loop-order": [[2, 0], [0, 0], [1, 0]], "tile-sizes": [[43], [48], [56]], "dual-buffer": true}}

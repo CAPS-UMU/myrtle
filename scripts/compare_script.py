@@ -6,6 +6,7 @@ import pandas as pd
 # python compare_script.py "/home/emily/myrtle/16x16x16 copy/16x16x16wm-n-k_ss_c_rem_div_ana_pruned.csv" "/home/emily/myrtle/16x16x16/16x16x16wm-n-k_ss_c_rem_div_ana_pruned.csv" 
 # python compare_script.py "/home/emily/myrtle/16x16x16 copy/16x16x16wm-n-k_ss_c_rem_div_ana.csv" "/home/emily/myrtle/16x16x16/16x16x16wm-n-k_ss_c_rem_div_ana.csv" 
 # python compare_script.py "/home/emily/myrtle/192x384x384/192x384x384wm-n-k_ss_c_rem_div_ana-old.csv" "/home/emily/myrtle/192x384x384/192x384x384wm-n-k_ss_c_rem_div_ana.csv"
+# python compare_script.py "/home/emily/myrtle/128x128x128/128x128x128wm-n-k_ss_c_rem_div_ana_pruned-old.csv" "/home/emily/myrtle/128x128x128/128x128x128wm-n-k_ss_c_rem_div_ana_pruned.csv"
 
 def compare_myrtle_outputs(old_csv_path: str, new_csv_path: str) -> bool:
     """
