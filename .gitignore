@@ -21,3 +21,5 @@ IGNORE/*
 scripts/out/*
 scripts/out/deleteLater/*
 myrtle/deleteLater/
+sensitivity-analysis/beta=0/spm-reg/untimed/384x384x384wm-n-k_ss_c_rem_div_ana.csv
+sensitivity-analysis/beta=0/spm-reg/untimed/512x512x512wm-n-k_ss_c_rem_div_ana.csv
