@@ -30,7 +30,8 @@ do
     graph "$line"
 done < "$1"
 
-
+# add an overview page
+WEBPAGES40ishPoints+=" out/overview.html"
 
 INDEX_TITLE="Both Remainders and Divisors - Experimental Pruning"
 INDEX_SUMMARY="Experimental Pruning points timed."

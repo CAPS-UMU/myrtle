@@ -36,9 +36,15 @@ def main():
     left = sys.argv[1]              
     right = sys.argv[2]            
     outputName= sys.argv[3]
+    if len(sys.argv) < 5:
+        mode = "polite"
+    else:
+        mode= sys.argv[4]
     l = pd.read_csv(left)
     r = pd.read_csv(right)
     print(f"Rows in File 1: {len(l)}")
+    #l_dups = l.loc[l.duplicated(subset='FakeNN JSON Name', keep=False)]
+    #print(f"File 1 contained duplicates:{l_dups}")
     print(f"Rows in File 2: {len(r)}")
     print(f"Expected total rows: {len(l) + len(r)}")
     if len(l.columns) != len(r.columns):
@@ -53,9 +59,11 @@ def main():
         for x in r.columns:
             if x not in l.columns:
                 print(x) 
-        # print("we continue by keeping only the LEFT df columns...")
-        # r = r.reindex(columns=l.columns).dropna(how='all', axis=1)  # get rid of cols in right that do not match left        
-        raise Exception("Error: the to csv files contain differing number of columns")
+        if mode == "agressive":
+            print("AGRESSIVE MODE: we continue by keeping only the LEFT df columns...")
+            r = r.reindex(columns=l.columns).dropna(how='all', axis=1)  # get rid of cols in right that do not match left        
+        else:
+            raise Exception("Error: the to csv files contain differing number of columns")
 
     lr = pd.concat([l[list(l.columns)],r[list(l.columns)]],axis=0, ignore_index=True)
     print(f"Rows in concatted file: {len(lr)}")

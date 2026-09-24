@@ -6,6 +6,7 @@ import math
 import re
 from graphUtils import genResultGraphPDF, saveFigsInHTML, scatterWithColorSymbol, scatterWithFlatColorSymbol, scatterWithFlatColor, scatterWithColor, addScatterFlatColorMarker, stack_dfs_to_html, genResultGraphQPDF
 from modelDubBuff import pruneApproach3,pruneApproach4
+import pathlib
 
 subfigEpi=r"""
             \bottomrule
@@ -339,6 +340,26 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      special_figs = []
      more_figs = []
      table=""
+
+     # save these search spaces with expanded annotations
+     
+     def createNickname(df):
+        m = timed["M"].iloc[0]
+        n = timed["N"].iloc[0]
+        k= timed["K"].iloc[0]
+        return f"{m}x{n}x{k}"
+
+     nickname = createNickname(timed)    
+     basename = f"{pathlib.Path(__file__).parent.resolve()}/out/expandedAnns/{nickname}"
+     timed.to_csv(
+        f"{basename}_timed.csv",
+        index=False)
+     analyzed.to_csv(
+        f"{basename}_analyzed.csv",
+        index=False)
+     full.to_csv(
+        f"{basename}_full.csv",
+        index=False)
 
      #special_figs,more_figs, table = pruneApproach1FewerGraphs(timed,analyzed,full)
     #  special_figs,more_figs, table = pruneApproach1(timed,analyzed,full)
