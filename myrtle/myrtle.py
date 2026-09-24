@@ -6,7 +6,7 @@ from tile_static_analysis.TSA_Quidditch import TSA_Quidditch
 from tile_static_analysis.TSA_C_Remainder import TSA_C_Remainder
 from tile_size_generation.TSG_C_Remainder import TSG_C_Remainder
 from tile_size_generation.TSG_C_Div_Rem import TSG_C_Div_Rem
-import tile_sel.tile_selection as tss
+import tile_selection.tile_selection as tss
 import re
 import pandas as pd
 import pathlib
@@ -47,13 +47,15 @@ def main():
     dispatchName = sys.argv[1]
     quidditch = True
     if sys.argv[1][:6] == "matmul":
-        print("\tTSG: we will prune for Manual C Backend")
+        print("myrtle: ", end="")
+        print("Manual C Backend")
         dispatchRegex = re.compile(r"matmul_(\d+)x(\d+)x(\d+)_f64")
         M, N, K = dispatchRegex.search(dispatchName).groups()
         dispatchNickName = f"{M}x{N}x{K}wm-n-k"
         quidditch = False
     else:
-        print("\tTSG: we will prune for Quidditch Backend")
+        print("myrtle: ", end="")
+        print("Quidditch Backend")
         dispatchRegex = re.compile(
             r"main\$async_dispatch_\d+_matmul_transpose_b_(\d+)x(\d+)x(\d+)_f64"
         )
@@ -61,22 +63,53 @@ def main():
         dispatchNickName = f"{M}x{N}x{K}wm-n-k"
     prune = False
     skipTSG = False
-    if len(sys.argv) >= 5:
+    if len(sys.argv) >= 6:
+        spm_opt = sys.argv[5] == "optSPM"
         if sys.argv[4] == "prune":
             prune = True
+        elif sys.argv[4] == "query":
+            print("myrtle: Tiling Scheme Query")
+            m = int(sys.argv[5])
+            n = int(sys.argv[6])
+            k = int(sys.argv[7])
+            spm_opt = sys.argv[8] == "optSPM"
+            jen = TSG_C_Div_Rem(
+            int(M),
+            int(N),
+            int(K),
+            dispatchName=dispatchName,
+            l1MemoryBytes=112 * 1024,
+            bank_size=1024,
+            dualBuff=True,
+            optSPM=spm_opt)
+            ts = jen.checkTSFits((m,n,k))
+            ann = TSA_C_Remainder(8, 8)
+            ts_as_df = jen.convertOptionsToDF(dispatchNickName, [ts])
+            ts_ssr_configs = ann.annotate_w_ssr_configs(ts_as_df)
+            # ts_as_dict = ts_ssr_configs.to_dict('records')
+            # ts_ann_as_dict = ann.analyze_option(ts_as_dict)
+            # ts_ann_as_df = pd.DataFrame(ts_ann_as_dict, columns=ts_ann_as_dict.keys())
+            
+            ts_analyzed = ann.analyze_options(ts_ssr_configs)
+            print("\nTiling Scheme Analyzed")
+            print(ts_analyzed)
+            return
         else:
             searchSpaceCSVName = sys.argv[4]
-            print("myrtle: ", end="")
-            print("Using search space passed in from command line.")
             if not os.path.exists(searchSpaceCSVName):
                 print("myrtle: ", end="")
                 print(
-                    "Can't find search space file. Continuing with automatic search space generation..."
+                    "Using automatic search space generation..."
                 )
             else:
+                print("myrtle: ", end="")
+                print("Using search space passed in from command line.")
                 options_as_df = pd.read_csv(searchSpaceCSVName)
                 skipTSG = True
-        spm_opt = sys.argv[5] == "optSPM"
+        
+    else:
+        print("myrtle: incorrect number of arguments; expecting >= 5")
+        return
 
     # Quidditch Backend
     if quidditch:
@@ -140,7 +173,7 @@ def main():
             index=False,
         )
         # only analyze points that survive pruning
-        suffix = "_rem_div_ana_pruned"
+        suffix = "_ss_c_rem_div_ana_pruned"
         analyzed = ann.analyze_options(sorted_pruned)
         analyzed = analyzed.sort_values(
             "SSR Config Count", ascending=True, ignore_index=True
@@ -152,7 +185,7 @@ def main():
         analyzed = analyzed.sort_values(
             "SSR Config Count", ascending=True, ignore_index=True
         )
-
+    print("\tTSA: wrote analyzed search space to")
     filename = (
         f"{pathlib.Path(__file__).parent.resolve()}/out/{dispatchNickName}{suffix}.csv"
     )
@@ -161,6 +194,7 @@ def main():
         index=False,
     )
     analyzedSearchSpaceCSVName = filename
+    print("\t",analyzedSearchSpaceCSVName)
     # select best tiling scheme using mode
     tileSelection(analyzedSearchSpaceCSVName, dispatchName, sys.argv[2], sys.argv[3])
 

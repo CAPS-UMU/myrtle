@@ -19,6 +19,18 @@ import interactiveGraphs as ig
 # /home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/128x768x768-roberta-reg-SPM-results.csv \
 # /home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/128x768x768wm-n-k_ss_c_rem_div_ana-results-unskipped.csv \
 # out/roberta-concatted.csv
+# python concatCSVs.py \
+# /home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/512x512x512wm-n-k_rem_div_ana_pruned-results-dma-only.csv \
+# /home/emily/myrtle/512x512x512-time-64-24-64/512x512x512wm-n-k_ss_c_rem_div_ana_pruned-results.csv \
+# out/512-cube-with-64-24-64.csv
+# python concatCSVs.py \
+# /home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/256x256x256wm-n-k_ss_c_rem_div_ana-results-unskipped.csv \
+# /home/emily/myrtle/256x256x256-time-40-40-65/256x256x256wm-n-k_ss_c_rem_div_ana-results.csv \
+# out/256cube-with-40-40-65.csv
+# python concatCSVs.py \
+# /home/emily/myrtle/sensitivity-analysis/beta=0/spm-reg/timed/128x128x128-reg-SPM-results.csv \
+# /home/emily/myrtle/128x128x128-time-40-40-65/128x128x128wm-n-k_ss_c_rem_div_ana_pruned-results.csv \
+# out/128cube-with-40-40-65.csv
 
 def main():
     left = sys.argv[1]              
@@ -41,7 +53,8 @@ def main():
         for x in r.columns:
             if x not in l.columns:
                 print(x) 
-        #r = r.reindex(columns=l.columns).dropna(how='all', axis=1)  # get rid of cols in B that do not match A        
+        # print("we continue by keeping only the LEFT df columns...")
+        # r = r.reindex(columns=l.columns).dropna(how='all', axis=1)  # get rid of cols in right that do not match left        
         raise Exception("Error: the to csv files contain differing number of columns")
 
     lr = pd.concat([l[list(l.columns)],r[list(l.columns)]],axis=0, ignore_index=True)

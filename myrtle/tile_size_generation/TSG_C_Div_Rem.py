@@ -129,6 +129,17 @@ class TSG_C_Div_Rem(TileSizeGenerator):
         print(unique_ssr_configs)
         prunePoint = unique_ssr_configs[x-1]  # prune to X smallest groups of ssr_configs 
         return prunePoint
+    
+    def checkTSFits(self, tup, debug=True):
+        d = {"id":tup}
+        annotated = self.annnotateRemainderTileStatus(d)
+        annotated = self.annotateOptionWL1Usage(d,debug)
+        if annotated["Space Remaining"] >= 0:
+            print("Tiling Scheme Fits")
+        else:
+            print("Tiling Scheme Does NOT fit")
+        print(annotated)
+        return annotated
 
     def filterForSizeConstraints(self, options_as_triples, debug = False):
         options_as_dicts = list(map(lambda tup: {"id":tup}, options_as_triples))
@@ -278,52 +289,50 @@ class TSG_C_Div_Rem(TileSizeGenerator):
         if debug:
             print("\n")
             print(f"Regular Matmul {self.M}-{self.N}-{self.K}:")
-            print(f"Tiling Scheme {m}-{n}-{k}:")
-            print(f"Allocate A tile: {m}x{k}")
+            print(f"Tiling Scheme {m}-{n}-{k} and SPM capacity {self.l1MemoryBytes}:")
+            print(f"Allocate A tile: {m}x{k} = {m*k} elts = {m*k*8} bytes")
             if self.dualBuff:
-                print(f"Allocate A2 tile: {m}x{k}")
-            print(f"Allocate B1 tile: {k}x{n}")
+                print(f"Allocate A2 tile: {m}x{k}= {m*k} elts = {m*k*8} bytes")
+            print(f"Allocate B1 tile: {k}x{n} = {k*n} elts = {k*n*8} bytes")
             if self.dualBuff:
-                print(f"Allocate B2 tile: {k}x{n}")
-            print(f"Allocate C tile: {m}x{n}")
+                print(f"Allocate B2 tile: {k}x{n} = {k*n} elts = {k*n*8} bytes")
+            print(f"Allocate C tile: {m}x{n} = {m*n} elts = {m*n*8} bytes")
             if self.dualBuff:
-                print(f"Allocate C2 tile: {m}x{n}")
+                print(f"Allocate C2 tile: {m}x{n} {m*n} elts = {m*n*8} bytes")
 
-        total = 2 * (tileA + tileB + tileC) if self.dualBuff else tileA + tileB + tileC
+        totalElts = 2 * (tileA + tileB + tileC) if self.dualBuff else tileA + tileB + tileC
 
         if debug:
-            if self.dualBuff:
+            if not self.dualBuff:
                 print(
-                    f"total = {tileA} + {tileB} + {tileC} = {total} elements or {total*8} bytes"
+                    f"total = {tileA} + {tileB} + {tileC} = {totalElts} elements or {totalElts*8} bytes"
                 )
             else:
                 print(
-                    f"total = {2} * ({tileA} + {tileB} + {tileC}) = {total} elements or {total*8} bytes"
+                    f"total = {2} * ({tileA} + {tileB} + {tileC}) = {totalElts} elements or {totalElts*8} bytes"
                 )
-            if total * 8 > self.l1MemoryBytes:
+            if totalElts * 8 > self.l1MemoryBytes:
                 print(
-                    f"which does NOT fit in L1 with {(total*8)-self.l1MemoryBytes} too many bytes!",
+                    f"which does NOT fit in L1 with {(totalElts*8)-self.l1MemoryBytes} too many bytes!",
                     end="\n\n",
                 )
             else:
                 print(
-                    f"which fits in L1 with {self.l1MemoryBytes-(total*8)} bytes to spare",
+                    f"which fits in L1 with {self.l1MemoryBytes-(totalElts*8)} bytes to spare",
                     end="\n\n",
                 )
 
         weightMatTileSpace = 2 * tileB if self.dualBuff else tileB
-        tileSpace = total
-        totalSpace = total
-        return tileSpace, weightMatTileSpace, totalSpace, tileA, tileB, tileC, tileA_cc, tileB_cc, tileC_cc
+        return weightMatTileSpace, totalElts, tileA, tileB, tileC, tileA_cc, tileB_cc, tileC_cc
 
     # augment a dictionary {"id":(m,n,k)} to include
     # total spaced used in L1
     # weight matrix tile size
     # space remaining
     # measured in BYTES
-    def annotateOptionWL1Usage(self, d):
-        tileSpace, weightMatTileSpace, totalUsage, tileA, tileB, tileC, tileA_cc, tileB_cc, tileC_cc = self.computeL1Usage(
-            d
+    def annotateOptionWL1Usage(self, d, debug=False):
+        weightMatTileSpace, totalUsage, tileA, tileB, tileC, tileA_cc, tileB_cc, tileC_cc = self.computeL1Usage(
+            d, debug
         )
         d["Space Needed in L1"]= totalUsage * 8
         d["Weight Matrix Tile Size"]= weightMatTileSpace * 8

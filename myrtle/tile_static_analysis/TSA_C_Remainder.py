@@ -5,6 +5,7 @@ from tile_static_analysis.TileSizeAnalyzer import TileSizeAnalyzer
 from functools import reduce
 import math
 from pandarallel import pandarallel
+import pprint
 
 class TSA_C_Remainder(TileSizeAnalyzer):
     def __init__(
@@ -29,6 +30,9 @@ class TSA_C_Remainder(TileSizeAnalyzer):
 
     def analyze_option(self, d):
         ts = TilingScheme(int(d["M"]),int(d["N"]),int(d["K"]),int(d["m"]),int(d["n"]),int(d["k"]),self.UaJF,self.DoP,d["remainderTiles"])
+        # info = ts.doubleBufferIters()
+        # print(f"The double buffering info is")
+        # pprint.pprint(info,width=1)
         d.update(self.tilingSchemeMetrics(ts))
         return d
     

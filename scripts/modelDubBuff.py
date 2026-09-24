@@ -229,6 +229,7 @@ def printFinalRankingTwoShelves(title, df, colorCol):
     my_titles = [] #Avg m'_sz / k_size
     my_columns = ["JSON Name", "mnkRem", "timed", "Avg n'_sz / k_size","m'_sz*n_sz / k_sz",colorCol,"Avg B'", "Time (cycles)", "diff"]
     my_columns = ["JSON Name", "timed", "Avg m'_sz*n_sz / k_sz", "FMADDsMULsPerCore","mRem","mnk",colorCol,"tileB", "Time (cycles)", "diff"]
+    my_columns = ["JSON Name", "timed", "Avg m'_sz*n_sz / k_sz", "mnkRem","mRem","mnk",colorCol,"tileB", "Time (cycles)", "diff"]
     
     # Get unique FMADD values, sort them from smallest to largest
     sorted_fmadd_keys = sorted(df['FMADDsMULsPerCore'].unique(), reverse=True)
