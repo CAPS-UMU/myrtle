@@ -1,0 +1,60 @@
+<html>
+
+<head>
+    <title>Myrtle Cost Model Results Summary</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background-color: #f7f7f7;
+        }
+
+        .dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            /* space between charts */
+        }
+
+        .plot-box {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+         .attention{
+            color: red;
+            text-decoration: underline;
+            text-align:center;
+        }
+        .center{
+          text-align:center;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 style="text-align:center;">Myrtle Cost Model Results</h1>
+    <div class="dashboard">
+        <h2>Why are some 256 cube points so slow??</h2>
+        <ul>
+            <li><a href="investigate-overlap-stall.html">256 cube - investigating stall cycles</a></li>
+            
+        </ul>
+        <h2>Estimating Banking Conflicts ?</h2>
+        <ul>
+            <li><a href="256x256x256w32-64-53-viz.html">256 cube - 32-64-53 (slow)</a></li>
+            <li><a href="256x256x256w64-32-53-viz.html">256 cube - 64-32-53 (slow)</a></li>
+            <li><a href="256x256x256w40-40-65-viz.html">256 cube - 40-40-65 (best; fastest observed)</a></li>
+            <li><a href="256x256x256w64-24-64-viz.html">256 cube - 64-24-64 (fast; differs from best by 0.14% )</a></li>
+            
+        </ul>
+        <a href="https://caps-umu.github.io/myrtle">Back to Homepage</a>
+       
+    </div>
+</body>
+
+</html>

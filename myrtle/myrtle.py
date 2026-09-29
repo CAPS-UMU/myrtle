@@ -11,6 +11,7 @@ import re
 import pandas as pd
 import pathlib
 import os.path
+import tile_static_analysis.vizSPM as vizSPM
 
 
 def tileSelection(analyzedSearchSpaceCSVName, dispatchName, mode, outputFile):
@@ -67,6 +68,8 @@ def main():
         spm_opt = sys.argv[5] == "optSPM"
         if sys.argv[4] == "prune":
             prune = True
+        elif sys.argv[4] == "NoPrune":
+            prune = False
         elif sys.argv[4] == "query":
             print("myrtle: Tiling Scheme Query")
             m = int(sys.argv[5])
@@ -93,6 +96,8 @@ def main():
             ts_analyzed = ann.analyze_options(ts_ssr_configs)
             print("\nTiling Scheme Analyzed")
             print(ts_analyzed)
+            output_path = vizSPM.vizSPM(ts_analyzed)
+            print(f"Visualization written to: {output_path}")
             return
         else:
             searchSpaceCSVName = sys.argv[4]

@@ -1,11 +1,12 @@
 BOTH_FLDR="../sensitivity-analysis/remainder-vs-divisor/both"
 WEBPAGES40ishPoints=""
-USER="emily"
+USER="hoppip"
 
 #bash graph-both-data.sh dims-csv-name-line-by-line.input both
 # bash graph-exp-data-beta.sh dims-csv-name-line-by-line-expanded-SS.input expanded-SS-db
 # bash graph-exp-data-beta.sh dims-csv-name-line-by-line-expanded-SS.input expanded-SS-db2
-
+# bash graph-exp-data-beta.sh dims-csv-name-line-by-line-expanded-SS-hoppip.input expanded-SS-db2
+#/home/hoppip/myrtle/scripts/dims-csv-name-line-by-line-expanded-SS-hoppip.input
 
 graph(){
     stringarray=($1) # dims followed by the the CSV name, INCLUDING .csv extension!

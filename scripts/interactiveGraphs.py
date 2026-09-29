@@ -2017,8 +2017,201 @@ def generateInteractiveBarAndScatterGraphs(timed, analyzed, titleOfWebpage):
             "symbolMarker",
         )
     )
-
-
-
-
     return saveFigsInHTML(special_figs, more_figs, titleOfWebpage)
+
+def generateOverlapStallGraphs(timed, analyzed, titleOfWebpage):
+    timed["FMADDsMULsPerCore"] = timed["FMADDsMULs"] / timed["Total CC Tiles"]
+    timed["Raw Compute / Overlap Stall"] = timed["Raw Compute Time Total"] / timed["Overlap Stall Time Total"]
+    timed["(Raw Compute / Overlap Stall) Per Core"] = timed["Raw Compute Time Total"] / timed["Overlap Stall Time Total"] / timed["Total CC Tiles"]
+    timed["Overlap Stall Time Per Core"] = timed["Overlap Stall Time Total"] / timed["Total CC Tiles"]
+    x_col = "SSR Config Count"
+    y_col = "dma"
+    hover_data = [
+        "JSON Name",
+        "absoluteRank",
+        "dma",
+        "HW Loops",
+        "FMADDsMULs",
+        "FMADDsMULsPerCore",
+        "SSR Loads per HW Loop",
+        "HW Loops / SSR Loads per HW Loop",
+      #  "myRegPerStream",
+        "remainderTiles",
+        "Overlap Stall Time Total",
+        "Raw Compute Time Total",
+        "Global Sim E2E_dma",
+        "Total CC Tiles",
+        "Overlap Stall Time Per Core",
+        "Avg A''",
+        "Avg B'",
+        "Avg C''",
+        "Avg CC Tile Size",
+        "Avg A''/ B'",
+        "(A''+ B') / C''",
+        "Avg (A''+ B') / C''",
+        "Avg A'",
+        # "L3 Loads",
+        # "L3 Stores",
+        "Avg L3 Loads",
+        "Avg L3 Stores"
+    ]
+    analyzed["Overlap Stall Time Total"] = -1
+    analyzed["Raw Compute Time Total"] = -1
+    analyzed["Global Sim E2E_dma"] = -1
+    analyzed["Total CC Tiles"] = analyzed["SSR Config Count"]
+    analyzed["FMADDsMULsPerCore"] = analyzed["FMADDsMULs"] / analyzed["Total CC Tiles"]
+    analyzed["Overlap Stall Time Per Core"] = -1
+    analyzed["Raw Compute / Overlap Stall"] = -1
+    analyzed["(Raw Compute / Overlap Stall) Per Core"] = -1
+    
+#     print(analyzed.columns)
+#     print(analyzed[["Overlap Stall Time Total"]])
+
+    timed["remainderTiles"] = timed["remainderTiles"].apply(lambda x: "000" if x == 0 else f"{x}")
+    timed["symbolMarker"] = timed["remainderTiles"].apply(lambda x: "O" if x == "000" else "^")
+    timed = timed.sort_values(by="symbolMarker", ascending=True)
+    timed["flatColor"] = "pink"
+
+    ut = analyzed[~analyzed["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])]
+    #print(ut)
+    # combine timed points into single DF, then create absolute rank
+    
+    
+
+    # special figures
+    special_figs = []
+    # x_col = "SSR Configs"
+    # y_col = "dma"
+    # special_figs.append(
+    #     prunedScatter(
+    #         timed,
+    #         x_col,
+    #         y_col,
+    #         "regPerStream",
+    #         hover_data,
+    #         "OLD RATIO: timed divisors and (some) timed remainders",
+    #         "symbolMarker",
+    #     )
+    # )
+
+
+    # y_col = "Overlap Stall Time Total"
+    # x_col = "dma"
+    # special_figs.append(
+    #     scatterWithColor(
+    #         timed,
+    #         x_col,
+    #         y_col,
+    #         "HW Loops / SSR Loads per HW Loop",
+    #         hover_data,
+    #         "stall time vs e2e time",
+    #         "symbolMarker",
+    #     )
+    # )
+    
+    #Kernel Time,dma,Global Sim E2E_dma,dma cycle_q,
+    # # Total CC Tiles,Overlap Stall Time Total,
+    # # Raw Compute Time Total,SSR Config Time Total
+    # Overlap Stall Time Total, Raw Compute Time Total, SSR Config Time Total, Kernel Time, Global Sim E2E_dma
+    # Columns to display as grouped bars
+    metric_cols = [
+        "Overlap Stall Time Total",
+        "SSR Config Time Total",
+        "Global Sim E2E_dma",
+    ]
+
+    # Create grouped vertical bar chart
+    fig = px.bar(
+        timed,
+        x="FakeNN JSON Name",
+        y=metric_cols,
+        barmode="group",
+        labels={
+            "value": "cycles",
+            "variable": "Metric",
+            "FakeNN JSON Name": "FakeNN JSON Name",
+        },
+        title="Execution Time Metrics per Configuration",
+    )
+
+    # Optional: refine layout aesthetics and ensure category ordering on x-axis
+    fig.update_layout(
+        xaxis=dict(type="category"),
+        legend_title_text="Metric",
+        template="plotly_white",
+    )
+    special_figs.append(fig)
+    special_figs.append(stacked(timed))
+    
+    return saveFigsInHTML(special_figs, [], titleOfWebpage)
+
+def stacked(df):
+    # 1. Setup metrics and color palette
+    metrics = ["Overlap Stall Time", "Raw Compute Time", "SSR Config Time"]
+    colors = {
+        "Overlap Stall Time": "#636EFA",
+        "Raw Compute Time": "#EF553B",
+        "SSR Config Time": "#00CC96",
+        "Global Sim E2E_dma": "#AB63FA",  # Distinct color for DMA
+    }
+
+    fig = go.Figure()
+
+    # 2. Add traces for compute cores 0–7 (stacked vertically within each core's bar)
+    for core in range(8):
+        for metric in metrics:
+            col_name = f"{metric}_cc_{core}"
+
+            fig.add_trace(
+                go.Bar(
+                    name=metric,
+                    x=df["FakeNN JSON Name"],
+                    y=df[col_name] if col_name in df else [0] * len(df),
+                    offsetgroup=f"Core {core}",  # Side-by-side slot for Core 0-7
+                    legendgroup=metric,
+                    showlegend=(core == 0),  # Show metric entry only once in legend
+                    marker_color=colors[metric],
+                    hovertemplate=(
+                        f"<b>%{{x}}</b><br>"
+                        f"Core {core}<br>"
+                        f"{metric}: %{{y}} cycles<extra></extra>"
+                    ),
+                )
+            )
+
+    # 3. Add the 9th bar: DMA Core (Global Sim E2E_dma)
+    fig.add_trace(
+        go.Bar(
+            name="Global Sim E2E_dma",
+            x=df["FakeNN JSON Name"],
+            y=(
+                df["Global Sim E2E_dma"]
+                if "Global Sim E2E_dma" in df
+                else [0] * len(df)
+            ),
+            offsetgroup="DMA",  # 9th side-by-side slot alongside the 8 cores
+            legendgroup="Global Sim E2E_dma",
+            showlegend=True,
+            marker_color=colors["Global Sim E2E_dma"],
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "DMA Core<br>"
+                "Global Sim E2E_dma: %{y} cycles<extra></extra>"
+            ),
+        )
+    )
+
+    # 4. Layout configuration
+    fig.update_layout(
+    barmode="stack",
+    bargroupgap=0.2,  # <-- Increases space BETWEEN the 9 vertical bars (Cores 0-7 & DMA)
+    bargap=0.3,  # <-- Controls space BETWEEN different "FakeNN JSON Name" groups
+    xaxis=dict(
+        title="FakeNN JSON Name",
+        type="category",
+    ),
+    yaxis=dict(title="cycles"),
+    legend_title_text="Metric",
+    template="plotly_white",
+)
+    return fig
