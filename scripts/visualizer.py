@@ -7,6 +7,22 @@ import re
 from graphUtils import genResultGraphPDF, saveFigsInHTML, scatterWithColorSymbol, scatterWithFlatColorSymbol, scatterWithFlatColor, scatterWithColor, addScatterFlatColorMarker, stack_dfs_to_html, genResultGraphQPDF
 from modelDubBuff import pruneApproach3,pruneApproach4
 import pathlib
+import sys
+
+# 1. Resolve paths
+# Root directory: myrtle
+PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
+
+# Inner package directory containing 'tile_static_analysis': myrtle/myrtle
+INNER_MYRTLE = PROJECT_ROOT / "myrtle"
+
+# 2. Add both to sys.path
+for p in [PROJECT_ROOT, INNER_MYRTLE]:
+    if str(p) not in sys.path:
+        sys.path.append(str(p))
+
+# 3. Now the import works without breaking internal imports inside TSA_C_Remainder:
+import myrtle.tile_static_analysis.TSA_C_Remainder as TSA
 
 subfigEpi=r"""
             \bottomrule
@@ -227,80 +243,8 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      def applyRemainderSize(df,nm,D,d):
          df[nm] = df[[D,d]].apply(lambda x: int(x[D]) % int(x[d]) if (x[D] != -1 and x[d] != -1) else -1,axis=1)
          return df
-         
-     timed["Total CC Tiles"] = timed["SSR Config Count"]
-     timed["FMADDsMULsPerCore"] = timed["FMADDsMULs"] / timed["Total CC Tiles"]
-     timed["1/FMADDS"]=1/timed["FMADDsMULsPerCore"]
-     timed["Overlap Stall Time Per Core"] = timed["Overlap Stall Time Total"] / timed["Total CC Tiles"]
-     timed=handle_timeouts(timed)
-     timed["M"] = timed["FakeNN JSON Name"].apply(parseDimM)
-     timed["N"] = timed["FakeNN JSON Name"].apply(parseDimN)
-     timed["K"] = timed["FakeNN JSON Name"].apply(parseDimK)
-    #  print(timed[timed.isna().any(axis=1)][["FakeNN JSON Name","M","N","K","m","n","k","FMADDsMULs"]])
-     timedContainsNaNs = timed[timed.isna().any(axis=1)]
-     if not timedContainsNaNs.empty:
-        if timedContainsNaNs.shape[0] != 1:
-            print(timedContainsNaNs[["FakeNN JSON Name","m","n","k","FMADDsMULs","Total CC Tiles","SSR Config Count"]])
-            raise Exception("data frame of timed values contains NaNs!")
-     timed = applyRemainderSize(timed,"mRem","M","m") 
-     timed = applyRemainderSize(timed,"nRem","N","n") 
-     timed = applyRemainderSize(timed,"kRem","K","k") 
-     timed["mnkRem"] = timed[["mRem","nRem","kRem"]].apply(lambda x: (int(x["mRem"]),int(x["nRem"]),int(x["kRem"])),axis=1)
-     timed["mnk"] = timed[["m","n","k"]].apply(lambda x: int(x["m"])*int(x["n"])*int(x["k"]),axis=1)
-     timed["1/mRem"]=1/timed["mRem"]
-     timed["m/mRem"]=timed["m"]/timed["mRem"]
-     timed["m % 8"]=timed["m"] % 8
-     timed["niceM"] = timed["m"].apply(lambda r: True if r % 8 == 0 else False)
-     timed["niceMRem"] = timed["mRem"].apply(lambda r: True if r == 0 or r % 8 == 0 else False)
-     #timed["niceMRem"] = timed["mRem"].apply(lambda r: True if r == 0 or r > 8 else False)
-     timed["bothNice"]=timed[["niceM", "niceMRem"]].apply(lambda r: True if r["niceM"] & r["niceMRem"] else False,axis=1)
-     timed["howNice"] = timed["mRem"].apply(lambda r: "zero" if r == 0 else ("divisBy8" if r % 8 == 0 else "mean"))
-     timed["hypotenuse"] = timed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
-     timed["Time (cycles)"]=timed["Global Sim E2E_dma"]
-     timed["n / k"]=timed["Avg n'_sz / k_size"]
-     timed["comp/memxfer"]=timed["FMADDsMULsPerCore"]/timed["tileA"]+timed["tileB"] #+timed["tileC"]
-     
-     analyzed=handle_timeouts(analyzed)
-     analyzed["M"] = analyzed["FakeNN JSON Name"].apply(parseDimM)
-     analyzed["N"] = analyzed["FakeNN JSON Name"].apply(parseDimN)
-     analyzed["K"] = analyzed["FakeNN JSON Name"].apply(parseDimK)
-     analyzed= applyRemainderSize(analyzed,"mRem","M","m") 
-     analyzed= applyRemainderSize(analyzed,"nRem","N","n") 
-     analyzed = applyRemainderSize(analyzed,"kRem","K","k") 
-     analyzed["mnkRem"] = analyzed[["mRem","nRem","kRem"]].apply(lambda x: (int(x["mRem"]),int(x["nRem"]),int(x["kRem"])),axis=1)
-     analyzed["mnk"] = analyzed[["m","n","k"]].apply(lambda x: int(x["m"])*int(x["n"])*int(x["k"]),axis=1)
-     analyzed["1/mRem"]=1/analyzed["mRem"]
-     analyzed["m/mRem"]=analyzed["m"]/analyzed["mRem"]
-     analyzed["m % 8"]=analyzed["m"] % 8
-     analyzed["niceM"] = timed["m"].apply(lambda r: True if r % 8 == 0 else False)
-     analyzed["niceMRem"] = analyzed["mRem"].apply(lambda r: True if r == 0 or r % 8 == 0 else False)
-     #analyzed["niceMRem"] = analyzed["mRem"].apply(lambda r: True if r == 0 or r > 8 else False)
-     analyzed["howNice"] = analyzed["mRem"].apply(lambda r: "zero" if r == 0 else ("divisBy8" if r % 8 == 0 else "mean"))
-     analyzed["bothNice"]=analyzed[["niceM", "niceMRem"]].apply(lambda r: True if r["niceM"] and r["niceMRem"] else False,axis=1)
-     analyzed["Total CC Tiles"] = analyzed["SSR Config Count"]
-     analyzed["FMADDsMULsPerCore"] = analyzed["FMADDsMULs"] / analyzed["Total CC Tiles"]
-     analyzed["1/FMADDS"]=1/analyzed["FMADDsMULsPerCore"]
-     analyzed["hypotenuse"] = analyzed[["1/mRem","FMADDsMULsPerCore"]].apply(lambda x: math.sqrt(x["1/mRem"]*x["1/mRem"]+x["FMADDsMULsPerCore"]*x["FMADDsMULsPerCore"]),axis=1)
-     analyzed["Overlap Stall Time Per Core"] = -1
-     analyzed = addFakeTime(analyzed,timed)
-     analyzed["Y/X"]=timed["Avg n'_sz / k_size"] * timed["Avg A'"]
-     analyzed["timedData"] = False
-     analyzed["hypotenuse"] = analyzed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
-     analyzed["Time (cycles)"]=analyzed["Global Sim E2E_dma"]
-     analyzed["n / k"]=analyzed["Avg n'_sz / k_size"]
-     analyzed["comp/memxfer"]=analyzed["FMADDsMULsPerCore"]/timed["tileA"]+timed["tileB"] #+timed["tileC"]
-     
-     timed["remainderTiles"] = timed["remainderTiles"].apply(lambda x: "000" if x == 0 else f"{x}")
-     timed["symbolMarker"] = timed["remainderTiles"].apply(lambda x: "O" if x == "000" else "^")
-     timed = timed.sort_values(by="symbolMarker", ascending=True)
-     timed["flatColor"] = "pink"
-     timed["timedData"] = True
-     timed=timed.sort_values("Time (cycles)",ascending=True)
-     timed = timed.reset_index(drop=True)
-     best=timed["Global Sim E2E_dma"][0]
-     timed["diff"] = timed["Time (cycles)"].apply(lambda x: (x - best)/best * 100)
-     timed["n/k<1"] = timed["Avg n'_sz / k_size"].apply(lambda x: x < 1.0)
-     timed["diff<0.5"] = timed["diff"].apply(lambda x: x <= 0.5)
+     timed=TSA.TSA_C_Remainder.annotate_w_derived_features(timed)
+     analyzed=TSA.TSA_C_Remainder.annotate_w_derived_features(analyzed,untimed=True,df_timed=timed)
      full["SSR Configs"] = full["SSR Config Count"]
      full["L1 Usage"] = full["Space Needed in L1"]
      full = addFakeTime(full,timed)
@@ -344,13 +288,16 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
      # save these search spaces with expanded annotations
      
      def createNickname(df):
-        m = timed["M"].iloc[0]
-        n = timed["N"].iloc[0]
-        k= timed["K"].iloc[0]
+        m = df["M"].iloc[0]
+        n = df["N"].iloc[0]
+        k= df["K"].iloc[0]
         return f"{m}x{n}x{k}"
 
      nickname = createNickname(timed)    
      basename = f"{pathlib.Path(__file__).parent.resolve()}/out/expandedAnns/{nickname}"
+     timed=timed.sort_values("FMADDsMULsPerCore",ascending=False)
+     analyzed=analyzed.sort_values("FMADDsMULsPerCore",ascending=False)
+    #  full=full.sort_values("FMADDsMULsPerCore",ascending=False)
      timed.to_csv(
         f"{basename}_timed.csv",
         index=False)

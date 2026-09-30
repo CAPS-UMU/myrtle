@@ -1,5 +1,5 @@
-USER="hoppip"
-#USER="emily"
+#USER="hoppip"
+USER="emily"
 MYHOME="/home/$USER/"
 MYMYRTLE=$MYHOME"myrtle/"
 TIMED=$MYMYRTLE"sensitivity-analysis/beta=0/spm-reg/timed/"
@@ -19,7 +19,22 @@ TIMED=$MYMYRTLE"sensitivity-analysis/beta=0/spm-reg/timed/"
 # OUTPUT="out/192x384x384-add-skipped.csv"
 # python concatCSVs.py $ORIG $TOADD $OUTPUT agressive
 
-ORIG=$TIMED"512x512x512wm-n-k_rem_div_ana_pruned-results-dma-only.csv"
-TOADD=$MYMYRTLE"512x512x512wm-n-k_ss_c_rem_div_ana_pruned-results.csv"
-OUTPUT="out/512x512x512-add-skipped.csv"
-python concatCSVs.py $ORIG $TOADD $OUTPUT agressive
+# ORIG=$TIMED"512x512x512wm-n-k_rem_div_ana_pruned-results-dma-only.csv"
+# TOADD=$MYMYRTLE"512x512x512wm-n-k_ss_c_rem_div_ana_pruned-results.csv"
+# OUTPUT="out/512x512x512-add-skipped.csv"
+# python concatCSVs.py $ORIG $TOADD $OUTPUT agressive
+
+ORIG=$MYMYRTLE"256-investigating-overlap/256x256x256wm-n-k_ss_c_rem_div_ana_pruned-results.csv"
+TOADD=$MYMYRTLE"256x256x256wm-n-k_ss_c_rem_div_ana_pruned-results-stall-cycles.csv"
+OUTPUT="out/256-stall-cycles-morefmadds.csv"
+python concatCSVs.py $ORIG $TOADD $OUTPUT polite
+
+ORIG=$TIMED"256x256x256wm-n-k_ss_c_rem_div_ana-results-dma-only.csv"
+TOADD=$MYMYRTLE"256x256x256wm-n-k_ss_c_rem_div_ana-results.csv"
+OUTPUT="out/256-morefmadds.csv"
+python concatCSVs.py $ORIG $TOADD $OUTPUT polite
+
+ORIG=$TIMED"384x384x384wm-n-k_rem_div_ana_pruned-results-dma-only.csv"
+TOADD=$MYMYRTLE"384x384x384wm-n-k_ss_c_rem_div_ana_pruned-results-unskipped.csv"
+OUTPUT="out/384-morefmadds.csv"
+python concatCSVs.py $ORIG $TOADD $OUTPUT polite

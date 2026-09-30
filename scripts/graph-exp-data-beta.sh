@@ -32,6 +32,7 @@ do
 done < "$1"
 
 # add an overview page
+bash genOverviewPage.sh
 WEBPAGES40ishPoints+=" out/overview.html"
 
 INDEX_TITLE="Both Remainders and Divisors - Experimental Pruning"
