@@ -1,5 +1,5 @@
 HERE=$(pwd)
-USER="emily"
+USER="hoppip"
 TIMED="/home/"$USER"/myrtle/256-investigating-overlap/256-overlap-stall-experiments.csv"
 ANN="/home/"$USER"/myrtle/sensitivity-analysis/beta=0/spm-reg/untimed/256x256x256wm-n-k_ss_c_rem_div_ana.csv"
 FULL=""

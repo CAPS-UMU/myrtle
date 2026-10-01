@@ -163,9 +163,10 @@ class TSA_C_Remainder(TileSizeAnalyzer):
             info["mHat HW Loop Body Size"]=-1
             info["mHat"]=-1
         return info
+    
     # Annotate dataframe with features derived from columns already present 
     @classmethod
-    def annotate_w_derived_features(cls,df,untimed=False,df_timed = None):
+    def annotate_w_derived_features(cls,df,untimed=False,addFakeTime = False, df_timed = None):
         def handle_timeouts(df):
             df=df [df["FakeNN JSON Name"] != "timeout"].copy()
             return df
@@ -179,6 +180,7 @@ class TSA_C_Remainder(TileSizeAnalyzer):
             df_ut["Overlap Stall Time Total"] = -1
             df_ut["Raw Compute Time Total"] = -1
             df_ut["Overlap Stall Time Per Core"] = -1
+            df_ut["timeout"] = False  # they aren't timed so they can't possibly have timed out
             return df_ut
         def parseDimM(nm):
             expNameRegex = re.compile(
@@ -272,15 +274,13 @@ class TSA_C_Remainder(TileSizeAnalyzer):
         else:
             analyzed = df
             analyzed=handle_timeouts(analyzed)
-            #analyzed["niceMRem"] = analyzed["mRem"].apply(lambda r: True if r == 0 or r > 8 else False)
-            
-            analyzed = addFakeTime(analyzed,df_timed)
+            if addFakeTime:
+                analyzed = addFakeTime(analyzed,df_timed)
             analyzed["Y/X"]=analyzed["Avg n'_sz / k_size"] * analyzed["Avg A'"]
             analyzed["timedData"] = False
             analyzed["hypotenuse"] = analyzed[["mRem","1/FMADDS"]].apply(lambda x: math.sqrt(x["mRem"]*x["mRem"]+x["1/FMADDS"]*x["1/FMADDS"]),axis=1)
             analyzed["Time (cycles)"]=analyzed["Global Sim E2E_dma"]
             analyzed["n / k"]=analyzed["Avg n'_sz / k_size"]
             analyzed["comp/memxfer"]=analyzed["FMADDsMULsPerCore"]/analyzed["tileA"]+analyzed["tileB"] #+timed["tileC"]
-            
             df = analyzed
         return df

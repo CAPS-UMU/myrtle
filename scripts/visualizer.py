@@ -23,6 +23,7 @@ for p in [PROJECT_ROOT, INNER_MYRTLE]:
 
 # 3. Now the import works without breaking internal imports inside TSA_C_Remainder:
 import myrtle.tile_static_analysis.TSA_C_Remainder as TSA
+import myrtle.tile_selection.prune_approach_5 as TSS
 
 subfigEpi=r"""
             \bottomrule
@@ -244,7 +245,7 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
          df[nm] = df[[D,d]].apply(lambda x: int(x[D]) % int(x[d]) if (x[D] != -1 and x[d] != -1) else -1,axis=1)
          return df
      timed=TSA.TSA_C_Remainder.annotate_w_derived_features(timed)
-     analyzed=TSA.TSA_C_Remainder.annotate_w_derived_features(analyzed,untimed=True,df_timed=timed)
+     analyzed=TSA.TSA_C_Remainder.annotate_w_derived_features(analyzed,untimed=True,addFakeTime=True,df_timed=timed)
      full["SSR Configs"] = full["SSR Config Count"]
      full["L1 Usage"] = full["Space Needed in L1"]
      full = addFakeTime(full,timed)
@@ -308,13 +309,8 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
         f"{basename}_full.csv",
         index=False)
 
-     #special_figs,more_figs, table = pruneApproach1FewerGraphs(timed,analyzed,full)
-    #  special_figs,more_figs, table = pruneApproach1(timed,analyzed,full)
-     special_figs,more_figs, table = pruneApproach3(timed,analyzed,full)
-     #special_figs,more_figs, table = pruneApproach4(timed,analyzed,full)
-    # special_figs=special_figs+more_figs
-
-     #more_figs = pruneApproach2(timed,analyzed,full)
+    #  special_figs,more_figs, table = pruneApproach3(timed,analyzed,full)
+     special_figs,more_figs, table = TSS.pruneApproach5(timed,analyzed,full)
      
      return saveFigsInHTML(special_figs, more_figs, titleOfWebpage,table)
 

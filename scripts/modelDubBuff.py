@@ -1,4 +1,4 @@
-from graphUtils import scatterWithColorSymbol, scatterWithFlatColorSymbol, scatterWithFlatColor, scatterWithColor, addScatterFlatColorMarker, stack_dfs_to_html, genResultGraphPDF,genShelfGraphPDF
+from graphUtils import scatterWithColorSymbol, scatterWithFlatColor, scatterWithColor, addScatterFlatColorMarker, stack_dfs_to_html,genShelfGraphPDF
 import pandas as pd
 from typing import List
 import numpy as np

@@ -1,6 +1,28 @@
 import plotly.express as px
 import plotly.io as pio
 theColorBar="haline"
+import re
+
+def jugaadTitle(df):
+    M=int(df["M"][0])
+    N=int(df["N"][0])
+    K=int(df["K"][0])
+    dims=f"{M}x{N}x{K}"
+    t="Transformer"
+    if (M == 128) and (N == 128) and (K == 128):
+        t="BertTiny" 
+    if (M == 128) and (N == 768) and (K == 768):
+        t="Roberta" 
+    if (M == 192) and (N == 384) and (K == 384):
+        t="BGESmall" 
+    if (M == 384) and (N == 384) and (K == 384):
+        t="MiniLM" 
+    if (M == 256) and (N == 256) and (K == 256):
+        t="BertMini" 
+    if (M == 512) and (N == 512) and (K == 512):
+        t="Bert" 
+    return f"{t} Matmul {dims}"
+
 def scatterWithColor(df, x_col, y_col, color, hover_data, title, maerker=""):
     return px.scatter(
         df,
@@ -107,6 +129,163 @@ def prunedScatter(df, x_col, y_col, color, hover_data, title, prunePoint, marker
     fig14.add_vline(x=prunePoint, line_width=2, line_dash="dash", line_color="green")
     # turn the pruned points gray?
     return fig14
+
+def stack_dfs_to_html_w_toggle(
+    df_list, titles, columns_subset, main_title=None, include_index=False
+):
+    """Concatenates multiple DataFrames into a single HTML string with section titles.
+
+    Rows are conditionally styled based on 'timed', 'Avg n'_sz / k_size', and 'diff':
+    - 'timed' == False -> Gray text (no highlight)
+    - 'diff' == 0.0 -> Red background
+    - 'diff' <= 5.0 -> Blue background
+    - 'Avg n'_sz / k_size' >= 1 -> Entire row is bolded (preserving colors/highlights)
+
+    Includes a top-right toggle labeled 'mMod8' to filter rows where m (X in X-Y-Z) % 8 == 0.
+    """
+    if len(df_list) != len(titles):
+        raise ValueError(
+            "The number of DataFrames must match the number of titles."
+        )
+
+    html_sections = []
+
+    # Inject CSS & JavaScript for the top-right toggle control
+    toggle_header = """
+    <div style="display: flex; justify-content: space-between; align-items: center; font-family: Arial, sans-serif; margin-bottom: 20px;">
+        <div style="flex-grow: 1;">
+            <!-- Title placeholder handled below if present -->
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+            <label for="mMod8Toggle" style="font-weight: bold; font-size: 14px; cursor: pointer; user-select: none;">mMod8</label>
+            <input type="checkbox" id="mMod8Toggle" onchange="toggleMMod8(this.checked)" style="cursor: pointer; width: 18px; height: 18px;">
+        </div>
+    </div>
+    <script>
+    function toggleMMod8(filterActive) {
+        // Query all rows tagged with data-m-mod8 across all tables
+        const rows = document.querySelectorAll('tr[data-m-mod8]');
+        rows.forEach(row => {
+            const isMod8 = row.getAttribute('data-m-mod8') === 'true';
+            if (filterActive && !isMod8) {
+                row.style.display = 'none';
+            } else {
+                row.style.display = '';
+            }
+        });
+    }
+    </script>
+    """
+    html_sections.append(toggle_header)
+
+    # 1. Add the main title at the top if provided
+    if main_title:
+        main_title_style = "style='font-family: Arial, sans-serif; margin-bottom: 25px; color: #111; border-bottom: 2px solid #333; padding-bottom: 10px;'"
+        html_sections.append(f"<h1 {main_title_style}>{main_title}</h1>")
+
+    title_style = "style='font-family: Arial, sans-serif; margin-top: 25px; margin-bottom: 10px; color: #333;'"
+    table_style = "style='border-collapse: collapse; width: 75%; font-family: Arial, sans-serif; margin-bottom: 20px;'"
+
+    # Helper function to check if m % 8 == 0 from 'X-Y-Z' format
+    def is_m_mod8(json_name):
+        if not isinstance(json_name, str):
+            return False
+        # Match X in 'X-Y-Z'
+        match = re.match(r"(\d+)-(\d+)-(\d+)", json_name.strip())
+        if match:
+            try:
+                m_dim = int(match.group(1))
+                return (m_dim % 8) == 0
+            except ValueError:
+                return False
+        return False
+
+    # Internal helper function to apply the row styles
+    def style_rows(row):
+        styles = [""] * len(row)
+
+        # 1. Check 'timed' condition first
+        if "timed" in row and row["timed"] is False:
+            styles = ["color: #718096;"] * len(row)
+
+        # 2. Fall back to 'diff' conditions if 'timed' is True (or missing)
+        elif "diff" in row:
+            diff_val = row["diff"]
+            if diff_val == 0.0:
+                styles = ["background-color: #ffcccc; color: #990000;"] * len(
+                    row
+                )
+            elif diff_val <= 5.0:
+                styles = ["background-color: #d9ecff; color: #004085;"] * len(
+                    row
+                )
+
+        # 3. Independent condition: Bold entire row
+        avg_col = "Avg n'_sz / k_size"
+        if avg_col in row and row[avg_col] >= 1:
+            styles = [style + " font-weight: bold;" for style in styles]
+
+        return styles
+
+    for df, title in zip(df_list, titles):
+        html_sections.append(f"<h3 {title_style}>{title}</h3>")
+
+        try:
+            # 2. Filter to requested subset of columns
+            filtered_df = df[columns_subset].copy()
+
+            # 3. Build Styler HTML
+            styled_html = (
+                filtered_df.style.apply(style_rows, axis=1)
+                .hide(axis="index" if not include_index else None)
+                .to_html()
+            )
+
+            # Inject custom table styles
+            styled_html = styled_html.replace(
+                "<table", f'<table border="1" {table_style}'
+            )
+
+            # 4. Inject data-m-mod8 attribute into <tbody> <tr> tags
+            if "JSON Name" in filtered_df.columns:
+                mod8_flags = [
+                    "true" if is_m_mod8(val) else "false"
+                    for val in filtered_df["JSON Name"]
+                ]
+
+                # Split on <tbody> to leave headers untouched
+                if "<tbody>" in styled_html:
+                    header_part, body_part = styled_html.split("<tbody>", 1)
+                    body_content, close_part = body_part.split("</tbody>", 1)
+
+                    rows = body_content.split("<tr")
+                    rebuilt_rows = [rows[0]]
+
+                    # Attach data-m-mod8 attribute to each body row
+                    for idx, row_chunk in enumerate(rows[1:]):
+                        flag = (
+                            mod8_flags[idx]
+                            if idx < len(mod8_flags)
+                            else "false"
+                        )
+                        rebuilt_rows.append(f' data-m-mod8="{flag}"{row_chunk}')
+
+                    styled_html = (
+                        header_part
+                        + "<tbody>"
+                        + "<tr".join(rebuilt_rows)
+                        + "</tbody>"
+                        + close_part
+                    )
+
+            html_sections.append(styled_html)
+
+        except KeyError as e:
+            html_sections.append(
+                f"<p style='color: red;'>Error rendering table: Missing column {e}</p>"
+            )
+
+    return "\n".join(html_sections)
 
 def stack_dfs_to_html(df_list, titles, columns_subset, main_title=None, include_index=False):
     """
