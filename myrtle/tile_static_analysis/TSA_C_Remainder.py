@@ -199,7 +199,7 @@ class TSA_C_Remainder(TileSizeAnalyzer):
             df[nm] = df[[D,d]].apply(lambda x: int(x[D]) % int(x[d]),axis=1)
             return df
         df = handle_timeouts(df)
-        df["tileAmod32"] = df["m"]/8*df["k"]%32
+        df["nMod32"] = df["n"]%32
         df["M"] = df["FakeNN JSON Name"].apply(parseDimM)
         df["N"] = df["FakeNN JSON Name"].apply(parseDimN)
         df["K"] = df["FakeNN JSON Name"].apply(parseDimK)

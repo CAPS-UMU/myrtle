@@ -3,8 +3,23 @@ import plotly.express as px
 import plotly.io as pio
 import numpy as np
 import plotly.graph_objects as go
+import pathlib
+import sys
 from sklearn.linear_model import LinearRegression
+# 1. Resolve paths
+# Root directory: myrtle
+PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
 
+# Inner package directory containing 'tile_static_analysis': myrtle/myrtle
+INNER_MYRTLE = PROJECT_ROOT / "myrtle"
+
+# 2. Add both to sys.path
+for p in [PROJECT_ROOT, INNER_MYRTLE]:
+    if str(p) not in sys.path:
+        sys.path.append(str(p))
+
+# 3. Now the import works without breaking internal imports inside TSA_C_Remainder:
+import myrtle.tile_static_analysis.TSA_C_Remainder as TSA
 
 def generateInteractiveGraphsTuples(divisors, remainders, title, titleOfWebpage):
     df = divisors[0]
@@ -2071,6 +2086,7 @@ def generateOverlapStallGraphs(timed, analyzed, titleOfWebpage):
     timed["symbolMarker"] = timed["remainderTiles"].apply(lambda x: "O" if x == "000" else "^")
     timed = timed.sort_values(by="symbolMarker", ascending=True)
     timed["flatColor"] = "pink"
+    timed=TSA.TSA_C_Remainder.annotate_w_derived_features(timed)
 
     ut = analyzed[~analyzed["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])]
     #print(ut)
@@ -2114,38 +2130,74 @@ def generateOverlapStallGraphs(timed, analyzed, titleOfWebpage):
     # # Raw Compute Time Total,SSR Config Time Total
     # Overlap Stall Time Total, Raw Compute Time Total, SSR Config Time Total, Kernel Time, Global Sim E2E_dma
     # Columns to display as grouped bars
+    mask = timed['JSON Name'].isin(["64-24-64","24-64-64","64-64-24"])
+    shapes_64_24=timed.loc[mask]
+    mask = timed['JSON Name'].isin(["64-32-52","32-64-52","52-64-32"])
+    shapes_64_32=timed.loc[mask]
+    mask = timed['JSON Name'].isin(["64-40-43","40-64-43"])
+    shapes_64_40=timed.loc[mask]
+
+    special_figs.append(grouped(timed,"Config vs Stall vs E2E Time"))
+    special_figs.append(stacked(timed,"Per Core Compute/Stall/Config Cycles Breakdown"))
+    special_figs.append(grouped(shapes_64_24,"Shape vs Time 64-24-64"))
+    special_figs.append(stacked(shapes_64_24,"Shape vs Time 64-24-64"))
+    special_figs.append(grouped(shapes_64_32,"Shape vs Time 64-32-52"))
+    special_figs.append(stacked(shapes_64_32,"Shape vs Time 64-32-52"))
+    special_figs.append(grouped(shapes_64_40,"Shape vs Time 64-40-52"))
+    special_figs.append(stacked(shapes_64_40,"Shape vs Time 64-40-52"))
+    
+    
+    return saveFigsInHTML(special_figs, [], titleOfWebpage)
+
+
+def grouped(df, graphTitle="Execution Time Metrics per Configuration"):
     metric_cols = [
         "Overlap Stall Time Total",
         "SSR Config Time Total",
         "Global Sim E2E_dma",
     ]
 
-    # Create grouped vertical bar chart
+    # Create grouped vertical bar chart using "JSON Name"
     fig = px.bar(
-        timed,
-        x="FakeNN JSON Name",
+        df,
+        x="JSON Name",
         y=metric_cols,
         barmode="group",
         labels={
             "value": "cycles",
             "variable": "Metric",
-            "FakeNN JSON Name": "FakeNN JSON Name",
+            "JSON Name": "JSON Name",
         },
-        title="Execution Time Metrics per Configuration",
+        title=graphTitle,
     )
 
-    # Optional: refine layout aesthetics and ensure category ordering on x-axis
+    # Extract only "mnkRem" for the DMA hover tooltip
+    dma_customdata = (
+        df["mnkRem"].to_numpy()
+        if "mnkRem" in df.columns
+        else [None] * len(df)
+    )
+
+    # Apply custom hover data only to the Global Sim E2E_dma bar
+    for trace in fig.data:
+        if trace.name == "Global Sim E2E_dma":
+            trace.customdata = dma_customdata
+            trace.hovertemplate = (
+                "<b>%{x}</b><br>"
+                "Metric: Global Sim E2E_dma<br>"
+                "cycles: %{y}<br>"
+                "mnkRem: %{customdata}<extra></extra>"
+            )
+
     fig.update_layout(
         xaxis=dict(type="category"),
         legend_title_text="Metric",
         template="plotly_white",
     )
-    special_figs.append(fig)
-    special_figs.append(stacked(timed))
-    
-    return saveFigsInHTML(special_figs, [], titleOfWebpage)
+    return fig
 
-def stacked(df):
+
+def stacked(df, graphTitle="hoodle"):
     # 1. Setup metrics and color palette
     metrics = ["Overlap Stall Time", "Raw Compute Time", "SSR Config Time"]
     colors = {
@@ -2165,8 +2217,8 @@ def stacked(df):
             fig.add_trace(
                 go.Bar(
                     name=metric,
-                    x=df["FakeNN JSON Name"],
-                    y=df[col_name] if col_name in df else [0] * len(df),
+                    x=df["JSON Name"],
+                    y=df[col_name] if col_name in df.columns else [0] * len(df),
                     offsetgroup=f"Core {core}",  # Side-by-side slot for Core 0-7
                     legendgroup=metric,
                     showlegend=(core == 0),  # Show metric entry only once in legend
@@ -2179,39 +2231,48 @@ def stacked(df):
                 )
             )
 
-    # 3. Add the 9th bar: DMA Core (Global Sim E2E_dma)
+    # 3. Add the 9th bar: DMA Core (Global Sim E2E_dma) with only mnkRem in hover
+    dma_customdata = (
+        df["mnkRem"].to_numpy()
+        if "mnkRem" in df.columns
+        else [None] * len(df)
+    )
+
     fig.add_trace(
         go.Bar(
             name="Global Sim E2E_dma",
-            x=df["FakeNN JSON Name"],
+            x=df["JSON Name"],
             y=(
                 df["Global Sim E2E_dma"]
-                if "Global Sim E2E_dma" in df
+                if "Global Sim E2E_dma" in df.columns
                 else [0] * len(df)
             ),
             offsetgroup="DMA",  # 9th side-by-side slot alongside the 8 cores
             legendgroup="Global Sim E2E_dma",
             showlegend=True,
             marker_color=colors["Global Sim E2E_dma"],
+            customdata=dma_customdata,
             hovertemplate=(
                 "<b>%{x}</b><br>"
                 "DMA Core<br>"
-                "Global Sim E2E_dma: %{y} cycles<extra></extra>"
+                "Global Sim E2E_dma: %{y} cycles<br>"
+                "mnkRem: %{customdata}<extra></extra>"
             ),
         )
     )
 
     # 4. Layout configuration
     fig.update_layout(
-    barmode="stack",
-    bargroupgap=0.2,  # <-- Increases space BETWEEN the 9 vertical bars (Cores 0-7 & DMA)
-    bargap=0.3,  # <-- Controls space BETWEEN different "FakeNN JSON Name" groups
-    xaxis=dict(
-        title="FakeNN JSON Name",
-        type="category",
-    ),
-    yaxis=dict(title="cycles"),
-    legend_title_text="Metric",
-    template="plotly_white",
-)
+        barmode="stack",
+        bargroupgap=0.2,
+        bargap=0.3,
+        xaxis=dict(
+            title="JSON Name",
+            type="category",
+        ),
+        yaxis=dict(title="cycles"),
+        legend_title_text="Metric",
+        template="plotly_white",
+        title=graphTitle,
+    )
     return fig

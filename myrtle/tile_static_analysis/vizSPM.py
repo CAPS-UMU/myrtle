@@ -5,8 +5,12 @@ import pandas as pd
 def vizSPM(df: pd.DataFrame) -> pathlib.Path:
     """Generates an HTML page visualizing the SPM layout, bank distribution,
 
-    focused buffer view of A[0]/B[0], and a fourth figure concatenating rows
-    from A[0] and C[0] containing group start cells (black text).
+    focused buffer view of A[0]/B[0], and 'Last k Iter' figure.
+
+    Buffer B[0] is partitioned into groups of n cells and subgroups of 8 cells.
+    Each cell displays 'X.Y' where X is the subgroup number and Y is the group
+    number.
+    The first cell in every n-cell group uses black text.
     """
     row = df.iloc[0]
     scheme_name = str(row["FakeNN JSON Name"])
@@ -78,19 +82,35 @@ def vizSPM(df: pd.DataFrame) -> pathlib.Path:
         if current_idx >= total_cells:
             break
 
-    # Group start definitions for A[0] (8 groups of (m / 8) * k)
+    # Group end definitions for A[0] (8 groups of (m / 8) * k cells)
     a0_start = 2048
     a0_end = a0_start + tileA
     group_size_A = int((m / 8) * k)
-    a0_group_start_indices = set()
+    a0_group_end_indices = set()
     if group_size_A > 0:
         for g in range(8):
-            s_cell = a0_start + (g * group_size_A)
-            if s_cell < min(a0_end, total_cells):
-                a0_group_start_indices.add(s_cell)
+            last_cell = a0_start + ((g + 1) * group_size_A) - 1
+            if last_cell < min(a0_end, total_cells):
+                a0_group_end_indices.add(last_cell)
 
-    # Group start definitions for C[0] (8 groups of (m / 8) * n)
-    c0_start = a0_start + tileA + tileB
+    # Boundaries and parameters for B[0]
+    b0_start = a0_start + tileA
+    b0_end = b0_start + tileB
+
+    # Helper function to generate cell label and styling for B[0]
+    def get_b0_info(cell_index: int):
+        rel_idx = cell_index - b0_start
+        group_Y = rel_idx // n if n > 0 else 0
+        rem_in_group = rel_idx % n if n > 0 else 0
+        subgroup_X = rem_in_group // 8
+        label_text = f"{subgroup_X}.{group_Y}"
+        # The first cell in every group of n cells has black text
+        is_first_in_group = rem_in_group == 0
+        text_color = "#000000" if is_first_in_group else "#ffffff"
+        return label_text, text_color, is_first_in_group, subgroup_X, group_Y
+
+    # Group start definitions for C[0] (8 groups of (m / 8) * n cells)
+    c0_start = b0_start + tileB
     c0_end = c0_start + tileC
     group_size_C = int((m / 8) * n)
     c0_group_start_indices = set()
@@ -117,7 +137,28 @@ def vizSPM(df: pd.DataFrame) -> pathlib.Path:
 
             if label is not None:
                 color = color_palette[label]
-                if label == "C[0]":
+                if label == "A[0]":
+                    rel_idx = idx - a0_start
+                    group_num = (
+                        min(7, rel_idx // group_size_A)
+                        if group_size_A > 0
+                        else 0
+                    )
+                    cell_text = str(group_num)
+
+                    if idx in a0_group_end_indices:
+                        text_color = "#000000"
+                        title_tooltip = f"Cell {idx} (Row {r}, Bank/Col {c}): A[0] [Group {group_num} END]"
+                    else:
+                        text_color = "#ffffff"
+                        title_tooltip = f"Cell {idx} (Row {r}, Bank/Col {c}): A[0] [Group {group_num}]"
+                elif label == "B[0]":
+                    cell_text, text_color, is_first, sg_x, g_y = get_b0_info(
+                        idx
+                    )
+                    tag = " [GROUP START]" if is_first else ""
+                    title_tooltip = f"Cell {idx} (Row {r}, Bank/Col {c}): B[0] [Subgroup {sg_x}, Group {g_y} ({cell_text})]{tag}"
+                elif label == "C[0]":
                     rel_idx = idx - c0_start
                     group_num = (
                         min(7, rel_idx // group_size_C)
@@ -160,7 +201,6 @@ def vizSPM(df: pd.DataFrame) -> pathlib.Path:
     summary_cells_markup = "\n        ".join(summary_cells_html)
 
     # Build Figure 3: Focused A[0] and B[0] Subset
-    b0_end = 2048 + tileA + tileB
     start_row_ab = a0_start // num_cols
     end_row_ab = (
         (b0_end - 1) // num_cols if b0_end > a0_start else start_row_ab
@@ -188,12 +228,18 @@ def vizSPM(df: pd.DataFrame) -> pathlib.Path:
                     )
                     cell_text = str(group_num)
 
-                    if idx in a0_group_start_indices:
+                    if idx in a0_group_end_indices:
                         text_color = "#000000"
-                        title_tooltip = f"Cell {idx} (Row {r}, Bank/Col {c}): A[0] [Group {group_num} START]"
+                        title_tooltip = f"Cell {idx} (Row {r}, Bank/Col {c}): A[0] [Group {group_num} END]"
                     else:
                         text_color = "#ffffff"
                         title_tooltip = f"Cell {idx} (Row {r}, Bank/Col {c}): A[0] [Group {group_num}]"
+                elif label == "B[0]":
+                    cell_text, text_color, is_first, sg_x, g_y = get_b0_info(
+                        idx
+                    )
+                    tag = " [GROUP START]" if is_first else ""
+                    title_tooltip = f"Cell {idx} (Row {r}, Bank/Col {c}): B[0] [Subgroup {sg_x}, Group {g_y} ({cell_text})]{tag}"
                 else:
                     title_tooltip = (
                         f"Cell {idx} (Row {r}, Bank/Col {c}): {label}"
@@ -209,17 +255,15 @@ def vizSPM(df: pd.DataFrame) -> pathlib.Path:
             )
     subset_cells_markup = "\n            ".join(subset_cells_html)
 
-    # Build Figure 4: Concatenation of rows in A[0] and C[0] containing black text (group starts)
-    # 1. Identify A[0] rows with black text
+    # Build Figure 4: Last k Iter (Concatenation of rows in A[0] and C[0] containing black text)
     a0_first_row = a0_start // num_cols
     a0_last_row = min((a0_end - 1) // num_cols, num_rows - 1)
     a0_black_rows = []
     for r in range(a0_first_row, a0_last_row + 1):
         row_indices = range(r * num_cols, (r + 1) * num_cols)
-        if any(idx in a0_group_start_indices for idx in row_indices):
+        if any(idx in a0_group_end_indices for idx in row_indices):
             a0_black_rows.append(r)
 
-    # 2. Identify C[0] rows with black text
     c0_first_row = c0_start // num_cols
     c0_last_row = min((c0_end - 1) // num_cols, num_rows - 1)
     c0_black_rows = []
@@ -228,7 +272,6 @@ def vizSPM(df: pd.DataFrame) -> pathlib.Path:
         if any(idx in c0_group_start_indices for idx in row_indices):
             c0_black_rows.append(r)
 
-    # Concatenate selected rows
     fig4_rows = a0_black_rows + c0_black_rows
     fig4_row_count = max(1, len(fig4_rows))
 
@@ -250,11 +293,17 @@ def vizSPM(df: pd.DataFrame) -> pathlib.Path:
                         else 0
                     )
                     cell_text = str(group_num)
-                    if idx in a0_group_start_indices:
+                    if idx in a0_group_end_indices:
                         text_color = "#000000"
-                        title_tooltip = f"Fig 4 | Orig Row {r}, Col {c}: A[0] [Group {group_num} START]"
+                        title_tooltip = f"Fig 4 | Orig Row {r}, Col {c}: A[0] [Group {group_num} END]"
                     else:
                         title_tooltip = f"Fig 4 | Orig Row {r}, Col {c}: A[0] [Group {group_num}]"
+                elif label == "B[0]":
+                    cell_text, text_color, is_first, sg_x, g_y = get_b0_info(
+                        idx
+                    )
+                    tag = " [GROUP START]" if is_first else ""
+                    title_tooltip = f"Fig 4 | Orig Row {r}, Col {c}: B[0] [Subgroup {sg_x}, Group {g_y} ({cell_text})]{tag}"
                 elif label == "C[0]":
                     rel_idx = idx - c0_start
                     group_num = (
@@ -392,10 +441,12 @@ def vizSPM(df: pd.DataFrame) -> pathlib.Path:
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 7px;
+            font-size: 5px;
             font-weight: bold;
             line-height: 1;
             user-select: none;
+            overflow: hidden;
+            letter-spacing: -0.5px;
         }}
         .cell:hover {{
             outline: 1px solid #000;
@@ -466,9 +517,11 @@ def vizSPM(df: pd.DataFrame) -> pathlib.Path:
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 9px;
+            font-size: 6px;
             font-weight: bold;
             user-select: none;
+            overflow: hidden;
+            letter-spacing: -0.5px;
         }}
         .subset-cell:hover {{
             outline: 1px solid #000;
@@ -524,9 +577,9 @@ def vizSPM(df: pd.DataFrame) -> pathlib.Path:
                     </div>
                 </div>
 
-                <!-- Figure 4: Concatenated A[0] & C[0] Rows with Group Starts (Black Text) -->
+                <!-- Figure 4: Last k Iter -->
                 <div class="panel">
-                    <div class="panel-title">Group Start Rows: A[0] &amp; C[0] ({len(fig4_rows)} Rows)</div>
+                    <div class="panel-title">Last k Iter ({len(fig4_rows)} Rows)</div>
                     <div class="spm-header-grid">
                         {spm_header_markup}
                     </div>
