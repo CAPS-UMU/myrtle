@@ -46,7 +46,7 @@ def printFinalRankingTwoShelves(title, df, colorCol):
     my_titles = [] #Avg m'_sz / k_size
     my_columns = ["JSON Name", "mnkRem", "timed", "Avg n'_sz / k_size","m'_sz*n_sz / k_sz",colorCol,"Avg B'", "Time (cycles)", "diff"]
     my_columns = ["JSON Name", "timed", "Avg m'_sz*n_sz / k_sz", "FMADDsMULsPerCore","mRem","mnk",colorCol,"tileB", "Time (cycles)", "diff"]
-    my_columns = ["JSON Name", "timed", "Avg m'_sz*n_sz / k_sz", "mnkRem","mRem","nMod32",colorCol,"tileB", "Time (cycles)", "diff"]
+    my_columns = ["JSON Name", "timed", "Avg m'_sz*n_sz / k_sz", "mnkRem","mMod8","nMod32",colorCol,"tileB", "Time (cycles)", "diff"]
     
     # Get unique FMADD values, sort them from smallest to largest
     sorted_fmadd_keys = sorted(df['FMADDsMULsPerCore'].unique(), reverse=True)
@@ -58,7 +58,7 @@ def printFinalRankingTwoShelves(title, df, colorCol):
         
         # Sort by 'mRem' (Smallest to Largest) and then colorCol (SMALLEST TO LARGEST)
         processed_slice = fmadd_group.sort_values(
-            by=['mRem', colorCol], 
+            by=['mMod8', colorCol], 
             ascending=[True, True]
         )
         # Append to our parallel output lists
@@ -286,8 +286,22 @@ def pruneApproach5(timed, analyzed, full):
      
      # step 5: identify nice m remainders
      nice_timed,nice_ut = catByMDimBoundaryTile(timed, ut, niceOnly=True)
-     # illustrate_prune_nefarious_boundary_tiles(special_figs, hover_data, timed,ut)
+     # # illustrate_prune_nefarious_boundary_tiles(special_figs, hover_data, timed,ut)
      combined=pd.concat([nice_timed,nice_ut])
+
+     # # remove m remainders < 8
+     # combined = pd.concat([timed, ut])
+     # combined = combined[combined["mRem"]>=8].copy()
+     agressivelyPruned = nice_ut[nice_ut["mDiv8"] != 0].copy()
+     agressivelyPruned = agressivelyPruned[agressivelyPruned["FMADDsMULsPerCore"] < 12500.0].copy()
+     agressivelyPruned = agressivelyPruned[agressivelyPruned["FMADDsMULsPerCore"] > 10000.0].copy()
+     agressivelyPruned = agressivelyPruned.sort_values(by="FMADDsMULsPerCore",ascending=False)
+     m=timed["M"][0]
+     n=timed["N"][0]
+     k=timed["K"][0]
+     nickname=f"{m}x{n}x{k}-between10and12k"
+     filename= f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}"
+     agressivelyPruned.to_csv(filename,index=False)
 
      # remove n dim divisible by 32
      combined = combined[combined["nMod32"]!=0].copy()
@@ -310,17 +324,46 @@ def pruneApproach5(timed, analyzed, full):
         "tileC",
         "comp/memxfer",]
 
-     y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
+
+     #     nice_timed=nice_timed.sort_values("FMADDsMULsPerCore",ascending=False)
+     #      y_col = "Avg n'_sz / k_size"
+     #      x_col = "Global Sim E2E_dma"
+     #      more_figs.append(scatterWithColorSymbol(
+     #          nice_timed,
+     #             x_col,
+     #             y_col,
+     #             "diff<0.5",
+     #             hover_data,
+     #             "Is pruning by n/k = 1 a good idea? circle is n/k < 1. orange is diff < 0.5 from best/",
+     #             "n/k<1",
+     #             ["triangle-up","circle"]
+     #      ))
+     #asDF=asDF.sort_values("mDiv8")
+     timed = asDF[asDF["timedData"]==True].copy()
+     ut = asDF[asDF["timedData"]==False].copy()
+     timed.sort_values("mDiv8")
+     ut.sort_values("mDiv8")
+     y_col = "diff"#"Global Sim E2E_dma"#"Avg n'_sz / k_size"
      x_col = "FMADDsMULsPerCore"#"m'_sz*n_sz / k_sz"#"Global Sim E2E_dma"
      special_figs.append(scatterWithColorSymbol(
-         asDF.head(50),
+         timed,
             x_col,
             y_col,
-            "tileC",
+            "m'_sz*n_sz / k_sz",
             specialHover,
-            "Best 50, maximize by FMADDsMULsPerCore, minimize by avg mn/k after pruning by ssr configs, m and m-rem ",
-            "timedData",
-            ["circle","circle"]
+            "maximize by FMADDsMULsPerCore, minimize by avg mn/k after pruning by ssr configs, m-rem, and preferring mMod8=0 ",
+            "mDiv8",
+            ["circle","triangle-up"]
      ))
-     special_figs[-1].update_traces(showlegend=False) 
+     special_figs[-1].update_traces(showlegend=False)
+     # addScatterFlatColorMarker(
+     #         special_figs[-1],
+     #         ut,
+     #         x_col,
+     #         y_col,
+     #         "gray",
+     #         "x",
+     #         hover_data,
+     #         "untimed"
+     #     )
      return special_figs,more_figs,f"<span>{table2}</span><span>{table}</span>"

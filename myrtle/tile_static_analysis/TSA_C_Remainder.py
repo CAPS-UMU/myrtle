@@ -180,6 +180,7 @@ class TSA_C_Remainder(TileSizeAnalyzer):
             df_ut["Overlap Stall Time Total"] = -1
             df_ut["Raw Compute Time Total"] = -1
             df_ut["Overlap Stall Time Per Core"] = -1
+            df_ut["diff"] = 15
             df_ut["timeout"] = False  # they aren't timed so they can't possibly have timed out
             return df_ut
         def parseDimM(nm):
@@ -202,6 +203,8 @@ class TSA_C_Remainder(TileSizeAnalyzer):
             return df
         df = handle_timeouts(df)
         df["nMod32"] = df["n"]%32
+        df["mMod8"] = df["m"]%8
+        df["mDiv8"] = df["mMod8"] == 0
         df["M"] = df["FakeNN JSON Name"].apply(parseDimM)
         df["N"] = df["FakeNN JSON Name"].apply(parseDimN)
         df["K"] = df["FakeNN JSON Name"].apply(parseDimK)
