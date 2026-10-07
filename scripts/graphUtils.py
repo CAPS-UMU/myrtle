@@ -1,7 +1,11 @@
 import plotly.express as px
 import plotly.io as pio
-theColorBar="haline"
 import re
+import plotly.graph_objects as go
+import pandas as pd
+from typing import Sequence, Tuple
+
+theColorBar="haline"
 
 def jugaadTitle(df):
     M=int(df["M"][0])
@@ -129,6 +133,49 @@ def prunedScatter(df, x_col, y_col, color, hover_data, title, prunePoint, marker
     fig14.add_vline(x=prunePoint, line_width=2, line_dash="dash", line_color="green")
     # turn the pruned points gray?
     return fig14
+
+def plot_3d_scatter(
+    df: pd.DataFrame,
+    xyz: Tuple[str, str, str],
+    hover_data: Sequence[str] = None,
+    title: str = "3D Scatter Plot",
+) -> go.Figure:
+    """Creates an interactive 3D scatter plot from a pandas DataFrame using Plotly Express.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The DataFrame containing the data to plot.
+    xyz : tuple of (str, str, str)
+        Tuple specifying (x_col, y_col, z_col) column names for the 3 axes.
+    hover_data : list or sequence of str, optional
+        List of column names to display in the hover tooltip.
+    title : str, optional
+        Title of the generated 3D plot.
+
+    Returns
+    -------
+    go.Figure
+        The resulting Plotly Express 3D figure object.
+    """
+    x_col, y_col, z_col = xyz
+
+    fig = px.scatter_3d(
+        df,
+        x=x_col,
+        y=y_col,
+        z=z_col,
+        hover_data=hover_data,
+        title=title,
+    )
+
+    fig.update_layout(
+        template="plotly_white",
+        margin=dict(l=20, r=20, t=40, b=20),
+    )
+
+    return fig
+
 
 def stack_dfs_to_html_w_toggle(
     df_list, titles, columns_subset, main_title=None, include_index=False
@@ -755,3 +802,81 @@ def genResultGraphQPDF(title,timed, recentlyPruned,hover_data,color="fmaddsPerCo
     #fig.write_image(f"out/{title}.pdf", width=widthPx, height=heightPx)
     return fig
 
+import re
+
+
+def genLatexyGraphPDF(
+    title,
+    df,
+    x_col,
+    y_col,
+    color,
+    symbol,
+    symbols,
+    hover_data="FakeNN JSON Name",
+    x_label=None,
+    y_label=None,
+    color_label=None,
+    df_ut=None
+):
+    def convert_labels(text):
+        """Converts LaTeX-style subscripts to HTML <sub> tags."""
+        if not text:
+            return text
+        text = str(text).replace("$", "").replace(r"\cdot", "·")
+        return re.sub(
+            r"_\{([^}]+)\}|_([a-zA-Z0-9])",
+            lambda m: f"<sub>{m.group(1) or m.group(2)}</sub>",
+            text,
+        )
+
+    colorCol = color
+    df = df.sort_values(symbol)
+    fig = scatterWithColorSymbol(
+        df, x_col, y_col, colorCol, hover_data, title, symbol, symbols
+    )
+    if df_ut is not None:
+        addScatterFlatColorMarker(
+             fig,
+             df_ut,
+             x_col,
+             y_col,
+             "gray",
+             "x",
+             hover_data,
+             "untimed"
+         )
+
+
+    # 1. Resolve labels with HTML formatting
+    x_title = convert_labels(x_label if x_label is not None else x_col)
+    y_title = convert_labels(y_label if y_label is not None else y_col)
+    color_title = convert_labels(
+        color_label if color_label is not None else colorCol
+    )
+
+    dpi = 72
+    widthPx = 6 * dpi
+    heightPx = 4 * dpi
+
+    fig.update_traces(showlegend=False)
+
+    fig.update_layout(
+        title=dict(text=title, x=0.5, xanchor="center"),
+        width=widthPx,
+        height=heightPx,
+        margin=dict(l=30, r=20, t=35, b=30),
+        xaxis=dict(title=x_title, automargin=True),
+        yaxis=dict(title=y_title, automargin=True),
+        # Default vertical colorbar label placement preserved
+        coloraxis=dict(colorbar=dict(title=dict(text=color_title))),
+        font=dict(
+            family="CMU Sans Serif Demi Condensed, CMU Typewriter Text, CMU Serif, Computer Modern, Latin Modern Roman, Serif",
+            size=14,
+            color="black",
+        ),
+        template="plotly_white",
+    )
+
+    fig.write_image(f"out/{title}.pdf", scale=1)
+    return fig

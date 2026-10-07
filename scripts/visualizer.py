@@ -310,7 +310,7 @@ def visualizePruning(timed, analyzed, full, titleOfWebpage):
         index=False)
 
     #  special_figs,more_figs, table = pruneApproach3(timed,analyzed,full)
-     special_figs,more_figs, table = TSS.pruneApproach5(timed,analyzed,full)
+     special_figs, more_figs, table = TSS.pruneApproach5(timed,analyzed,full)
      
      return saveFigsInHTML(special_figs, more_figs, titleOfWebpage,table)
 

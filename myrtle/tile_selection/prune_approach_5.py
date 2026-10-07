@@ -6,7 +6,7 @@ import math
 import re
 import pathlib
 import sys
-from scripts.graphUtils import scatterWithColorSymbol, scatterWithFlatColor, scatterWithColor, addScatterFlatColorMarker, stack_dfs_to_html_w_toggle,genShelfGraphPDF,jugaadTitle
+from scripts.graphUtils import scatterWithColorSymbol, plot_3d_scatter,scatterWithFlatColor, genLatexyGraphPDF,scatterWithColor, addScatterFlatColorMarker, stack_dfs_to_html_w_toggle,genShelfGraphPDF,jugaadTitle
 import pandas as pd
 from typing import List
 import numpy as np
@@ -311,7 +311,7 @@ def pruneApproach5(timed, analyzed, full):
      table = ""
      table2, asDF, filteredDF, three_shelves =printFinalRankingTwoShelves("(prioritizing mRem = 0, then smaller m*n / k ratio)",combined,"m'_sz*n_sz / k_sz")
     
-     help = genShelfGraphPDF(jugaadTitle(timed),three_shelves,hover_data,color="mRem")
+    #  help = genShelfGraphPDF(jugaadTitle(timed),three_shelves,hover_data,color="mRem")
      specialHover = [ "JSON Name",
         "diff",
         "SSR Configs",
@@ -341,8 +341,8 @@ def pruneApproach5(timed, analyzed, full):
      #asDF=asDF.sort_values("mDiv8")
      timed = asDF[asDF["timedData"]==True].copy()
      ut = asDF[asDF["timedData"]==False].copy()
-     timed.sort_values("mDiv8")
-     ut.sort_values("mDiv8")
+     timed=timed.sort_values("mDiv8")
+     ut=ut.sort_values("mDiv8")
      y_col = "diff"#"Global Sim E2E_dma"#"Avg n'_sz / k_size"
      x_col = "FMADDsMULsPerCore"#"m'_sz*n_sz / k_sz"#"Global Sim E2E_dma"
      special_figs.append(scatterWithColorSymbol(
@@ -356,6 +356,15 @@ def pruneApproach5(timed, analyzed, full):
             ["circle","triangle-up"]
      ))
      special_figs[-1].update_traces(showlegend=False)
+
+     x_col = "FMADDsMULsPerCore"
+     y_col="Global Sim E2E_dma"
+     forLatex = timed[timed["FMADDsMULsPerCore"]>9000.0].copy()
+     forLatex_ut = ut[ut["FMADDsMULsPerCore"]>9000.0].copy()
+     latexyGraph =genLatexyGraphPDF(jugaadTitle(forLatex),forLatex,x_col,y_col,"m'_sz*n_sz / k_sz","mDiv8",["triangle-up","circle"],specialHover,x_label=None,y_label="Time (cycles)",color_label="m_{size} · n_{size} / k_{size}",df_ut=None)
+     special_figs.append(latexyGraph)
+     #latexyGraph_include_ut =genLatexyGraphPDF(jugaadTitle(forLatex),forLatex,x_col,y_col,"m'_sz*n_sz / k_sz","mDiv8",["circle","triangle-up"],specialHover,x_label=None,y_label="Time (cycles)",color_label="m_{size} · n_{size} / k_{size}",df_ut=forLatex_ut) 
+     #special_figs.append(latexyGraph_include_ut)
      # addScatterFlatColorMarker(
      #         special_figs[-1],
      #         ut,
@@ -366,4 +375,7 @@ def pruneApproach5(timed, analyzed, full):
      #         hover_data,
      #         "untimed"
      #     )
+     # x, y, z
+     # "FMADDsMULsPerCore","diff","m'_sz*n_sz / k_sz"
+   #  special_figs.append(plot_3d_scatter(timed,("FMADDsMULsPerCore","diff","m'_sz*n_sz / k_sz"),specialHover))
      return special_figs,more_figs,f"<span>{table2}</span><span>{table}</span>"
