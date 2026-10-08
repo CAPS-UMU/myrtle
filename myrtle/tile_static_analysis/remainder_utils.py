@@ -279,6 +279,8 @@ class TilingScheme():
         num_tiles = self.m_tiles * self.n_tiles * self.k_tiles
         # x represents the number of double buffer steps needed to complete a matmul
         x = num_tiles + 2
+        print("")
+        print(f"Total Double Buffer Iters to Trace: {x}")
         # let's keep track of different memory-compute overlap ratios
         overlaps = {}
         prev_iter = dbu.Mem_Compute_Overlap(0,0,0)
@@ -314,6 +316,9 @@ class TilingScheme():
                 
                 buff_idx = dma_in.dma_in_i % 2 # switch A, B buffers
                 c_buff_idx = dma_in.dma_in_mn % 2 # switch C buffers
+                # when beta = 0, we never load C
+                # load = A + B
+                load = (dma_in.m*dma_in.k) + (dma_in.k*dma_in.n)
                 if verbose:
                     print("\tDMA IN")
                     # we always load a new A and B tile when DMA In action is enabled
@@ -327,9 +332,6 @@ class TilingScheme():
                     print(f"sntr_dma_load_2d_tile(SPM B buff[{buff_idx}], L3 B ptr, ",end='')
                     print(f"{dma_in.dma_in_k},{dma_in.dma_in_n},",end='')
                     print("\t",f"{dma_in.k},{dma_in.n}, B flat size, prec)")
-                # when beta = 0, we never load C
-                # load = A + B
-                load = (dma_in.m*dma_in.k) + (dma_in.k*dma_in.n)
             else:
                 load = 0
                 if verbose:
@@ -353,7 +355,7 @@ class TilingScheme():
                 
             current_overlap = dbu.Mem_Compute_Overlap(compute,load,store)
             if compute == 0 and load == 0 and store == 0:
-                print("How bizarre. This iter there isn't any loading, computing, or storing? How is that possible?!")
+                print(f"How bizarre. This iter ({str(i)}) there isn't any loading, computing, or storing? How is that possible?!")
                 print(f"\t{compute} {load} {store}")
             else:
                 if verbose:
@@ -369,5 +371,6 @@ class TilingScheme():
             else:
                 overlaps[(compute,load,store)] = current_overlap
             prev_iter = current_overlap
-            print("\tEnd of Double Buffer Iteration "+str(i)+" ---------- |\n")
+            if verbose:
+                print("\tEnd of Double Buffer Iteration "+str(i)+" ---------- |\n")
         return overlaps
