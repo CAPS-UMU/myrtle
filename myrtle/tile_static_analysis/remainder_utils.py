@@ -275,7 +275,7 @@ class TilingScheme():
         #assert len(all_imaginable) == 8 # debugging only
         return all_imaginable
     
-    def doubleBufferIters(self):
+    def doubleBufferIters(self,verbose=False):
         num_tiles = self.m_tiles * self.n_tiles * self.k_tiles
         # x represents the number of double buffer steps needed to complete a matmul
         x = num_tiles + 2
@@ -283,68 +283,81 @@ class TilingScheme():
         overlaps = {}
         prev_iter = dbu.Mem_Compute_Overlap(0,0,0)
         for i in range (0,x):
-            print("\tDouble Buffer Iteration "+str(i))
             dma_in = dbu.DMA_in(i,self)
             dma_out = dbu.DMA_out(i,self)
             compu = dbu.compute(i,self)
-
+            if verbose: 
+                print("\tDouble Buffer Iteration "+str(i))          
             # DMA OUT
             if(dma_out.dma_out_i >= 0):
                 # // Store C
                 # if (dma_out_k == k_rem_idx) {  // only store C on last k iteration
                 # I need a check in here to prevent printing every time
                 # #  (need to only print on last k iter!!)
-                print("\tDMA OUT ",end='')
+                
                 buff_idx = dma_out.dma_out_mn % 2 # switch C buffers
-                print("\t",end='')
-                print(f"sntr_dma_store_2d_tile(L3 C ptr, SPM C buff[{buff_idx}],",end='')
-                print(f"{dma_out.dma_out_m_abs},{dma_out.dma_out_n},",end='')
-                print("\t",f"{dma_out.m},{dma_out.n}, C flat size, prec)")
+                if verbose: 
+                    print("\tDMA OUT ",end='')
+                    print("\t",end='')
+                    print(f"sntr_dma_store_2d_tile(L3 C ptr, SPM C buff[{buff_idx}],",end='')
+                    print(f"{dma_out.dma_out_m_abs},{dma_out.dma_out_n},",end='')
+                    print("\t",f"{dma_out.m},{dma_out.n}, C flat size, prec)")
                 store = dma_out.m * dma_out.n
             else:
-                print("\tDMA OUT (skipped)")
                 store = 0
+                if verbose: 
+                    print("\tDMA OUT (skipped)")
+                
 
             # DMA IN
             if (dma_in.dma_in_i < num_tiles):
-                print("\tDMA IN")
+                
                 buff_idx = dma_in.dma_in_i % 2 # switch A, B buffers
                 c_buff_idx = dma_in.dma_in_mn % 2 # switch C buffers
-                # we always load a new A and B tile when DMA In action is enabled
-                # load A
-                print("\t\t",end='')
-                print(f"sntr_dma_load_2d_tile(SPM A buff[{buff_idx}], L3 A ptr, ",end='')
-                print(f"{dma_in.dma_in_m_abs},{dma_in.dma_in_k},",end='')
-                print("\t",f"{dma_in.m},{dma_in.k}, A flat size, prec)")
-                # load B
-                print("\t\t",end='')
-                print(f"sntr_dma_load_2d_tile(SPM B buff[{buff_idx}], L3 B ptr, ",end='')
-                print(f"{dma_in.dma_in_k},{dma_in.dma_in_n},",end='')
-                print("\t",f"{dma_in.k},{dma_in.n}, B flat size, prec)")
+                if verbose:
+                    print("\tDMA IN")
+                    # we always load a new A and B tile when DMA In action is enabled
+                    # load A
+                    print("\t\t",end='')
+                    print(f"sntr_dma_load_2d_tile(SPM A buff[{buff_idx}], L3 A ptr, ",end='')
+                    print(f"{dma_in.dma_in_m_abs},{dma_in.dma_in_k},",end='')
+                    print("\t",f"{dma_in.m},{dma_in.k}, A flat size, prec)")
+                    # load B
+                    print("\t\t",end='')
+                    print(f"sntr_dma_load_2d_tile(SPM B buff[{buff_idx}], L3 B ptr, ",end='')
+                    print(f"{dma_in.dma_in_k},{dma_in.dma_in_n},",end='')
+                    print("\t",f"{dma_in.k},{dma_in.n}, B flat size, prec)")
                 # when beta = 0, we never load C
                 # load = A + B
                 load = (dma_in.m*dma_in.k) + (dma_in.k*dma_in.n)
             else:
-                print("\tDMA IN (skipped)")
                 load = 0
+                if verbose:
+                    print("\tDMA IN (skipped)")
 
             # COMPUTE
             if((compu.comp_i >= 0) and (compu.comp_i < num_tiles)):
-                print("\tCOMPUTE", end="")
+                
                 buff_idx = compu.comp_i % 2 # switch A, B buffers
                 c_buff_idx = compu.comp_mn % 2 # switch C buffers
-                print("\t",end='')
-                print("\t",f"sc_st_gemm(a=SPM A buff[{buff_idx}], lda = {compu.k}, b=SPM B buff[{buff_idx}], ldb = {compu.n}, c=SPM C buff[{c_buff_idx}], ldc = {compu.n})")
                 compute = prev_iter.load
+                if verbose:
+                    print("\tCOMPUTE", end="")
+                    print("\t",end='')
+                    print("\t",f"sc_st_gemm(a=SPM A buff[{buff_idx}], lda = {compu.k}, b=SPM B buff[{buff_idx}], ldb = {compu.n}, c=SPM C buff[{c_buff_idx}], ldc = {compu.n})")
+                    
             else:
-                print("\tCOMPUTE (skipped)")
                 compute = 0
+                if verbose:
+                    print("\tCOMPUTE (skipped)")
+                
             current_overlap = dbu.Mem_Compute_Overlap(compute,load,store)
             if compute == 0 and load == 0 and store == 0:
                 print("How bizarre. This iter there isn't any loading, computing, or storing? How is that possible?!")
                 print(f"\t{compute} {load} {store}")
             else:
-                print(f"\t{compute} {load} {store}")
+                if verbose:
+                    print(f"\t{compute} {load} {store}")
                 # print(f"\t{compu}")
                 # print(f"\t{dma_in}")
                 # print(f"\t{dma_out}")

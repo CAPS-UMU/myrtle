@@ -293,13 +293,16 @@ def pruneApproach5(timed, analyzed, full):
      # combined = pd.concat([timed, ut])
      # combined = combined[combined["mRem"]>=8].copy()
      agressivelyPruned = nice_ut[nice_ut["mDiv8"] != 0].copy()
-     agressivelyPruned = agressivelyPruned[agressivelyPruned["FMADDsMULsPerCore"] < 12500.0].copy()
-     agressivelyPruned = agressivelyPruned[agressivelyPruned["FMADDsMULsPerCore"] > 10000.0].copy()
+    #  agressivelyPruned = agressivelyPruned[agressivelyPruned["FMADDsMULsPerCore"] < 12500.0].copy()
+    #  agressivelyPruned = agressivelyPruned[agressivelyPruned["FMADDsMULsPerCore"] > 10000.0].copy()
+     agressivelyPruned = agressivelyPruned[agressivelyPruned["FMADDsMULsPerCore"] < 9000.0].copy()
+     agressivelyPruned = agressivelyPruned[agressivelyPruned["FMADDsMULsPerCore"] > 6000.0].copy()
      agressivelyPruned = agressivelyPruned.sort_values(by="FMADDsMULsPerCore",ascending=False)
      m=timed["M"][0]
      n=timed["N"][0]
      k=timed["K"][0]
-     nickname=f"{m}x{n}x{k}-between10and12k"
+    #  nickname=f"{m}x{n}x{k}-between10and12k"
+     nickname=f"{m}x{n}x{k}-between6and9k"
      filename= f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}"
      agressivelyPruned.to_csv(filename,index=False)
 
@@ -360,8 +363,10 @@ def pruneApproach5(timed, analyzed, full):
      x_col = "FMADDsMULsPerCore"
      y_col="Global Sim E2E_dma"
      forLatex = timed[timed["FMADDsMULsPerCore"]>9000.0].copy()
+     if nickname=="128x128x128-between6and9k":
+        forLatex = timed[timed["FMADDsMULsPerCore"]>5000.0].copy()
      forLatex_ut = ut[ut["FMADDsMULsPerCore"]>9000.0].copy()
-     latexyGraph =genLatexyGraphPDF(jugaadTitle(forLatex),forLatex,x_col,y_col,"m'_sz*n_sz / k_sz","mDiv8",["triangle-up","circle"],specialHover,x_label=None,y_label="Time (cycles)",color_label="m_{size} · n_{size} / k_{size}",df_ut=None)
+     latexyGraph =genLatexyGraphPDF(jugaadTitle(forLatex),forLatex,x_col,y_col,"m'_sz*n_sz / k_sz","mDiv8",["triangle-up","circle"],specialHover,x_label=None,y_label="Time (cycles)",color_label="m_{size} * n_{size} / k_{size}",df_ut=None)
      special_figs.append(latexyGraph)
      #latexyGraph_include_ut =genLatexyGraphPDF(jugaadTitle(forLatex),forLatex,x_col,y_col,"m'_sz*n_sz / k_sz","mDiv8",["circle","triangle-up"],specialHover,x_label=None,y_label="Time (cycles)",color_label="m_{size} · n_{size} / k_{size}",df_ut=forLatex_ut) 
      #special_figs.append(latexyGraph_include_ut)
