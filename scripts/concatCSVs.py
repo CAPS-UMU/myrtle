@@ -59,8 +59,8 @@ def main():
         for x in r.columns:
             if x not in l.columns:
                 print(x) 
-        if mode == "agressive":
-            print("AGRESSIVE MODE: we continue by keeping only the LEFT df columns...")
+        if mode == "aggressive":
+            print("AGGRESSIVE MODE: we continue by keeping only the LEFT df columns...")
             r = r.reindex(columns=l.columns).dropna(how='all', axis=1)  # get rid of cols in right that do not match left        
         else:
             raise Exception("Error: the to csv files contain differing number of columns")
