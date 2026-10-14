@@ -2,6 +2,7 @@ from tile_static_analysis.remainder_utils import ClusterTile, TilingScheme, appl
 import pandas as pd
 import pathlib
 from tile_static_analysis.TileSizeAnalyzer import TileSizeAnalyzer
+import tile_static_analysis.double_buffer_utils as dbu
 from functools import reduce
 import math
 from pandarallel import pandarallel
@@ -26,14 +27,18 @@ class TSA_C_Remainder(TileSizeAnalyzer):
         options_as_dicts = list(df.to_dict('records'))
         analyzed = list(map(lambda d: self.analyze_option(d), options_as_dicts))
         cols = analyzed[0].keys()
+        if "Avg C-M Ratio" not in cols:
+            raise Exception("missing CM ratio")
         df = pd.DataFrame(analyzed, columns=cols)  
         return df
 
     def analyze_option(self, d):
         ts = TilingScheme(int(d["M"]),int(d["N"]),int(d["K"]),int(d["m"]),int(d["n"]),int(d["k"]),self.UaJF,self.DoP,d["remainderTiles"])
-        info = ts.doubleBufferIters()
-        print("\nThe double buffering info is")
-        pprint.pprint(info,width=1)
+        # info = ts.doubleBufferIters()
+        # # print(f"\nThere are {len(info)} Compute-Memory overlap shapes:")
+        # # pprint.pprint(info,width=1)
+        # avg_cm_ratio = dbu.Avg_C_M_Overlap(info)
+        # print(f"Average Compute-Memory Ratio: {avg_cm_ratio}")
         d.update(self.tilingSchemeMetrics(ts))
         return d
     
@@ -90,6 +95,13 @@ class TSA_C_Remainder(TileSizeAnalyzer):
         info["Avg m'_sz*n_sz / k_sz"] = info["m'_sz*n_sz / k_sz"] / cc_tile_count
         info["Avg m_sz*n_sz / k_sz"] = info["m_sz*n_sz / k_sz"] / cc_tile_count
         info["remainderTiles"] = ts.remainderTiles
+        overlapShapes = ts.doubleBufferIters()
+        #pprint.pprint(overlapShapes,width=1)
+        avg_cm_ratio = dbu.Avg_C_M_Overlap(overlapShapes)
+        cm_variance = dbu.Weighted_C_M_Overlap_Variance(avg_cm_ratio,overlapShapes)
+        info["Avg C-M Ratio"] = avg_cm_ratio
+        info["C-M Ratio Variance"] = cm_variance
+
         return info
 
     def unrollAndJamFactor(self, rowDim):

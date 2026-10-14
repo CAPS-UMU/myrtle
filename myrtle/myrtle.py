@@ -96,6 +96,8 @@ def main():
             ts_analyzed = ann.analyze_options(ts_ssr_configs)
             print("\nTiling Scheme Analyzed")
             print(ts_analyzed)
+            ratio = ts_analyzed["Avg C-M Ratio"][0]
+            print(f"Average Compute-Memory Ratio: {ratio}")
             output_path = vizSPM.vizSPM(ts_analyzed)
             print(f"Visualization written to: {output_path}")
             return

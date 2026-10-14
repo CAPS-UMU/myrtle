@@ -123,7 +123,7 @@ def main():
         spmLayout = "regular"
         # save a copy of the placeholder file
         subprocess.call(['cp', "placeholder.json", "placeholder-copy.json"])
-        if suffix == "all":
+        if suffix == fullSuffix:
             subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json", "NoPrune", spmLayout])
         else:
             subprocess.call(['python3', '../myrtle/myrtle.py', kernelName, "sflt", "placeholder.json", "prune", spmLayout])

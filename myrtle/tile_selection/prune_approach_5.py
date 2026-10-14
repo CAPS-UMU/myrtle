@@ -10,6 +10,7 @@ from scripts.graphUtils import scatterWithColorSymbol, plot_3d_scatter,scatterWi
 import pandas as pd
 from typing import List
 import numpy as np
+from typing import Tuple
 # # 1. Resolve paths
 # # Root directory: scripts
 # PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -201,14 +202,144 @@ def illustrate_prune_nefarious_boundary_tiles(special_figs,hover_data,timed, ut)
         "timed w/ worst case m remainder"
     )
 
+
+def split_longest_initial_subsequence(
+    df_a: pd.DataFrame,
+    df_b: pd.DataFrame,
+    id_col: str = "FakeNN JSON Name",
+    sort_col: str = "SSR Configs",
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Splits DataFrames A and B around the longest uninterrupted prefix of B in A.
+
+    Both DataFrames are assumed to be sorted ascending by `sort_col`. Rows are
+    matched by `id_col` to tolerate minor variations in other columns.
+
+    Returns:
+        prefix_df (pd.DataFrame): The longest contiguous prefix of B present in
+        A.
+        b_remainder (pd.DataFrame): Remaining rows of B after prefix_df (sorted
+        order preserved).
+        a_remainder (pd.DataFrame): Rows of A that do not appear in prefix_df
+        (sorted order preserved).
+    """
+    # 1. Validation checks
+    shared_cols = [c for c in df_b.columns if c in df_a.columns]
+    if not shared_cols:
+        raise ValueError("DataFrames A and B do not share any columns.")
+
+    for col in (id_col, sort_col):
+        if col not in df_a.columns or col not in df_b.columns:
+            raise ValueError(
+                f"Required column '{col}' must be present in both DataFrames."
+            )
+
+    # Edge cases: empty inputs
+    if df_b.empty:
+        return df_b.copy(), df_b.copy(), df_a.copy()
+    if df_a.empty:
+        return df_b.iloc[:0].copy(), df_b.copy(), df_a.copy()
+
+    # 2. Match membership using the unique ID column
+    a_ids = set(df_a[id_col].dropna().astype(str))
+    in_a = df_b[id_col].astype(str).isin(a_ids).to_numpy()
+
+    # 3. Determine the end index of the contiguous prefix in B
+    if not in_a[0]:
+        # First row doesn't match -> prefix length is 0
+        break_idx = 0
+    elif in_a.all():
+        # Every row of B is matched
+        break_idx = len(df_b)
+    else:
+        # First mismatch index
+        break_idx = int((~in_a).argmax())
+
+    # 4. Slice the prefix and the remainder of B
+    prefix_df = df_b.iloc[:break_idx].copy()
+    b_remainder = df_b.iloc[break_idx:].copy()
+
+    # 5. Extract rows in A not present in prefix_df, preserving A's sorted order
+    prefix_ids = set(prefix_df[id_col].astype(str))
+    a_remainder = df_a[~df_a[id_col].astype(str).isin(prefix_ids)].copy()
+
+    return prefix_df, b_remainder, a_remainder
+
+
+def maxMNK(full):
+    full["mnk"] = full["m"]*full["n"]*full["k"]
+    full = full.sort_values(by="mnk",ascending=False)
+    full = full.reset_index(drop=True)
+    best = full[["FakeNN JSON Name","mnk"]].loc[0]
+    full["mDiv8"] = full["m"] % 8
+    pruned = full[full["mDiv8"]==0].copy()
+    pruned = pruned.sort_values(by="mnk",ascending=False)
+    pruned = pruned.reset_index(drop=True)
+    bestDiv8 = pruned[["FakeNN JSON Name","mnk"]].loc[0]
+    return best, bestDiv8, full.copy()
+
+def bestObserved(timed):
+    timed = timed.sort_values(by="dma",ascending=True)
+    timed = timed.reset_index(drop=True)
+    best = timed[["FakeNN JSON Name","dma"]].loc[0]
+    return best
+
+def extractPointsForComparison(df, id_list, label_list):
+    extracted_rows = []
+
+    for item_id, label in zip(id_list, label_list):
+        # Match rows where "FakeNN JSON Name" matches the target ID
+        matched = df[df["FakeNN JSON Name"] == item_id].copy()
+
+        if not matched.empty:
+            matched["point_label"] = label
+            extracted_rows.append(matched)
+
+    if not extracted_rows:
+        # Return an empty DataFrame containing original columns plus "label"
+        empty_cols = list(df.columns)
+        if "label" not in empty_cols:
+            empty_cols.append("point_label")
+        return pd.DataFrame(columns=empty_cols)
+
+    # Concatenate all extracted rows and reset the index
+    result_df = pd.concat(extracted_rows, ignore_index=True)
+    return result_df
+
 def pruneApproach5(timed, analyzed, full):
+     mnk,mnkDiv8,full = maxMNK(full)
+     # print(full[["FakeNN JSON Name","mnk"]].head(10))
+     mnkMaxID = mnk["FakeNN JSON Name"]#.values[0]
+     # print(f"max mnk is ts {mnkMaxID}\n{mnk}")
+     mnkDiv8ID = mnkDiv8["FakeNN JSON Name"]#.values[0]
+     # print(f"max mnk divisible by 8 in m-dim is ts {mnkDiv8ID}\n{mnkDiv8}")
+     #print(full[["FakeNN JSON Name","mnk"]])
      prunePoint = ssr_prune_frac(full,3)
      ut = analyzed[~analyzed["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])]
      # make sure untimed points are a subset of the pruned search space
      ut = ut[ut["SSR Config Count"] < prunePoint].copy()
-     pruned = full[full["SSR Config Count"] < prunePoint]
+     pruned = full[full["SSR Config Count"] < prunePoint]     
+     if(mnkMaxID in pruned["FakeNN JSON Name"].values[0]):
+        print("pruned SS contains the max mnk")
+     else:
+        raise Exception("we have a PROBLEM! max mnk not included in pruned SS!!!")
+
      timed["timed"] = True
      ut["timed"] = False
+     fastest = bestObserved(timed)
+     fastestID = fastest["FakeNN JSON Name"]
+     print(f"fastest ts is {fastestID}\n{fastest}")
+
+     pruned = pruned.sort_values(by="SSR Configs",ascending=True)
+     pruned = pruned.reset_index(drop=True)
+     timed = timed.sort_values(by="SSR Configs",ascending=True)
+     timed = timed.reset_index(drop=True)
+     subseq_df, pruned_rest, timed_rest = split_longest_initial_subsequence(timed, pruned)
+     #print(subseq_df[["FakeNN JSON Name","SSR Configs"]])
+     print("timed points breakdown:")
+     print(f"min ssr configs timed: {subseq_df.shape[0]}")
+     print(f"other points timed: {timed_rest.shape[0]}")
+     print(f"remaining points to time: {pruned_rest.shape[0]}")
+
      printMethodologyStats(full, pruned, timed)
      hover_data = [
         "JSON Name",
@@ -216,7 +347,6 @@ def pruneApproach5(timed, analyzed, full):
         "absoluteRank",
         "dma",
         "HW Loops",
-        "SSR Configs",
         "FMADDsMULs",
         "FMADDsMULsPerCore",
         "Time (cycles)",#"SSR Loads per HW Loop",
@@ -234,7 +364,6 @@ def pruneApproach5(timed, analyzed, full):
         "tileB",
         "Avg n'_sz / k_size",
         "timedData",
-        "comp/memxfer",
      ]
      minimal_hover = [
         "JSON Name",       
@@ -257,8 +386,7 @@ def pruneApproach5(timed, analyzed, full):
             ["circle","circle"]
      ))
 
-
-    # illustrate_ssr_pruning(pruned, full, special_figs,minimal_hover)
+      # illustrate_ssr_pruning(pruned, full, special_figs,minimal_hover)
      y_col = "SSR Configs"
      x_col = "L1 Usage"
      fig = scatterWithFlatColor(
@@ -281,8 +409,116 @@ def pruneApproach5(timed, analyzed, full):
         minimal_hover,
         "timed"
     )
-     
-     
+
+     y_col = "timed"
+     x_col = "SSR Configs"
+     fig = scatterWithFlatColor(
+            ut,
+            x_col,
+            y_col,
+            "pink",
+            minimal_hover,
+            f"Pruned Search Space to SSR configs <= {prunePoint} (black points are timed)",
+            "symbolMarker",
+        )
+     special_figs.append(fig)
+     addScatterFlatColorMarker(
+        special_figs[-1],
+        timed,
+        x_col,
+        y_col,
+        "black",
+        "circle",
+        minimal_hover,
+        "timed"
+    )
+
+     y_col = "L1 Usage"
+     x_col = "L1 Usage"
+     fig = scatterWithFlatColor(
+            timed,
+            x_col,
+            y_col,
+            "black",
+            minimal_hover,
+            f"Pruned Search Space to SSR configs <= {prunePoint} (black points are timed)",
+            "symbolMarker",
+        )
+     special_figs.append(fig)
+  
+     y_col = "L1 Usage"
+     x_col = "L1 Usage"
+     fig = scatterWithFlatColor(
+            ut,
+            x_col,
+            y_col,
+            "pink",
+            minimal_hover,
+            f"Pruned Search Space to SSR configs <= {prunePoint} (pink are untimed)",
+            "symbolMarker",
+        )
+     special_figs.append(fig)
+
+     y_col = "FMADDsMULsPerCore"
+     x_col = "mnk"
+     fig = scatterWithFlatColor(
+            analyzed,
+            x_col,
+            y_col,
+            "black",
+            minimal_hover,
+            "how different are mnk vs FmaddsPerCore?",
+            "symbolMarker",
+        )
+     special_figs.append(fig)
+
+     y_col = "FMADDsMULsPerCore"
+     x_col = "FMADDsMULsPerCore"
+     fig = scatterWithFlatColor(
+            timed,
+            x_col,
+            y_col,
+            "black",
+            minimal_hover,
+            f"Pruned Search Space to SSR configs <= {prunePoint} (black points are timed)",
+            "symbolMarker",
+        )
+     special_figs.append(fig)
+     fig = scatterWithFlatColor(
+            ut,
+            x_col,
+            y_col,
+            "pink",
+            minimal_hover,
+            f"Pruned Search Space to SSR configs <= {prunePoint} (pink are untimed)",
+            "symbolMarker",
+        )
+     special_figs.append(fig)
+
+     specialHover = [ "JSON Name",
+        "diff",
+        "FMADDsMULsPerCore",
+        "Time (cycles)",#"SSR Loads per HW Loop",
+        "Total CL Tiles",
+        "L1 Usage",
+        "Avg CC Tile Size",
+        "mRem",
+        "mnk",
+        "tileC"]
+   
+     y_col = "diff"#"Global Sim E2E_dma"#"Avg n'_sz / k_size"
+     x_col = "mnk"#"m'_sz*n_sz / k_sz"#"Global Sim E2E_dma"
+     special_figs.append(scatterWithColorSymbol(
+         timed,
+            x_col,
+            y_col,
+            "m'_sz*n_sz / k_sz",
+            specialHover,
+            "is maximizing by mnk (naive) better?",
+            "mDiv8",
+            ["circle","triangle-up"]
+     ))
+     special_figs[-1].update_traces(showlegend=False)
      
      # step 5: identify nice m remainders
      nice_timed,nice_ut = catByMDimBoundaryTile(timed, ut, niceOnly=True)
@@ -302,9 +538,12 @@ def pruneApproach5(timed, analyzed, full):
      n=timed["N"][0]
      k=timed["K"][0]
     #  nickname=f"{m}x{n}x{k}-between10and12k"
-     nickname=f"{m}x{n}x{k}-between6and9k"
-     filename= f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}"
-     agressivelyPruned.to_csv(filename,index=False)
+     #nickname=f"{m}x{n}x{k}-between6and9k"
+     #filename= f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}"
+     #agressivelyPruned.to_csv(filename,index=False)
+     nickname=f"{m}x{n}x{k}-max-mnk"
+     filename= f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}.csv"
+     mnk[["FakeNN JSON Name","mnk"]].to_csv(filename,index=False)
 
      # remove n dim divisible by 32
      combined = combined[combined["nMod32"]!=0].copy()
@@ -313,19 +552,17 @@ def pruneApproach5(timed, analyzed, full):
      combined = combined.sort_values(by="FMADDsMULsPerCore",ascending=False)
      table = ""
      table2, asDF, filteredDF, three_shelves =printFinalRankingTwoShelves("(prioritizing mRem = 0, then smaller m*n / k ratio)",combined,"m'_sz*n_sz / k_sz")
-    
+     chosenID=asDF[["FakeNN JSON Name"]].loc[0]["FakeNN JSON Name"]
+     # create little DF with each point to compare
+     nickname=f"{m}x{n}x{k}-baseline-best-myrtle"
+    #  filename= f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}.csv"
+    #  timed.to_csv(filename,index=False)
+     point_ids=[mnkMaxID,mnkDiv8ID,fastestID,chosenID]
+     point_labels=["naive mnk", "naive mnk, m | 8","fastest observed","myrtle"]
+     df = extractPointsForComparison(timed,point_ids, point_labels)
+     print(df[["FakeNN JSON Name","point_label","diff","dma"]])
     #  help = genShelfGraphPDF(jugaadTitle(timed),three_shelves,hover_data,color="mRem")
-     specialHover = [ "JSON Name",
-        "diff",
-        "SSR Configs",
-        "FMADDsMULsPerCore",
-        "Time (cycles)",#"SSR Loads per HW Loop",
-        "Total CL Tiles",
-        "L1 Usage",
-        "Avg CC Tile Size",
-        "mRem",
-        "tileC",
-        "comp/memxfer",]
+     
 
 
      #     nice_timed=nice_timed.sort_values("FMADDsMULsPerCore",ascending=False)
@@ -359,6 +596,8 @@ def pruneApproach5(timed, analyzed, full):
             ["circle","triangle-up"]
      ))
      special_figs[-1].update_traces(showlegend=False)
+
+     
 
      x_col = "FMADDsMULsPerCore"
      y_col="Global Sim E2E_dma"
