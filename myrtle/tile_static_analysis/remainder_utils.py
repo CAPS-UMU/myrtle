@@ -281,8 +281,8 @@ class TilingScheme():
         num_tiles = self.m_tiles * self.n_tiles * self.k_tiles
         # x represents the number of double buffer steps needed to complete a matmul
         x = num_tiles + 2
-        print("")
-        print(f"Total Double Buffer Iters to Trace: {x}")
+        # print("")
+        # print(f"Total Double Buffer Iters to Trace: {x}")
         # let's keep track of different memory-compute overlap ratios
         overlaps = {}
         prev_iter = dbu.Mem_Compute_Overlap(0,0,0)

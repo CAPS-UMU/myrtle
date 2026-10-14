@@ -47,7 +47,7 @@ def printFinalRankingTwoShelves(title, df, colorCol):
     my_titles = [] #Avg m'_sz / k_size
     my_columns = ["JSON Name", "mnkRem", "timed", "Avg n'_sz / k_size","m'_sz*n_sz / k_sz",colorCol,"Avg B'", "Time (cycles)", "diff"]
     my_columns = ["JSON Name", "timed", "Avg m'_sz*n_sz / k_sz", "FMADDsMULsPerCore","mRem","mnk",colorCol,"tileB", "Time (cycles)", "diff"]
-    my_columns = ["JSON Name", "timed", "Avg m'_sz*n_sz / k_sz", "mnkRem","mMod8","nMod32",colorCol,"tileB", "Time (cycles)", "diff"]
+    my_columns = ["JSON Name", "timed", "Avg m'_sz*n_sz / k_sz", "mnkRem","mMod8","nMod32",colorCol,"Avg C-M Ratio", "Time (cycles)", "diff"]
     
     # Get unique FMADD values, sort them from smallest to largest
     sorted_fmadd_keys = sorted(df['FMADDsMULsPerCore'].unique(), reverse=True)
@@ -345,10 +345,10 @@ def pruneApproach5(timed, analyzed, full):
      timed = timed.reset_index(drop=True)
      subseq_df, pruned_rest, timed_rest = split_longest_initial_subsequence(timed, pruned)
      #print(subseq_df[["FakeNN JSON Name","SSR Configs"]])
-     print("timed points breakdown:")
-     print(f"min ssr configs timed: {subseq_df.shape[0]}")
-     print(f"other points timed: {timed_rest.shape[0]}")
-     print(f"remaining points to time: {pruned_rest.shape[0]}")
+    #  print("timed points breakdown:")
+    #  print(f"min ssr configs timed: {subseq_df.shape[0]}")
+    #  print(f"other points timed: {timed_rest.shape[0]}")
+    #  print(f"remaining points to time: {pruned_rest.shape[0]}")
      aggressivelyPruned = pruned[pruned["mDiv8"] != 0].copy()
      # remove n dim divisible by 32
      aggressivelyPruned["nMod32"]=aggressivelyPruned["n"] % 32
@@ -371,7 +371,7 @@ def pruneApproach5(timed, analyzed, full):
         "Total CL Tiles",
         "Total CC Tiles",
         #"Overlap Stall Time Per Core",
-     #   "1/FMADDS",
+        "Avg C-M Ratio",#   "1/FMADDS",
         "L1 Usage",
         "Avg CC Tile Size",
         "mnkRem",
@@ -383,7 +383,9 @@ def pruneApproach5(timed, analyzed, full):
      minimal_hover = [
         "JSON Name",       
         "SSR Configs",
-        "L1 Usage",       
+        "L1 Usage", 
+        "Avg C-M Ratio",
+        "mnk"             
      ]
      special_figs=[]
      more_figs = []
@@ -513,6 +515,7 @@ def pruneApproach5(timed, analyzed, full):
      specialHover = [ "JSON Name",
         "diff",
         "FMADDsMULsPerCore",
+        "Avg C-M Ratio",
         "Time (cycles)",#"SSR Loads per HW Loop",
         "Total CL Tiles",
         "L1 Usage",
@@ -535,10 +538,88 @@ def pruneApproach5(timed, analyzed, full):
      ))
      special_figs[-1].update_traces(showlegend=False)
 
+     y_col = "diff"#"Global Sim E2E_dma"#"Avg n'_sz / k_size"
+     x_col = "Avg C-M Ratio"#"m'_sz*n_sz / k_sz"#"Global Sim E2E_dma"
+     special_figs.append(scatterWithColorSymbol(
+        timed,
+            x_col,
+            y_col,
+            "FMADDsMULsPerCore",
+            specialHover,
+            "what about sorting by a so-called optimal compute-memory ratio?",
+            "mDiv8",
+            ["circle","triangle-up"]
+     ))
+     addScatterFlatColorMarker(
+                  special_figs[-1],
+                  ut,
+                  x_col,
+                  y_col,
+                  "gray",
+                  "x",
+                  minimal_hover,
+                  "untimed"
+              )
+     special_figs[-1].update_traces(showlegend=False)
+
+     fewer = timed[timed["Avg C-M Ratio"]<20].copy()
+     focused = fewer[fewer["Avg C-M Ratio"]>13].copy()
+     fewer_ut = ut[ut["Avg C-M Ratio"]<20].copy()
+     focused_ut = fewer_ut[fewer_ut["Avg C-M Ratio"]>13].copy()
+     y_col = "diff"#"Global Sim E2E_dma"#"Avg n'_sz / k_size"
+     x_col = "Avg C-M Ratio"#"m'_sz*n_sz / k_sz"#"Global Sim E2E_dma"
+     special_figs.append(scatterWithColorSymbol(
+        focused,
+            x_col,
+            y_col,
+            "FMADDsMULsPerCore",
+            specialHover,
+            "Average Compute-Memory Overlap vs Percentage Diff from Best (Focused)",
+            "mDiv8",
+            ["circle","triangle-up"]
+     ))
+    #  addScatterFlatColorMarker(
+    #          special_figs[-1],
+    #          focused_ut,
+    #          x_col,
+    #          y_col,
+    #          "gray",
+    #          "x",
+    #          minimal_hover,
+    #          "untimed"
+    #      )
+     special_figs[-1].update_traces(showlegend=False)
+
+     fewer = timed[timed["Avg C-M Ratio"]<20].copy()
+     focused = fewer[fewer["Avg C-M Ratio"]>13].copy()
+     y_col = "diff"#"Global Sim E2E_dma"#"Avg n'_sz / k_size"
+     x_col = "Avg C-M Ratio"#"m'_sz*n_sz / k_sz"#"Global Sim E2E_dma"
+     special_figs.append(scatterWithColorSymbol(
+        focused,
+            x_col,
+            y_col,
+            "mnk",
+            specialHover,
+            "Average Compute-Memory Overlap vs Percentage Diff from Best (Focused)",
+            "mDiv8",
+            ["circle","triangle-up"]
+     ))
+    #  addScatterFlatColorMarker(
+    #               special_figs[-1],
+    #               focused_ut,
+    #               x_col,
+    #               y_col,
+    #               "gray",
+    #               "x",
+    #               minimal_hover,
+    #               "untimed"
+    #           )
+     special_figs[-1].update_traces(showlegend=False)
+
      mnk=combined=pd.concat([timed,ut])
      mnk=mnk[mnk["mRem"]==0].copy()
      mnk=mnk.sort_values(by="mnk",ascending=False)
-     print(mnk[["FakeNN JSON Name","mnk","timed","diff"]].head(20))
+     print(mnk[["FakeNN JSON Name","mnk","Avg C-M Ratio","timed","diff",]].head(5))
      
      # step 5: identify nice m remainders
      nice_timed,nice_ut = catByMDimBoundaryTile(timed, ut, niceOnly=True)
@@ -577,7 +658,7 @@ def pruneApproach5(timed, analyzed, full):
      point_labels=["naive mnk", "naive mnk, m | 8","fastest observed","myrtle"]
      df = extractPointsForComparison(timed,point_ids, point_labels)
      df.to_csv(f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}.csv",index=False)
-     print(df[["FakeNN JSON Name","point_label","diff","dma"]])
+     print(df[["FakeNN JSON Name","point_label","diff","Avg C-M Ratio","dma"]])
      nickname=f"{m}x{n}x{k}-methodology-stats"
      expStats["MxNxK"]=[f"{m}x{n}x{k}"]
      expStats_df = pd.DataFrame(expStats)
@@ -617,6 +698,33 @@ def pruneApproach5(timed, analyzed, full):
             ["circle","triangle-up"]
      ))
      special_figs[-1].update_traces(showlegend=False)
+     y_col = "diff"#"Global Sim E2E_dma"#"Avg n'_sz / k_size"
+     x_col = "Avg C-M Ratio"#"m'_sz*n_sz / k_sz"#"Global Sim E2E_dma"
+     special_figs.append(scatterWithColorSymbol(
+         timed,
+            x_col,
+            y_col,
+            "FMADDsMULsPerCore",
+            specialHover,
+            "after pruning by ssr configs, m-rem, and preferring mMod8=0 ",
+            "mDiv8",
+            ["circle","triangle-up"]
+     ))
+     special_figs[-1].update_traces(showlegend=False)
+     y_col = "diff"#"Global Sim E2E_dma"#"Avg n'_sz / k_size"
+     x_col = "Avg C-M Ratio"#"m'_sz*n_sz / k_sz"#"Global Sim E2E_dma"
+     special_figs.append(scatterWithColorSymbol(
+              timed,
+                 x_col,
+                 y_col,
+                 "mnk",
+                 specialHover,
+                 "after pruning by ssr configs, m-rem, and preferring mMod8=0 ",
+                 "mDiv8",
+                 ["circle","triangle-up"]
+          ))
+     special_figs[-1].update_traces(showlegend=False)
+     
 
      
 
