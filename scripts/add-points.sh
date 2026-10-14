@@ -50,7 +50,8 @@ for exp_file in "${EXP_FILES[@]}"; do
         continue
     fi
 
-    # Find all CSV files in toAdd matching the MxNxKw prefix
+    # Find unprocessed CSV files in toAdd matching the MxNxKw prefix
+    # Matches starting with "already-added-" are naturally excluded
     matching_csvs=()
     shopt -s nullglob
     for f in "$TO_ADD_DIR/${mnk}w"*.csv; do
@@ -58,13 +59,13 @@ for exp_file in "${EXP_FILES[@]}"; do
     done
     shopt -u nullglob
 
-    # If no matching CSVs exist in toAdd, skip this experiment
+    # If no unprocessed CSVs exist in toAdd, skip this experiment
     if [[ ${#matching_csvs[@]} -eq 0 ]]; then
-        echo "[$mnk] No matching CSVs found in $TO_ADD_DIR with prefix '${mnk}w'. Skipping."
+        echo "[$mnk] No unprocessed CSVs found in $TO_ADD_DIR with prefix '${mnk}w'. Skipping."
         continue
     fi
 
-    echo "[$mnk] Found ${#matching_csvs[@]} matching file(s) in $TO_ADD_DIR."
+    echo "[$mnk] Found ${#matching_csvs[@]} file(s) to process in $TO_ADD_DIR."
 
     all_output="$OUT_DIR/${mnk}-all.csv"
     concat_failed=0
@@ -103,14 +104,25 @@ for exp_file in "${EXP_FILES[@]}"; do
         fi
     fi
 
-    # Step 2: Concatenate the base EXP file with MxNxK-all.csv -> MxNxK-updated.csv
+    # Step 2: Concatenate base EXP file with MxNxK-all.csv -> MxNxK-updated.csv
     updated_output="$OUT_DIR/${mnk}-updated.csv"
     if ! run_concat "$exp_file" "$all_output" "$updated_output"; then
         echo "[$mnk] Error: concatCSVs.py failed while generating $updated_output."
         continue
     fi
 
-    # Step 3: Overwrite the EXP file with the updated CSV
-    cp "$updated_output" "$exp_file"
-    echo "[$mnk] Successfully updated $exp_file."
+    # Step 3: Overwrite EXP file with updated CSV
+    if cp "$updated_output" "$exp_file"; then
+        echo "[$mnk] Successfully updated $exp_file."
+
+        # Step 4: Rename processed toAdd files with 'already-added-' prefix
+        for orig_file in "${matching_csvs[@]}"; do
+            base_name="$(basename "$orig_file")"
+            dir_name="$(dirname "$orig_file")"
+            mv "$orig_file" "$dir_name/already-added-$base_name"
+        done
+        echo "[$mnk] Renamed ${#matching_csvs[@]} file(s) in $TO_ADD_DIR to 'already-added-*'."
+    else
+        echo "[$mnk] Error: Failed to overwrite $exp_file. Source files were not renamed."
+    fi
 done

@@ -85,11 +85,21 @@ def printFinalRankingTwoShelves(title, df, colorCol):
     # 3. Return all four values
     return table, concatenated_df, filtered_df, three_shelves
 
-def printMethodologyStats(full, pruned, timed):
+def printMethodologyStats(full, pruned, timed, suggested):
     print(f"full ss has size {len(full)}")
     print(f"pruned has size {len(pruned)}")
     print(f"timed has size {len(timed)}")
     print(f"what percentage of SPM used in timed points vs pruned points? {len(timed)/len(pruned)*100.0} %")
+    stats = {}
+    stats["SS-exhaustive"]=[len(full)]
+    stats["SS-pruned-to-third-fewest-syncs"]=[len(pruned)]
+    stats["timed-points"]=[len(timed)]
+    stats["SS-suggested"]=[len(suggested)]
+    stats["percentage-of-full-timed"]= [len(timed)/len(full)*100.0]
+    stats["percentage-of-full-suggested"]= [len(suggested)/len(full)*100.0]
+    stats["percentage-of-full-survived-pruning"]= [len(pruned)/len(full)*100.0]
+    stats["percentage-of-pruned-timed"]= [len(timed)/len(pruned)*100.0]
+    return stats
 
 # return the SSR config value that is the largest of the bottom frac
 def ssr_prune_frac(df,frac):
@@ -339,8 +349,13 @@ def pruneApproach5(timed, analyzed, full):
      print(f"min ssr configs timed: {subseq_df.shape[0]}")
      print(f"other points timed: {timed_rest.shape[0]}")
      print(f"remaining points to time: {pruned_rest.shape[0]}")
+     aggressivelyPruned = pruned[pruned["mDiv8"] != 0].copy()
+     # remove n dim divisible by 32
+     aggressivelyPruned["nMod32"]=aggressivelyPruned["n"] % 32
+     aggressivelyPruned = aggressivelyPruned[aggressivelyPruned["nMod32"]!=0].copy()
 
-     printMethodologyStats(full, pruned, timed)
+     expStats = printMethodologyStats(full, pruned, timed, aggressivelyPruned)
+
      hover_data = [
         "JSON Name",
         "timeout",
@@ -519,6 +534,11 @@ def pruneApproach5(timed, analyzed, full):
             ["circle","triangle-up"]
      ))
      special_figs[-1].update_traces(showlegend=False)
+
+     mnk=combined=pd.concat([timed,ut])
+     mnk=mnk[mnk["mRem"]==0].copy()
+     mnk=mnk.sort_values(by="mnk",ascending=False)
+     print(mnk[["FakeNN JSON Name","mnk","timed","diff"]].head(20))
      
      # step 5: identify nice m remainders
      nice_timed,nice_ut = catByMDimBoundaryTile(timed, ut, niceOnly=True)
@@ -541,9 +561,7 @@ def pruneApproach5(timed, analyzed, full):
      #nickname=f"{m}x{n}x{k}-between6and9k"
      #filename= f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}"
      #agressivelyPruned.to_csv(filename,index=False)
-     nickname=f"{m}x{n}x{k}-max-mnk"
-     filename= f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}.csv"
-     mnk[["FakeNN JSON Name","mnk"]].to_csv(filename,index=False)
+    
 
      # remove n dim divisible by 32
      combined = combined[combined["nMod32"]!=0].copy()
@@ -555,12 +573,15 @@ def pruneApproach5(timed, analyzed, full):
      chosenID=asDF[["FakeNN JSON Name"]].loc[0]["FakeNN JSON Name"]
      # create little DF with each point to compare
      nickname=f"{m}x{n}x{k}-baseline-best-myrtle"
-    #  filename= f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}.csv"
-    #  timed.to_csv(filename,index=False)
      point_ids=[mnkMaxID,mnkDiv8ID,fastestID,chosenID]
      point_labels=["naive mnk", "naive mnk, m | 8","fastest observed","myrtle"]
      df = extractPointsForComparison(timed,point_ids, point_labels)
+     df.to_csv(f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}.csv",index=False)
      print(df[["FakeNN JSON Name","point_label","diff","dma"]])
+     nickname=f"{m}x{n}x{k}-methodology-stats"
+     expStats["MxNxK"]=[f"{m}x{n}x{k}"]
+     expStats_df = pd.DataFrame(expStats)
+     expStats_df.to_csv(f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}.csv",index=False)
     #  help = genShelfGraphPDF(jugaadTitle(timed),three_shelves,hover_data,color="mRem")
      
 

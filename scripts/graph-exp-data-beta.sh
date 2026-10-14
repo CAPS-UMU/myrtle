@@ -9,6 +9,7 @@ USER="emily"
 #/home/hoppip/myrtle/scripts/dims-csv-name-line-by-line-expanded-SS-hoppip.input
 # bash graph-exp-data-beta.sh dims-csv-name-line-by-line-expanded-SS.input new-cost-model
 # bash graph-exp-data-beta.sh dims-csv-name-line-by-line-expanded-SS.input new-cost-model-10k
+# bash graph-exp-data-beta.sh dims-csv-name-line-by-line-expanded-SS-hoppip.input compare-mnk
 
 graph(){
     stringarray=($1) # dims followed by the the CSV name, INCLUDING .csv extension!
