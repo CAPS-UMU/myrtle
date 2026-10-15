@@ -29,7 +29,7 @@ pd.set_option('display.max_rows', None)
 
 
 
-def printFinalRankingTwoShelves(title, df, colorCol):
+def printFinalRankingTwoShelves(title, df, colorCol,shelfMetric='FMADDsMULsPerCore'):
     """
     1. Sorts and slices unique 'FMADDsMULsPerCore' values from smallest to largest.
     2. Groups rows by 'mRem' (ascending) and 'colorCol' (descending) within each slice.
@@ -50,12 +50,12 @@ def printFinalRankingTwoShelves(title, df, colorCol):
     my_columns = ["JSON Name", "timed", "Avg m'_sz*n_sz / k_sz", "mnkRem","mMod8","nMod32",colorCol,"Avg C-M Ratio", "Time (cycles)", "diff"]
     
     # Get unique FMADD values, sort them from smallest to largest
-    sorted_fmadd_keys = sorted(df['FMADDsMULsPerCore'].unique(), reverse=True)
+    sorted_fmadd_keys = sorted(df[shelfMetric].unique(), reverse=True)
     
     # Process each FMADD slice in ascending order
     for fmadd_value in sorted_fmadd_keys:
         # Extract the slice for the current FMADD value
-        fmadd_group = df[df['FMADDsMULsPerCore'] == fmadd_value]
+        fmadd_group = df[df[shelfMetric] == fmadd_value]
         
         # Sort by 'mRem' (Smallest to Largest) and then colorCol (SMALLEST TO LARGEST)
         processed_slice = fmadd_group.sort_values(
@@ -566,6 +566,16 @@ def pruneApproach5(timed, analyzed, full):
      focused = fewer[fewer["Avg C-M Ratio"]>13].copy()
      fewer_ut = ut[ut["Avg C-M Ratio"]<20].copy()
      focused_ut = fewer_ut[fewer_ut["Avg C-M Ratio"]>13].copy()
+     m=timed["M"][0]
+     n=timed["N"][0]
+     k=timed["K"][0]
+     nickname=f"{m}x{n}x{k}-CMRatioBetween13and20-GT-20k-mnk"
+     to_time = focused_ut[focused_ut["nMod32"]!=0].copy()
+     to_time = to_time[to_time["mnk"]> 20000].copy()
+     to_time.to_csv(f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}.csv",index=False)
+     nickname=f"{m}x{n}x{k}-CMRatioBetween13and20-GT-20k-mnk-div8"
+     to_time = to_time[to_time["mRem"]==0].copy()
+     to_time.to_csv(f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}.csv",index=False)
      y_col = "diff"#"Global Sim E2E_dma"#"Avg n'_sz / k_size"
      x_col = "Avg C-M Ratio"#"m'_sz*n_sz / k_sz"#"Global Sim E2E_dma"
      special_figs.append(scatterWithColorSymbol(
@@ -647,16 +657,25 @@ def pruneApproach5(timed, analyzed, full):
      # remove n dim divisible by 32
      combined = combined[combined["nMod32"]!=0].copy()
     
+     redPurple=combined[combined["mRem"]==0].copy()
 
      combined = combined.sort_values(by="FMADDsMULsPerCore",ascending=False)
      table = ""
      table2, asDF, filteredDF, three_shelves =printFinalRankingTwoShelves("(prioritizing mRem = 0, then smaller m*n / k ratio)",combined,"m'_sz*n_sz / k_sz")
      chosenID=asDF[["FakeNN JSON Name"]].loc[0]["FakeNN JSON Name"]
+     
+     table3, redPurpleAsDF, filteredDF_redpurple, three_shelves_redpurple =printFinalRankingTwoShelves("(prioritizing mRem = 0, then smaller m*n / k ratio)",redPurple,"m'_sz*n_sz / k_sz","mnk")
+     redPurpleID=redPurpleAsDF[["FakeNN JSON Name"]].loc[0]["FakeNN JSON Name"]       
      # create little DF with each point to compare
      nickname=f"{m}x{n}x{k}-baseline-best-myrtle"
-     point_ids=[mnkMaxID,mnkDiv8ID,fastestID,chosenID]
-     point_labels=["naive mnk", "naive mnk, m | 8","fastest observed","myrtle"]
+     if f"{m}x{n}x{k}" == "192x384x384": #jugaad af
+              mnkMaxID="192x384x384w46-56-45"
+     if f"{m}x{n}x{k}" == "512x512x512": #jugaad af
+                  mnkDiv8ID="512x512x512w48-56-43"
+     point_ids=[mnkMaxID,mnkDiv8ID,fastestID,chosenID,redPurpleID]
+     point_labels=["naive mnk", "naive mnk, m | 8","fastest observed","myrtle","red + myrtle"]
      df = extractPointsForComparison(timed,point_ids, point_labels)
+     print(point_ids)
      df.to_csv(f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}.csv",index=False)
      print(df[["FakeNN JSON Name","point_label","diff","Avg C-M Ratio","dma"]])
      nickname=f"{m}x{n}x{k}-methodology-stats"

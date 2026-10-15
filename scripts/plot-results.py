@@ -16,7 +16,7 @@ EXPERIMENTS = [
     "384x384x384",
     "512x512x512",
     "128x768x768",
-    "192x384x384"
+    "192x384x384",
 ]
 
 
@@ -46,7 +46,7 @@ def load_experiment_data(experiments, data_dir):
             else exp_id
         )
 
-        # 1. Baseline records (4 vertical bars per experiment)
+        # 1. Baseline records (up to 5 vertical bars per experiment)
         df_baseline = pd.read_csv(baseline_file)
         for _, row in df_baseline.iterrows():
             diff_val = float(row["diff"])
@@ -121,10 +121,26 @@ def create_diff_graph(df_baseline):
     Returns the figure and the two label sets (percentage-only and
     percentage+JSON Name) for the interactive single-button toggle.
     """
-    palette = px.colors.qualitative.Plotly
-    unique_labels = df_baseline["point_label"].unique().tolist()
+    raw_labels = df_baseline["point_label"].unique().tolist()
+
+    # Build ordering ensuring 'red + myrtle' is positioned directly to the right of 'myrtle'
+    ordered_labels = []
+    for lbl in raw_labels:
+        if lbl not in ["myrtle", "red + myrtle"] and lbl not in ordered_labels:
+            ordered_labels.append(lbl)
+
+    if "myrtle" in raw_labels:
+        ordered_labels.append("myrtle")
+    if "red + myrtle" in raw_labels:
+        ordered_labels.append("red + myrtle")
+
+    for lbl in raw_labels:
+        if lbl not in ordered_labels:
+            ordered_labels.append(lbl)
+
+    palette = px.colors.qualitative.Plotly + ["#FF7F0E", "#D62728"]
     color_map = {
-        lbl: palette[i % len(palette)] for i, lbl in enumerate(unique_labels)
+        lbl: palette[i % len(palette)] for i, lbl in enumerate(ordered_labels)
     }
 
     fig1 = go.Figure()
@@ -132,12 +148,24 @@ def create_diff_graph(df_baseline):
     text_pct_only = []
     text_with_names = []
 
-    for label in unique_labels:
+    for label in ordered_labels:
         df_sub = df_baseline[df_baseline["point_label"] == label].copy()
 
-        pct_only = [f"{row['diff_text']}" for _, row in df_sub.iterrows()]
+        # Align by EXPERIMENTS order to keep grouped bar slots synchronized
+        df_sub = (
+            df_sub.set_index("Experiment")
+            .reindex(EXPERIMENTS)
+            .reset_index()
+        )
+
+        pct_only = [
+            f"{row['diff_text']}" if pd.notna(row["diff"]) else ""
+            for _, row in df_sub.iterrows()
+        ]
         with_names = [
             f"{row['diff_text']}<br><span style='font-size:10px;'>{row['JSON Name']}</span>"
+            if pd.notna(row["diff"])
+            else ""
             for _, row in df_sub.iterrows()
         ]
 
@@ -165,8 +193,8 @@ def create_diff_graph(df_baseline):
 
     fig1.update_layout(
         barmode="group",
-        bargap=0.12,
-        bargroupgap=0.03,
+        bargap=0.10,
+        bargroupgap=0.02,
         xaxis=dict(
             title="Experiment (MxNxK)",
             type="category",
@@ -254,7 +282,6 @@ def export_dashboard(
     """Embeds both figures into an HTML file with a single toggle button."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Use explicit element ID for fig1 so the toggle button script can target it
     html_1 = fig1.to_html(
         full_html=False, include_plotlyjs="cdn", div_id="diff_graph"
     )
@@ -294,7 +321,7 @@ def export_dashboard(
         #toggleTileSizesBtn {{
             position: absolute;
             right: 28px;
-            top: 235px;
+            top: 260px;
             z-index: 100;
             background-color: #ffffff;
             border: 1px solid #c5cbd3;
