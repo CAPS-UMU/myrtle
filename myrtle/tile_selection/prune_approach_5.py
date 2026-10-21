@@ -541,8 +541,8 @@ def pruneApproach5(timed, analyzed, full):
      myrtle_ties, table2, myrtle_priority = sm.myrtle(analyzed,timed)
      mnk_myrtle_ties, table3, mnk_myrtle_priority = sm.mnk_myrtle(analyzed,timed)
      fastestID = bestObserved(timed)["FakeNN JSON Name"]
-     point_labels=["naive mnk", "naive mnk, m | 8","fastest observed","deeploy","myrtle","red + myrtle"]
-     pointIDs=[getPointIDs(mnk_ties),getPointIDs(mnk_mDiv8_ties),[fastestID],getPointIDs(deeploy_ties),getPointIDs(myrtle_ties),getPointIDs(mnk_myrtle_ties)]
+     point_labels=["naive mnk", "naive mnk, m | 8","fastest observed","myrtle","red + myrtle","deeploy"]
+     pointIDs=[getPointIDs(mnk_ties),getPointIDs(mnk_mDiv8_ties),[fastestID],getPointIDs(myrtle_ties),getPointIDs(mnk_myrtle_ties),getPointIDs(deeploy_ties)]
      sel_stats = maxMinAvg(expName,timed,point_ids=pointIDs,point_labels=point_labels)
      nickname=f"{expName}w-sel-method-comparison"
      sel_stats.to_csv(f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}.csv",index=False)
