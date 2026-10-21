@@ -539,6 +539,7 @@ def pruneApproach5(timed, analyzed, full):
      mnk_mDiv8_ties, mDiv8_priority = sm.mnk_mDiv8(full,timed)
      deeploy_ties, deeploy_priority = sm.deeploy(full,timed)
      myrtle_ties, table2, myrtle_priority = sm.myrtle(analyzed,timed)
+    # new_myrtle_ties, table2, myrtle_priority = sm.new_myrtle(analyzed,timed)
      mnk_myrtle_ties, table3, mnk_myrtle_priority = sm.mnk_myrtle(analyzed,timed)
      fastestID = bestObserved(timed)["FakeNN JSON Name"]
      point_labels=["naive mnk", "naive mnk, m | 8","fastest observed","myrtle","red + myrtle","deeploy"]

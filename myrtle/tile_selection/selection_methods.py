@@ -64,7 +64,7 @@ def rankWithShelves(title, df, colorCol, shelfMetric="FMADDsMULsPerCore",htmlTab
         "diff",
     ]
 
-    # Get unique FMADD values, sort them from smallest to largest
+    # Get unique FMADD values, sort them from largest to smallest
     sorted_fmadd_keys = sorted(df[shelfMetric].unique(), reverse=True)
 
     # Process each FMADD slice in ascending order
@@ -132,6 +132,99 @@ def rankWithShelves(title, df, colorCol, shelfMetric="FMADDsMULsPerCore",htmlTab
     #     print("ties:")
     #     print(ties[["FakeNN JSON Name",colorCol,shelfMetric]])
     # 4. Return the shelves concatenated, visual table representation and shelves w/ rank mMod8 != 0 removed
+    return concatenated_df, table, high_priority_df, ties
+
+def rankWithShelvesParameterized(title, df, shelfMetric="FMADDsMULsPerCore", sortShelfMetric0=("mMod8",True),sortShelfMetric1=("Avg m'_sz*n_sz / k_sz",True),htmlTable=True):
+    """
+    1. Sorts and slices unique 'shelfMetric' values from smallest to largest.
+    2. Groups rows by 'sortShelfMetric0'[0] and then 'sortShelfMetric1'[0] within each slice.
+    3. Concatenates all processed slices into a single DataFrame.
+    4. Filters the concatenated DataFrame to keep only rows where 'timed' is False.
+    5. Returns the HTML table, the full concatenated DataFrame, and the filtered DataFrame.
+    """
+    df = df.sort_values("Time (cycles)", ascending=True)
+    df = df.reset_index(drop=True)
+    best = df["Time (cycles)"][0]
+    title = f"best observed: {best} cycles {title}"
+
+    fmadd_values = []
+    processed_dfs = []
+    my_titles = []  # Avg m'_sz / k_size
+
+    my_columns = [
+        "JSON Name",
+        "timed",
+        "mnk",
+        "FMADDsMULsPerCore",
+        "mnkRem",
+        sortShelfMetric0[0],
+        "nMod32",
+        "m'_sz*n_sz / k_sz",
+        "mn/k",
+        "Avg C-M Ratio",
+        "Time (cycles)",
+        "diff",
+    ]
+
+    # Get unique FMADD values, sort them from largest to smallest
+    sorted_fmadd_keys = sorted(df[shelfMetric].unique(), reverse=False)
+
+    # Process each FMADD slice in ascending order
+    for fmadd_value in sorted_fmadd_keys:
+        # Extract the slice for the current FMADD value
+        fmadd_group = df[df[shelfMetric] == fmadd_value]
+
+        # Sort by sortShelfMetric0 and then sortShelfMetric1
+        processed_slice = fmadd_group.sort_values(
+            by=[sortShelfMetric0[0], sortShelfMetric1[0]], ascending=[sortShelfMetric0[1], sortShelfMetric1[1]]
+        )
+        # Append to our parallel output lists
+        fmadd_values.append(fmadd_value)
+        processed_dfs.append(processed_slice)
+        myTitle = f"{shelfMetric}: {fmadd_value} w/ len {len(processed_slice)}"
+        my_titles.append(myTitle)
+
+    # 1. Concatenate all processed slices into a single DataFrame by stacking rows
+    # (ignoring index ensures a clean, continuous index for the combined df)
+    concatenated_df = (
+        pd.concat(processed_dfs, ignore_index=True) if processed_dfs else pd.DataFrame()
+    )
+
+    # 2. Generate the usual HTML table
+    # don't print all the shelves, in fact print a max of 20
+    finalShelf = min(20, len(processed_dfs) - 1)
+    finalShelf = len(processed_dfs) - 1
+    if htmlTable:
+        table = stack_dfs_to_html_w_toggle(
+            processed_dfs[0:finalShelf], my_titles[0:finalShelf], my_columns, title
+        )
+    else:
+        table="empty table"
+    
+    # 3. Remove low priority sortShelfMetric0[0]!= 0 rows wherever possible
+    high_priority_only = []
+    fallback_to_m_dim_boundary_tiles = []
+    for shelf in processed_dfs:       
+        shelf_high_priority = shelf[shelf[sortShelfMetric0[0]]==0.0].copy()        
+        if shelf_high_priority.empty:
+            shelf_low_priority = shelf[shelf[sortShelfMetric0[0]]!=0.0].copy()
+            shelf_low_priority = shelf_low_priority.sort_values(sortShelfMetric1[0],ascending=sortShelfMetric1[1])
+            fallback_to_m_dim_boundary_tiles.append(shelf_low_priority)
+        else:
+            shelf_high_priority = shelf_high_priority.sort_values(sortShelfMetric1[0],ascending=sortShelfMetric1[1])
+            high_priority_only.append(shelf_high_priority)
+        if len(high_priority_only) >= 1:
+            break
+    if len(high_priority_only)==0:
+        high_priority_only = fallback_to_m_dim_boundary_tiles
+    high_priority_df = (
+            pd.concat(high_priority_only, ignore_index=True) if high_priority_only else pd.DataFrame()
+        )
+    highest_shelf = high_priority_only[0]
+    highest_shelf = highest_shelf.reset_index(drop=True)
+    bestColorColVal = highest_shelf[sortShelfMetric1[0]].loc[0]
+    ties = highest_shelf[highest_shelf[sortShelfMetric1[0]]==bestColorColVal]
+
     return concatenated_df, table, high_priority_df, ties
 
 # naive selection
@@ -204,7 +297,7 @@ def deeploy(full,timed):
     notDiv8 = notDiv8.sort_values(by="mnk",ascending=False)
     notDiv8 = notDiv8.reset_index(drop=True)
     # print("Deeploy div8 options:")
-    # print(div8[["FakeNN JSON Name","mnk"]].head(5))
+    # print(div8[["FakeNN JSON Name","mnk"]])
     # print("Deeploy NOT div8 options:")
     # print(notDiv8[["FakeNN JSON Name","mnk"]].head(10))
     if not div8.empty:
@@ -302,4 +395,51 @@ def mnk_myrtle(analyzed,timed,htmlTable=True):
         toTime.to_csv(f"{pathlib.Path(__file__).parent.resolve()}/out/{filename}",index=False)
     else:
         print(f"all ties were timed for mnk-myrtle {nickname}.")
+    return ties, table, high_priority_df
+
+# new myrtle
+# rankWithShelvesParameterized(title, df, 
+# shelfMetric="FMADDsMULsPerCore", 
+# sortShelfMetric0=("mMod8",True),
+# sortShelfMetric1=("Avg m'_sz*n_sz / k_sz",True),htmlTable=True):
+# prune by min third cluster tiles
+# prune by n-dim not-divisible-by-32
+# prune by m-boundary tile divisible-by-8
+# maximize by per-core-mnk product
+# prefer tiling schemes with m divisible by 8
+# tie break with smaller mn/k ratio
+def new_myrtle(analyzed,timed,htmlTable=True):
+    def prune(df):
+         df["mn/k"]=df["m"]*df["n"]/df["k"]
+         df["nMod32"]=df["n"]%32
+         df= df[df["nMod32"]!=0].copy() # prune by n-dim not-divisible-by-32
+         if df.empty:
+             raise(Exception("DF empty after removing n-dim not div 32"))
+         df = df[df["niceMRem"]].copy() # prune by m-boundary tile divisible-by-8
+         return df
+    m=timed["M"][0]
+    n=timed["N"][0]
+    k=timed["K"][0]
+    nickname=f"{m}x{n}x{k}w"
+    prunePoint = ssr_prune_frac(analyzed,3)
+    pruned = analyzed[analyzed["SSR Config Count"] < prunePoint].copy()
+    pruned = prune(pruned)
+    timed = prune(timed)
+    ut = pruned[~pruned["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])].copy()
+    timed["timed"] = True
+    ut["timed"] = False
+    combined = pd.concat([timed, ut])
+    shelf="Avg m'_sz*n_sz / k_sz"
+    sortShelf0=("mMod8",True)# we set ascending to True
+    sortShelf1=("mMod8",True)
+    comments = "(prioritizing m | 8)"
+    combined = combined.sort_values(by="FMADDsMULsPerCore",ascending=False)
+    concatenated_df, table, high_priority_df, ties = rankWithShelvesParameterized(comments,combined,shelfMetric=shelf,sortShelfMetric0=sortShelf0,sortShelfMetric1=sortShelf1,htmlTable=htmlTable)
+    toTime=ties[~ties["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])]
+    if not toTime.empty:
+        filename=f"{nickname}-ties-myrtle-toTime.csv"
+        print(f"\tsaved untimed ties to file {filename}")
+        toTime.to_csv(f"{pathlib.Path(__file__).parent.resolve()}/out/{filename}",index=False)
+    else:
+        print(f"all ties were timed for myrtle {nickname}.")
     return ties, table, high_priority_df
