@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-USER="hoppip"
+USER="emily" #"hoppip"
 MYHOME="/home/$USER/"
 MYMYRTLE="${MYHOME}myrtle/"
 TIMED="${MYMYRTLE}sensitivity-analysis/beta=0/spm-reg/timed/"

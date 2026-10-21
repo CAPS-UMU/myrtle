@@ -49,9 +49,10 @@ def main():
         # Apply the updates to fields "dma" and "Global Sim E2E_dma"
         df.loc[df["dma"] == -1, "dma"] = timeout_dma_value
         df.loc[df["Global Sim E2E_dma"] == -1, "Global Sim E2E_dma"] = timeout_dma_value
+        print("Warning: 'timeout' found!")
     else:
         df["timeout"] = False
-        print("Warning: 'timeout' row not found!.")
+        
 
     # read in the pruned analysis csv file
     df_ann = pd.read_csv(pruned_analyzed)

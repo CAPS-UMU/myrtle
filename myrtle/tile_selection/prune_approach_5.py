@@ -63,6 +63,7 @@ def printFinalRankingTwoShelves(title, df, colorCol,shelfMetric='FMADDsMULsPerCo
             by=['mMod8', colorCol], 
             ascending=[True, True]
         )
+        processed_slice = processed_slice.reset_index(drop=True)
         # Append to our parallel output lists
         fmadd_values.append(fmadd_value)
         processed_dfs.append(processed_slice)
@@ -87,10 +88,11 @@ def printFinalRankingTwoShelves(title, df, colorCol,shelfMetric='FMADDsMULsPerCo
     return table, concatenated_df, filtered_df, three_shelves
 
 def printMethodologyStats(full, pruned, timed, suggested):
-    print(f"full ss has size {len(full)}")
-    print(f"pruned has size {len(pruned)}")
-    print(f"timed has size {len(timed)}")
-    print(f"what percentage of SPM used in timed points vs pruned points? {len(timed)/len(pruned)*100.0} %")
+    # print(f"full ss has size {len(full)}")
+    # print(f"pruned has size {len(pruned)}")
+    # print(f"timed has size {len(timed)}")
+    # print(f"what percentage of SPM used in timed points vs pruned points? {len(timed)/len(pruned)*100.0} %")
+    
     stats = {}
     stats["SS-exhaustive"]=[len(full)]
     stats["SS-pruned-to-third-fewest-syncs"]=[len(pruned)]
@@ -316,11 +318,84 @@ def extractPointsForComparison(df, id_list, label_list):
     result_df = pd.concat(extracted_rows, ignore_index=True)
     return result_df
 
+def getPointIDs(df):
+    if df is None:
+        return []
+    else:
+    #print(list(df["FakeNN JSON Name"]))
+        return list(df["FakeNN JSON Name"])
+
+# def maxMinAvg(timed,point_ids, point_labels)
+#     points = timed[timed[point_ids]]
+#     if len(point_ids) == 1:
+def maxMinAvg(timed, point_ids, point_labels):
+    # Map to store stats per label: label -> (min_dma, max_dma, avg_dma)
+    label_stats = {}
+
+    # Step 1-3: Slice timed df and compute (min, max, avg) for each point_id_list
+    for id_list, label in zip(point_ids, point_labels):
+        slice_df = timed[timed["FakeNN JSON Name"].isin(id_list)]
+
+        if slice_df.empty:
+            continue
+
+        dma_series = slice_df["dma"]
+        n_rows = len(slice_df)
+
+        if n_rows == 1:
+            val = dma_series.iloc[0]
+            stats = (val, val, val)
+        else:
+            stats = (dma_series.min(), dma_series.max(), dma_series.mean())
+
+        label_stats[label] = stats
+
+    # Retrieve the average dma for "fastest observed"
+    baseline_avg = None
+    if "fastest observed" in label_stats:
+        baseline_avg = label_stats["fastest observed"][2]
+
+    # Step 4: Zip and print results for each pair
+    for id_list, label in zip(point_ids, point_labels):
+        if label not in label_stats:
+            print(f"Point Label: {label} (No matching rows found in dataframe)")
+            continue
+
+        min_val, max_val, avg_val = label_stats[label]
+
+        # 4.1 Print label and (min, max, avg)
+        print(f"Point Label: {label}")
+        print(
+            f"  DMA - Min: {min_val:.4f}, Max: {max_val:.4f}, Avg: {avg_val:.4f}"
+        )
+
+        # 4.2 Print percentage difference against 'fastest observed'
+        if baseline_avg is not None:
+            pct_diff = ((avg_val - baseline_avg) / baseline_avg) * 100.0
+            print(
+                f"  % Difference vs 'fastest observed': {pct_diff:+.2f}%\n"
+            )
+        else:
+            print(
+                "  % Difference: 'fastest observed' baseline not found in labels\n"
+            )
+
+
+
 def pruneApproach5(timed, analyzed, full):
-     one, two = sm.mnk(full,timed)
-     one, two = sm.mnk_mDiv8(full,timed)
-     #one, two = sm.deeploy(full,timed)
-     ties, table2, asDF = sm.myrtle(analyzed,timed)
+     mnk_ties, mnk_priority = sm.mnk(full,timed)
+     mnk_mDiv8_ties, mDiv8_priority = sm.mnk_mDiv8(full,timed)
+     deeploy_ties, deeploy_priority = sm.deeploy(full,timed)
+     myrtle_ties, table2, myrtle_priority = sm.myrtle(analyzed,timed)
+     mnk_myrtle_ties, table3, mnk_myrtle_priority = sm.mnk_myrtle(analyzed,timed)
+     fastestID = bestObserved(timed)["FakeNN JSON Name"]
+     point_labels=["naive mnk", "naive mnk, m | 8","fastest observed","deeploy","myrtle","red + myrtle"]
+     pointIDs=[getPointIDs(mnk_ties),getPointIDs(mnk_mDiv8_ties),[fastestID],getPointIDs(deeploy_ties),getPointIDs(myrtle_ties),getPointIDs(mnk_myrtle_ties)]
+    #  print(pointIDs)
+     maxMinAvg(timed,point_ids=pointIDs,point_labels=point_labels)
+     #extractPointsForComparison(timed,point_ids, point_labels)
+     #print("mnk_myrtle ties are ")
+     #print(mnk_myrtle_ties[["FakeNN JSON Name","Avg m'_sz*n_sz / k_sz"]])
      mnk,mnkDiv8,full = maxMNK(full)
      # print(full[["FakeNN JSON Name","mnk"]].head(10))
      mnkMaxID = mnk["FakeNN JSON Name"]#.values[0]
@@ -329,39 +404,38 @@ def pruneApproach5(timed, analyzed, full):
      # print(f"max mnk divisible by 8 in m-dim is ts {mnkDiv8ID}\n{mnkDiv8}")
      #print(full[["FakeNN JSON Name","mnk"]])
      prunePoint = ssr_prune_frac(full,3)
+     pruned = full[full["SSR Config Count"] < prunePoint] 
      ut = analyzed[~analyzed["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])]
-     
      # make sure untimed points are a subset of the pruned search space
      ut = ut[ut["SSR Config Count"] < prunePoint].copy()
-     pruned = full[full["SSR Config Count"] < prunePoint]     
-     if(mnkMaxID in pruned["FakeNN JSON Name"].values[0]):
-        print("pruned SS contains the max mnk")
-     else:
-        raise Exception("we have a PROBLEM! max mnk not included in pruned SS!!!")
-
      timed["timed"] = True
      ut["timed"] = False
-     fastest = bestObserved(timed)
-     fastestID = fastest["FakeNN JSON Name"]
-     print(f"fastest ts is {fastestID}\n{fastest}")
+     fastestID = bestObserved(timed)["FakeNN JSON Name"]
 
-     pruned = pruned.sort_values(by="SSR Configs",ascending=True)
-     pruned = pruned.reset_index(drop=True)
-     timed = timed.sort_values(by="SSR Configs",ascending=True)
-     timed = timed.reset_index(drop=True)
-     subseq_df, pruned_rest, timed_rest = split_longest_initial_subsequence(timed, pruned)
-     #print(subseq_df[["FakeNN JSON Name","SSR Configs"]])
-    #  print("timed points breakdown:")
-    #  print(f"min ssr configs timed: {subseq_df.shape[0]}")
-    #  print(f"other points timed: {timed_rest.shape[0]}")
-    #  print(f"remaining points to time: {pruned_rest.shape[0]}")
+     
      aggressivelyPruned = pruned[pruned["mDiv8"] != 0].copy()
      # remove n dim divisible by 32
      aggressivelyPruned["nMod32"]=aggressivelyPruned["n"] % 32
      aggressivelyPruned = aggressivelyPruned[aggressivelyPruned["nMod32"]!=0].copy()
 
      expStats = printMethodologyStats(full, pruned, timed, aggressivelyPruned)
+     m=timed["M"][0]
+     n=timed["N"][0]
+     k=timed["K"][0]
+    #  chosenID=asDF[["FakeNN JSON Name"]].loc[0]["FakeNN JSON Name"]
+    #  redPurpleID=redPurpleAsDF[["FakeNN JSON Name"]].loc[0]["FakeNN JSON Name"]       
+     # create little DF with each point to compare
+     nickname=f"{m}x{n}x{k}-baseline-best-myrtle"
+     if f"{m}x{n}x{k}" == "192x384x384": #jugaad af
+              mnkMaxID="192x384x384w46-56-45"
+     if f"{m}x{n}x{k}" == "512x512x512": #jugaad af
+                  mnkDiv8ID="512x512x512w48-56-43"
+    # point_ids=[mnkMaxID,mnkDiv8ID,fastestID,chosenID,redPurpleID]
+    #  df = extractPointsForComparison(timed,point_ids, point_labels)
 
+     nickname=f"{m}x{n}x{k}-methodology-stats"
+     expStats["MxNxK"]=[f"{m}x{n}x{k}"]
+     expStats_df = pd.DataFrame(expStats)
      hover_data = [
         "JSON Name",
         "timeout",
@@ -385,17 +459,9 @@ def pruneApproach5(timed, analyzed, full):
         "tileB",
         "Avg n'_sz / k_size",
         "timedData",
-     ]
-     minimal_hover = [
-        "JSON Name",       
-        "SSR Configs",
-        "L1 Usage", 
-        "Avg C-M Ratio",
-        "mnk"             
-     ]
+     ]     
      special_figs=[]
      more_figs = []
-
      y_col = "Global Sim E2E_dma"#"Avg n'_sz / k_size"
      x_col = "Global Sim E2E_dma" #"comp/memxfer"
      special_figs.append(scatterWithColorSymbol(
@@ -407,8 +473,31 @@ def pruneApproach5(timed, analyzed, full):
             "Reality Check. Make sure fastest point is ranked 1.",
             "timedData",
             ["circle","circle"]
-     ))
+     ))     
+     #special_figs,more_figs=graphingExploration(more_figs,special_figs,timed,ut,analyzed,hover_data,prunePoint,asDF,expStats,fastestID,mnkMaxID)
+     return special_figs,more_figs,f"<span>{table2}</span><span></span>"
 
+def graphingExploration(more_figs,special_figs,timed,ut,analyzed,hover_data,prunePoint,asDF,expStats,fastestID,mnkMaxID):
+     minimal_hover = [
+        "JSON Name",       
+        "SSR Configs",
+        "L1 Usage", 
+        "Avg C-M Ratio",
+        "mnk"             
+     ]
+     specialHover = [ "JSON Name",
+        "diff",
+        "FMADDsMULsPerCore",
+        "Avg C-M Ratio",
+        "Time (cycles)",#"SSR Loads per HW Loop",
+        "Total CL Tiles",
+        "L1 Usage",
+        "Avg CC Tile Size",
+        "mRem",
+        "mnk",
+        "tileC"]
+     
+    
       # illustrate_ssr_pruning(pruned, full, special_figs,minimal_hover)
      y_col = "SSR Configs"
      x_col = "L1 Usage"
@@ -517,18 +606,6 @@ def pruneApproach5(timed, analyzed, full):
             "symbolMarker",
         )
      special_figs.append(fig)
-
-     specialHover = [ "JSON Name",
-        "diff",
-        "FMADDsMULsPerCore",
-        "Avg C-M Ratio",
-        "Time (cycles)",#"SSR Loads per HW Loop",
-        "Total CL Tiles",
-        "L1 Usage",
-        "Avg CC Tile Size",
-        "mRem",
-        "mnk",
-        "tileC"]
    
      y_col = "diff"#"Global Sim E2E_dma"#"Avg n'_sz / k_size"
      x_col = "mnk"#"m'_sz*n_sz / k_sz"#"Global Sim E2E_dma"
@@ -637,7 +714,7 @@ def pruneApproach5(timed, analyzed, full):
      mnk=pd.concat([timed,ut])
      mnk=mnk[mnk["mRem"]==0].copy()
      mnk=mnk.sort_values(by="mnk",ascending=False)
-     print(mnk[["FakeNN JSON Name","mnk","Avg C-M Ratio","timed","diff",]].head(5))
+     #print(mnk[["FakeNN JSON Name","mnk","Avg C-M Ratio","timed","diff",]].head(5))
      
      # step 5: identify nice m remainders
      nice_timed,nice_ut = catByMDimBoundaryTile(timed, ut, niceOnly=True)
@@ -683,13 +760,14 @@ def pruneApproach5(timed, analyzed, full):
      point_ids=[mnkMaxID,mnkDiv8ID,fastestID,chosenID,redPurpleID]
      point_labels=["naive mnk", "naive mnk, m | 8","fastest observed","myrtle","red + myrtle"]
      df = extractPointsForComparison(timed,point_ids, point_labels)
-     print(point_ids)
+    # print(point_ids)
      df.to_csv(f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}.csv",index=False)
-     print(df[["FakeNN JSON Name","point_label","diff","Avg C-M Ratio","dma"]])
+    # print(df[["FakeNN JSON Name","point_label","diff","Avg C-M Ratio","dma"]])
      nickname=f"{m}x{n}x{k}-methodology-stats"
      expStats["MxNxK"]=[f"{m}x{n}x{k}"]
      expStats_df = pd.DataFrame(expStats)
      expStats_df.to_csv(f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}.csv",index=False)
+    
     #  help = genShelfGraphPDF(jugaadTitle(timed),three_shelves,hover_data,color="mRem")
      
 
@@ -776,5 +854,4 @@ def pruneApproach5(timed, analyzed, full):
      #     )
      # x, y, z
      # "FMADDsMULsPerCore","diff","m'_sz*n_sz / k_sz"
-   #  special_figs.append(plot_3d_scatter(timed,("FMADDsMULsPerCore","diff","m'_sz*n_sz / k_sz"),specialHover))
-     return special_figs,more_figs,f"<span>{table2}</span><span>{table}</span>"
+     return special_figs,more_figs

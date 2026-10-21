@@ -310,3 +310,55 @@ def pruneApproachCM(timed, analyzed, full):
      # "FMADDsMULsPerCore","diff","m'_sz*n_sz / k_sz"
    #  special_figs.append(plot_3d_scatter(timed,("FMADDsMULsPerCore","diff","m'_sz*n_sz / k_sz"),specialHover))
      return special_figs,more_figs,f"<span>{table2}</span><span>{table}</span>"
+
+# def deeploy(full,timed):
+#     m=timed["M"][0]
+#     n=timed["N"][0]
+#     k=timed["K"][0]
+#     nickname=f"{m}x{n}x{k}w"
+#     full["mnk"] = full["m"]*full["n"]*full["k"]
+#     full["mMod8"] = full["m"] % 8
+#     pruned = full[full["k"]==k].copy() # no k tiling
+#     if pruned.empty:
+#         print("warning: tiling scheme not found for deeploy method!")
+#         return None,None
+#     #else:
+#         # print("all options when k cannot be tiled:")
+#         # print(pruned[["FakeNN JSON Name","mnk"]])
+#     pruned = pruned.sort_values(by="mnk",ascending=False)
+#     pruned = pruned.reset_index(drop=True)
+#     best = pruned[["mnk"]].loc[0]["mnk"]
+#     # split into div8  and not div 8
+#     div8 = pruned[pruned["mMod8"]==0].copy()
+#     notDiv8 = pruned[pruned["mMod8"]!=0].copy()
+#     print("Deeploy div8 options:")
+#     print(div8[["FakeNN JSON Name","mnk"]].head(10))
+#     print("Deeploy NOT div8 options:")
+#     print(notDiv8[["FakeNN JSON Name","mnk"]].head(10))
+#     if not div8.empty:
+#         div8 = div8.sort_values(by="mnk",ascending=False)
+#         div8 = div8.reset_index(drop=True)
+#         bestDiv8 = div8[["mnk"]].loc[0]["mnk"]
+#     else:
+#         bestDiv8 = best - 1
+#     if not notDiv8.empty:
+#         notDiv8 = notDiv8.sort_values(by="mnk",ascending=False)
+#         notDiv8 = notDiv8.reset_index(drop=True)
+#         bestNotDiv8 = notDiv8[["mnk"]].loc[0]["mnk"]
+#     else:
+#         bestNotDiv8 = best - 1
+#     # if the best div8 option is equal to or better than the notDiv8 option, 
+#     # discard all notDiv8 options, and we know that the best is divisible by 8.
+#     if bestDiv8 >= bestNotDiv8:
+#         pruned = div8
+#     ties = pruned[pruned["mnk"]==best].copy()
+#     print("\n Deeploy ties:")
+#     print(ties[["FakeNN JSON Name","mnk"]])
+#     toTime=ties[~ties["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])]
+#     if not toTime.empty:
+#         filename=f"{nickname}-ties-deeploy-toTime.csv"
+#         print(f"\tsaved untimed ties to file {filename}")
+#         toTime.to_csv(f"{pathlib.Path(__file__).parent.resolve()}/out/{filename}",index=False)
+#     else:
+#         print(f"all ties were timed for deeploy {nickname}.")
+#     return ties,pruned

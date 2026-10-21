@@ -273,6 +273,19 @@ def stack_dfs_to_html_w_toggle(
             styles = [style + " font-weight: bold;" for style in styles]
 
         return styles
+    
+    for i, df in enumerate(df_list):
+        if not df.index.is_unique:
+            print(f"DataFrame {i} has duplicate indices!")
+            print(df.index[df.index.duplicated()])
+
+        if not df.columns.is_unique:
+            print(f"DataFrame {i} has duplicate columns!")
+            print(df.columns[df.columns.duplicated()])
+
+        # Check whether columns_subset itself has duplicate names
+        if len(columns_subset) != len(set(columns_subset)):
+            print("Warning: columns_subset contains duplicate column names!")
 
     for df, title in zip(df_list, titles):
         html_sections.append(f"<h3 {title_style}>{title}</h3>")
