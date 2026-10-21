@@ -87,12 +87,12 @@ def printFinalRankingTwoShelves(title, df, colorCol,shelfMetric='FMADDsMULsPerCo
     # 3. Return all four values
     return table, concatenated_df, filtered_df, three_shelves
 
-def printMethodologyStats(full, pruned, timed, suggested):
-    # print(f"full ss has size {len(full)}")
-    # print(f"pruned has size {len(pruned)}")
-    # print(f"timed has size {len(timed)}")
-    # print(f"what percentage of SPM used in timed points vs pruned points? {len(timed)/len(pruned)*100.0} %")
-    
+def printMethodologyStats(full, pruned, timed, suggested, verbose=False):
+    if verbose:
+        print(f"full ss has size {len(full)}")
+        print(f"pruned has size {len(pruned)}")
+        print(f"timed has size {len(timed)}")
+        print(f"what percentage of SPM used in timed points vs pruned points? {len(timed)/len(pruned)*100.0} %")    
     stats = {}
     stats["SS-exhaustive"]=[len(full)]
     stats["SS-pruned-to-third-fewest-syncs"]=[len(pruned)]
@@ -324,65 +324,217 @@ def getPointIDs(df):
     else:
     #print(list(df["FakeNN JSON Name"]))
         return list(df["FakeNN JSON Name"])
-
+def getExpName(df):
+    m=df["M"][0]
+    n=df["N"][0]
+    k=df["K"][0]
+    return f"{m}x{n}x{k}" 
+    
 # def maxMinAvg(timed,point_ids, point_labels)
 #     points = timed[timed[point_ids]]
 #     if len(point_ids) == 1:
-def maxMinAvg(timed, point_ids, point_labels):
-    # Map to store stats per label: label -> (min_dma, max_dma, avg_dma)
-    label_stats = {}
+# def maxMinAvg(timed, point_ids, point_labels):
+#     # Map to store stats per label: label -> (min_dma, max_dma, avg_dma)
+#     label_stats = {}
 
-    # Step 1-3: Slice timed df and compute (min, max, avg) for each point_id_list
+#     # Step 1-3: Slice timed df and compute (min, max, avg) for each point_id_list
+#     for id_list, label in zip(point_ids, point_labels):
+#         slice_df = timed[timed["FakeNN JSON Name"].isin(id_list)]
+
+#         if slice_df.empty:
+#             continue
+
+#         dma_series = slice_df["dma"]
+#         n_rows = len(slice_df)
+
+#         if n_rows == 1:
+#             val = dma_series.iloc[0]
+#             stats = (val, val, val)
+#         else:
+#             stats = (dma_series.min(), dma_series.max(), dma_series.mean())
+
+#         label_stats[label] = stats
+
+#     # Retrieve the average dma for "fastest observed"
+#     baseline_avg = None
+#     if "fastest observed" in label_stats:
+#         baseline_avg = label_stats["fastest observed"][2]
+
+#     # Step 4: Zip and print results for each pair
+#     for id_list, label in zip(point_ids, point_labels):
+#         if label not in label_stats:
+#             print(f"Point Label: {label} (No matching rows found in dataframe)")
+#             continue
+
+#         min_val, max_val, avg_val = label_stats[label]
+
+#         # 4.1 Print label and (min, max, avg)
+#         print(f"Point Label: {label}")
+#         print(
+#             f"  DMA - Min: {min_val:.4f}, Max: {max_val:.4f}, Avg: {avg_val:.4f}"
+#         )
+
+#         # 4.2 Print percentage difference against 'fastest observed'
+#         if baseline_avg is not None:
+#             pct_diff = ((avg_val - baseline_avg) / baseline_avg) * 100.0
+#             print(
+#                 f"  % Difference vs 'fastest observed': {pct_diff:+.2f}%\n"
+#             )
+#         else:
+#             print(
+#                 "  % Difference: 'fastest observed' baseline not found in labels\n"
+#             )
+import numpy as np
+import pandas as pd
+
+
+def maxMinAvg(expName, timed, point_ids, point_labels, verbose=False):
+    # Step 1: Pre-calculate slice statistics and best/worst rows
+    processed_stats = {}
+
     for id_list, label in zip(point_ids, point_labels):
+        # Subset timed dataframe by matching "FakeNN JSON Name"
         slice_df = timed[timed["FakeNN JSON Name"].isin(id_list)]
 
         if slice_df.empty:
             continue
 
         dma_series = slice_df["dma"]
-        n_rows = len(slice_df)
+        min_val = dma_series.min()
+        max_val = dma_series.max()
+        avg_val = dma_series.mean()
 
-        if n_rows == 1:
-            val = dma_series.iloc[0]
-            stats = (val, val, val)
+        # Find row corresponding to the minimum DMA value
+        min_row = slice_df.loc[slice_df["dma"] == min_val].iloc[0]
+        min_ts = min_row["JSON Name"]
+
+        # Find row corresponding to the maximum DMA value
+        max_row = slice_df.loc[slice_df["dma"] == max_val].iloc[0]
+        max_ts = max_row["JSON Name"]
+
+        # avg_ts rules: contains max_ts when max == min, otherwise 'n/a'
+        if max_val == min_val:
+            avg_ts = max_ts
         else:
-            stats = (dma_series.min(), dma_series.max(), dma_series.mean())
+            avg_ts = "n/a"
 
-        label_stats[label] = stats
+        processed_stats[label] = {
+            "min": min_val,
+            "max": max_val,
+            "avg": avg_val,
+            "min_ts": min_ts,
+            "max_ts": max_ts,
+            "avg_ts": avg_ts,
+        }
 
-    # Retrieve the average dma for "fastest observed"
+    # Baseline statistics for 'fastest observed'
     baseline_avg = None
-    if "fastest observed" in label_stats:
-        baseline_avg = label_stats["fastest observed"][2]
+    baseline_max = None
+    baseline_min = None
+    if "fastest observed" in processed_stats:
+        baseline_avg = processed_stats["fastest observed"]["avg"]
+        baseline_max = processed_stats["fastest observed"]["max"]
+        baseline_min = processed_stats["fastest observed"]["min"]
 
-    # Step 4: Zip and print results for each pair
+    # Step 2: Print expName before printing point label statistics (only if verbose)
+    if verbose:
+        print(f"Experiment: {expName}")
+
+    # Step 3 & 4: Print stats per label (if verbose) and populate output rows
+    result_rows = []
+
     for id_list, label in zip(point_ids, point_labels):
-        if label not in label_stats:
-            print(f"Point Label: {label} (No matching rows found in dataframe)")
+        if label not in processed_stats:
+            if verbose:
+                print(
+                    f"Point Label: {label} (No matching rows found in dataframe)"
+                )
             continue
 
-        min_val, max_val, avg_val = label_stats[label]
+        stats = processed_stats[label]
+        min_val = stats["min"]
+        max_val = stats["max"]
+        avg_val = stats["avg"]
+        min_ts = stats["min_ts"]
+        max_ts = stats["max_ts"]
+        avg_ts = stats["avg_ts"]
 
-        # 4.1 Print label and (min, max, avg)
-        print(f"Point Label: {label}")
-        print(
-            f"  DMA - Min: {min_val:.4f}, Max: {max_val:.4f}, Avg: {avg_val:.4f}"
-        )
-
-        # 4.2 Print percentage difference against 'fastest observed'
+        # Calculate percentage differences relative to 'fastest observed'
         if baseline_avg is not None:
             pct_diff = ((avg_val - baseline_avg) / baseline_avg) * 100.0
-            print(
-                f"  % Difference vs 'fastest observed': {pct_diff:+.2f}%\n"
-            )
         else:
-            print(
-                "  % Difference: 'fastest observed' baseline not found in labels\n"
-            )
+            pct_diff = np.nan
 
+        if baseline_max is not None:
+            max_diff = ((max_val - baseline_max) / baseline_max) * 100.0
+        else:
+            max_diff = np.nan
+
+        if baseline_min is not None:
+            min_diff = ((min_val - baseline_min) / baseline_min) * 100.0
+        else:
+            min_diff = np.nan
+
+        # Conditionally print stats
+        if verbose:
+            print(f"Point Label: {label}")
+            if min_val == max_val:
+                print(
+                    f"  DMA - Min: {min_val:.4f}, Max: {max_val:.4f}, Avg: {avg_val:.4f}"
+                )
+                print(f"  JSON Name: {min_ts} (no ties)")
+            else:
+                print(
+                    f"  DMA - Min: {min_val:.4f} (JSON Name: {min_ts}), "
+                    f"Max: {max_val:.4f} (JSON Name: {max_ts}), "
+                    f"Avg: {avg_val:.4f}"
+                )
+
+            if not np.isnan(pct_diff):
+                print(
+                    f"  % Difference vs 'fastest observed': {pct_diff:+.2f}%\n"
+                )
+            else:
+                print(
+                    "  % Difference: 'fastest observed' baseline not found in labels\n"
+                )
+
+        # Append row for the returned DataFrame
+        result_rows.append(
+            {
+                "sel_method": label,
+                "exp_name": expName,
+                "max": max_val,
+                "min": min_val,
+                "avg": avg_val,
+                "max_ts": max_ts,
+                "min_ts": min_ts,
+                "avg_ts": avg_ts,
+                "diff": pct_diff,
+                "max_diff": max_diff,
+                "min_diff": min_diff,
+            }
+        )
+
+    # DataFrame columns specification
+    cols = [
+        "sel_method",
+        "exp_name",
+        "max",
+        "min",
+        "avg",
+        "max_ts",
+        "min_ts",
+        "avg_ts",
+        "diff",
+        "max_diff",
+        "min_diff",
+    ]
+    return pd.DataFrame(result_rows, columns=cols)
 
 
 def pruneApproach5(timed, analyzed, full):
+     expName = getExpName(timed)
      mnk_ties, mnk_priority = sm.mnk(full,timed)
      mnk_mDiv8_ties, mDiv8_priority = sm.mnk_mDiv8(full,timed)
      deeploy_ties, deeploy_priority = sm.deeploy(full,timed)
@@ -391,51 +543,31 @@ def pruneApproach5(timed, analyzed, full):
      fastestID = bestObserved(timed)["FakeNN JSON Name"]
      point_labels=["naive mnk", "naive mnk, m | 8","fastest observed","deeploy","myrtle","red + myrtle"]
      pointIDs=[getPointIDs(mnk_ties),getPointIDs(mnk_mDiv8_ties),[fastestID],getPointIDs(deeploy_ties),getPointIDs(myrtle_ties),getPointIDs(mnk_myrtle_ties)]
-    #  print(pointIDs)
-     maxMinAvg(timed,point_ids=pointIDs,point_labels=point_labels)
-     #extractPointsForComparison(timed,point_ids, point_labels)
-     #print("mnk_myrtle ties are ")
-     #print(mnk_myrtle_ties[["FakeNN JSON Name","Avg m'_sz*n_sz / k_sz"]])
-     mnk,mnkDiv8,full = maxMNK(full)
-     # print(full[["FakeNN JSON Name","mnk"]].head(10))
-     mnkMaxID = mnk["FakeNN JSON Name"]#.values[0]
-     # print(f"max mnk is ts {mnkMaxID}\n{mnk}")
-     mnkDiv8ID = mnkDiv8["FakeNN JSON Name"]#.values[0]
-     # print(f"max mnk divisible by 8 in m-dim is ts {mnkDiv8ID}\n{mnkDiv8}")
-     #print(full[["FakeNN JSON Name","mnk"]])
+     sel_stats = maxMinAvg(expName,timed,point_ids=pointIDs,point_labels=point_labels)
+     nickname=f"{expName}w-sel-method-comparison"
+     sel_stats.to_csv(f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}.csv",index=False)
+     
      prunePoint = ssr_prune_frac(full,3)
-     pruned = full[full["SSR Config Count"] < prunePoint] 
+     # prune full search space
+     pruned = full[full["SSR Config Count"] < prunePoint] .copy()
+     # identify analyzed but untimed points
      ut = analyzed[~analyzed["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])]
-     # make sure untimed points are a subset of the pruned search space
+     # prune untimed search space
      ut = ut[ut["SSR Config Count"] < prunePoint].copy()
      timed["timed"] = True
      ut["timed"] = False
-     fastestID = bestObserved(timed)["FakeNN JSON Name"]
-
-     
-     aggressivelyPruned = pruned[pruned["mDiv8"] != 0].copy()
+     # remove m-dim NOT divisible by 8
+     pruned["mMod8"] = pruned["m"] % 8
+     aggressivelyPruned = pruned[pruned["mMod8"] == 0].copy()
      # remove n dim divisible by 32
      aggressivelyPruned["nMod32"]=aggressivelyPruned["n"] % 32
      aggressivelyPruned = aggressivelyPruned[aggressivelyPruned["nMod32"]!=0].copy()
-
      expStats = printMethodologyStats(full, pruned, timed, aggressivelyPruned)
-     m=timed["M"][0]
-     n=timed["N"][0]
-     k=timed["K"][0]
-    #  chosenID=asDF[["FakeNN JSON Name"]].loc[0]["FakeNN JSON Name"]
-    #  redPurpleID=redPurpleAsDF[["FakeNN JSON Name"]].loc[0]["FakeNN JSON Name"]       
-     # create little DF with each point to compare
-     nickname=f"{m}x{n}x{k}-baseline-best-myrtle"
-     if f"{m}x{n}x{k}" == "192x384x384": #jugaad af
-              mnkMaxID="192x384x384w46-56-45"
-     if f"{m}x{n}x{k}" == "512x512x512": #jugaad af
-                  mnkDiv8ID="512x512x512w48-56-43"
-    # point_ids=[mnkMaxID,mnkDiv8ID,fastestID,chosenID,redPurpleID]
-    #  df = extractPointsForComparison(timed,point_ids, point_labels)
-
-     nickname=f"{m}x{n}x{k}-methodology-stats"
-     expStats["MxNxK"]=[f"{m}x{n}x{k}"]
+     nickname=f"{expName}w-methodology-stats"
+     expStats["MxNxK"]=[expName]
      expStats_df = pd.DataFrame(expStats)
+     expStats_df.to_csv(f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}.csv",index=False)
+     
      hover_data = [
         "JSON Name",
         "timeout",

@@ -5,7 +5,7 @@ import subprocess
 # python graph.py user="emily" fresh-ana output="hoodle"
 
 # Default configurations
-USER = "emily" #"hoppip"
+USER = "hoppip"
 OUTPUT_DIR = "output"
 
 # Parse CLI arguments
@@ -47,9 +47,9 @@ EXPERIMENTS = [
     "128x128x128",
     "256x256x256",
     "384x384x384",
-    "512x512x512",
     "128x768x768",
-    "192x384x384"
+    "192x384x384",
+    "512x512x512"
 ]
 
 # Experiment-specific filenames for the timed search space
