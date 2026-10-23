@@ -58,6 +58,7 @@ def rankWithShelves(title, df, colorCol, shelfMetric="FMADDsMULsPerCore",htmlTab
         "mnkRem",
         "mMod8",
         "nMod32",
+        "m > k",
         colorCol,
         "Avg C-M Ratio",
         "Time (cycles)",
@@ -331,8 +332,9 @@ def myrtle(analyzed,timed,htmlTable=True):
     def prune(df):
          df["nMod32"]=df["n"]%32
          df= df[df["nMod32"]!=0].copy()
+         df= df[df["nMod32"]!=16].copy()
          if df.empty:
-             raise(Exception("DF empty after removing n-dim not div 32"))
+             raise(Exception("DF empty after removing n-dim nMod32 = 0, 16"))
          df = df[df["niceMRem"]].copy()
          return df
     m=timed["M"][0]
@@ -369,8 +371,9 @@ def mnk_myrtle(analyzed,timed,htmlTable=True):
     def prune(df):
          df["nMod32"]=df["n"]%32
          df= df[df["nMod32"]!=0].copy()
+         df= df[df["nMod32"]!=16].copy()
          if df.empty:
-             raise(Exception("DF empty after removing n-dim not div 32"))
+                      raise(Exception("DF empty after removing n-dim nMod32 = 0, 16"))
          df = df[df["mDiv8"]==True].copy()
          return df
     m=timed["M"][0]
@@ -412,9 +415,9 @@ def new_myrtle(analyzed,timed,htmlTable=True):
     def prune(df):
          df["mn/k"]=df["m"]*df["n"]/df["k"]
          df["nMod32"]=df["n"]%32
-         df= df[df["nMod32"]!=0].copy() # prune by n-dim not-divisible-by-32
+         df= df[df["nMod32"]!=16].copy()
          if df.empty:
-             raise(Exception("DF empty after removing n-dim not div 32"))
+             raise(Exception("DF empty after removing n-dim nMod32 = 0, 16"))
          df = df[df["niceMRem"]].copy() # prune by m-boundary tile divisible-by-8
          return df
     m=timed["M"][0]
@@ -429,9 +432,9 @@ def new_myrtle(analyzed,timed,htmlTable=True):
     timed["timed"] = True
     ut["timed"] = False
     combined = pd.concat([timed, ut])
-    shelf="Avg m'_sz*n_sz / k_sz"
+    shelf="Avg m'_sz / k_size"
     sortShelf0=("mMod8",True)# we set ascending to True
-    sortShelf1=("mMod8",True)
+    sortShelf1=("FMADDsMULsPerCore",False)
     comments = "(prioritizing m | 8)"
     combined = combined.sort_values(by="FMADDsMULsPerCore",ascending=False)
     concatenated_df, table, high_priority_df, ties = rankWithShelvesParameterized(comments,combined,shelfMetric=shelf,sortShelfMetric0=sortShelf0,sortShelfMetric1=sortShelf1,htmlTable=htmlTable)

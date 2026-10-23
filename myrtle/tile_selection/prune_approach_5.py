@@ -539,7 +539,7 @@ def pruneApproach5(timed, analyzed, full):
      mnk_mDiv8_ties, mDiv8_priority = sm.mnk_mDiv8(full,timed)
      deeploy_ties, deeploy_priority = sm.deeploy(full,timed)
      myrtle_ties, table2, myrtle_priority = sm.myrtle(analyzed,timed)
-    # new_myrtle_ties, table2, myrtle_priority = sm.new_myrtle(analyzed,timed)
+     #new_myrtle_ties, table2, myrtle_priority = sm.new_myrtle(analyzed,timed)
      mnk_myrtle_ties, table3, mnk_myrtle_priority = sm.mnk_myrtle(analyzed,timed)
      fastestID = bestObserved(timed)["FakeNN JSON Name"]
      point_labels=["naive mnk", "naive mnk, m | 8","fastest observed","myrtle","red + myrtle","deeploy"]
@@ -563,6 +563,10 @@ def pruneApproach5(timed, analyzed, full):
      # remove n dim divisible by 32
      aggressivelyPruned["nMod32"]=aggressivelyPruned["n"] % 32
      aggressivelyPruned = aggressivelyPruned[aggressivelyPruned["nMod32"]!=0].copy()
+     aggressivelyPruned = aggressivelyPruned[aggressivelyPruned["nMod32"]!=16].copy()
+     aggressivelyPruned_ut = aggressivelyPruned[~aggressivelyPruned["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])]
+     nickname=f"{expName}w-suggested-untimed-ss"
+     aggressivelyPruned_ut.to_csv(f"{pathlib.Path(__file__).parent.resolve()}/out/{nickname}.csv",index=False)
      expStats = printMethodologyStats(full, pruned, timed, aggressivelyPruned)
      nickname=f"{expName}w-methodology-stats"
      expStats["MxNxK"]=[expName]
