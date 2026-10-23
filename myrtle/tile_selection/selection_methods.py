@@ -1,6 +1,6 @@
 import pandas as pd
 import pathlib
-from scripts.graphUtils import stack_dfs_to_html_w_toggle
+from scripts.graphUtils import stack_dfs_to_html_w_toggle, stack_dfs_to_html_w_toggles
 
 # return the SSR config value that is the largest of the bottom frac
 def ssr_prune_frac(df,frac):
@@ -57,8 +57,9 @@ def rankWithShelves(title, df, colorCol, shelfMetric="FMADDsMULsPerCore",htmlTab
         "FMADDsMULsPerCore",
         "mnkRem",
         "mMod8",
-        "nMod32",
         "m > k",
+        "nMod32",
+        "m / k",
         colorCol,
         "Avg C-M Ratio",
         "Time (cycles)",
@@ -93,7 +94,7 @@ def rankWithShelves(title, df, colorCol, shelfMetric="FMADDsMULsPerCore",htmlTab
     # don't print all the shelves, in fact print a max of 20
     finalShelf = min(20, len(processed_dfs) - 1)
     if htmlTable:
-        table = stack_dfs_to_html_w_toggle(
+        table = stack_dfs_to_html_w_toggles(
             processed_dfs[0:finalShelf], my_titles[0:finalShelf], my_columns, title
         )
     else:
@@ -335,6 +336,9 @@ def myrtle(analyzed,timed,htmlTable=True):
          df= df[df["nMod32"]!=16].copy()
          if df.empty:
              raise(Exception("DF empty after removing n-dim nMod32 = 0, 16"))
+         df= df[df["m > k"]==False].copy()
+         if df.empty:
+            raise(Exception("DF empty after removing ts with m > k"))
          df = df[df["niceMRem"]].copy()
          return df
     m=timed["M"][0]
@@ -375,6 +379,9 @@ def mnk_myrtle(analyzed,timed,htmlTable=True):
          if df.empty:
                       raise(Exception("DF empty after removing n-dim nMod32 = 0, 16"))
          df = df[df["mDiv8"]==True].copy()
+         df= df[df["m > k"]==False].copy()
+         if df.empty:
+            raise(Exception("DF empty after removing ts with m > k"))
          return df
     m=timed["M"][0]
     n=timed["N"][0]

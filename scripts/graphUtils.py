@@ -347,6 +347,197 @@ def stack_dfs_to_html_w_toggle(
 
     return "\n".join(html_sections)
 
+def stack_dfs_to_html_w_toggles(
+    df_list, titles, columns_subset, main_title=None, include_index=False
+):
+    """Concatenates multiple DataFrames into a single HTML string with section titles.
+
+    Rows are conditionally styled based on 'timed', 'Avg n'_sz / k_size', and 'diff':
+    - 'timed' == False -> Gray text (no highlight)
+    - 'diff' == 0.0 -> Red background
+    - 'diff' <= 5.0 -> Blue background
+    - 'Avg n'_sz / k_size' >= 1 -> Entire row is bolded (preserving colors/highlights)
+
+    Includes top-right toggles:
+    - 'mMod8': filters rows where m (X in X-Y-Z) % 8 == 0.
+    - 'm < k': hides rows where column "m < k" is True.
+    """
+    if len(df_list) != len(titles):
+        raise ValueError(
+            "The number of DataFrames must match the number of titles."
+        )
+
+    html_sections = []
+
+    # Inject CSS & JavaScript for both toggle controls
+    toggle_header = """
+    <div style="display: flex; justify-content: space-between; align-items: center; font-family: Arial, sans-serif; margin-bottom: 20px;">
+        <div style="flex-grow: 1;">
+            <!-- Title placeholder handled below if present -->
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px; margin-left: auto;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="mMod8Toggle" style="font-weight: bold; font-size: 14px; cursor: pointer; user-select: none;">mMod8</label>
+                <input type="checkbox" id="mMod8Toggle" onchange="applyRowFilters()" style="cursor: pointer; width: 18px; height: 18px;">
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="mLessKToggle" style="font-weight: bold; font-size: 14px; cursor: pointer; user-select: none;">m &lt; k</label>
+                <input type="checkbox" id="mLessKToggle" onchange="applyRowFilters()" style="cursor: pointer; width: 18px; height: 18px;">
+            </div>
+        </div>
+    </div>
+    <script>
+    function applyRowFilters() {
+        const filterMod8 = document.getElementById('mMod8Toggle').checked;
+        const hideMLessK = document.getElementById('mLessKToggle').checked;
+
+        const rows = document.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const isMod8 = row.getAttribute('data-m-mod8') === 'true';
+            const isMLessK = row.getAttribute('data-m-greater-k') === 'true';
+
+            // Hide if mMod8 toggle is active and row is not divisible by 8
+            const failsMod8 = filterMod8 && !isMod8;
+            // Hide if m < k toggle is active and row has 'm < k' == True
+            const failsMLessK = hideMLessK && isMLessK;
+
+            if (failsMod8 || failsMLessK) {
+                row.style.display = 'none';
+            } else {
+                row.style.display = '';
+            }
+        });
+    }
+    </script>
+    """
+    html_sections.append(toggle_header)
+
+    # 1. Add the main title at the top if provided
+    if main_title:
+        main_title_style = "style='font-family: Arial, sans-serif; margin-bottom: 25px; color: #111; border-bottom: 2px solid #333; padding-bottom: 10px;'"
+        html_sections.append(f"<h1 {main_title_style}>{main_title}</h1>")
+
+    title_style = "style='font-family: Arial, sans-serif; margin-top: 25px; margin-bottom: 10px; color: #333;'"
+    table_style = "style='border-collapse: collapse; width: 75%; font-family: Arial, sans-serif; margin-bottom: 20px;'"
+
+    # Helper function to check if m % 8 == 0 from 'X-Y-Z' format
+    def is_m_mod8(json_name):
+        if not isinstance(json_name, str):
+            return False
+        match = re.match(r"(\d+)-(\d+)-(\d+)", json_name.strip())
+        if match:
+            try:
+                m_dim = int(match.group(1))
+                return (m_dim % 8) == 0
+            except ValueError:
+                return False
+        return False
+
+    # Internal helper function to apply row styles
+    def style_rows(row):
+        styles = [""] * len(row)
+
+        # 1. Check 'timed' condition first
+        if "timed" in row and row["timed"] is False:
+            styles = ["color: #718096;"] * len(row)
+
+        # 2. Fall back to 'diff' conditions if 'timed' is True (or missing)
+        elif "diff" in row:
+            diff_val = row["diff"]
+            if diff_val == 0.0:
+                styles = ["background-color: #ffcccc; color: #990000;"] * len(row)
+            elif diff_val <= 5.0:
+                styles = ["background-color: #d9ecff; color: #004085;"] * len(row)
+
+        # 3. Independent condition: Bold entire row
+        avg_col = "Avg n'_sz / k_size"
+        if avg_col in row and row[avg_col] >= 1:
+            styles = [style + " font-weight: bold;" for style in styles]
+
+        return styles
+
+    for i, df in enumerate(df_list):
+        if not df.index.is_unique:
+            print(f"DataFrame {i} has duplicate indices!")
+            print(df.index[df.index.duplicated()])
+
+        if not df.columns.is_unique:
+            print(f"DataFrame {i} has duplicate columns!")
+            print(df.columns[df.columns.duplicated()])
+
+        if len(columns_subset) != len(set(columns_subset)):
+            print("Warning: columns_subset contains duplicate column names!")
+
+    for df, title in zip(df_list, titles):
+        html_sections.append(f"<h3 {title_style}>{title}</h3>")
+
+        try:
+            # 2. Filter to requested subset of columns
+            filtered_df = df[columns_subset].copy()
+
+            # 3. Build Styler HTML
+            styled_html = (
+                filtered_df.style.apply(style_rows, axis=1)
+                .hide(axis="index" if not include_index else None)
+                .to_html()
+            )
+
+            # Inject custom table styles
+            styled_html = styled_html.replace(
+                "<table", f'<table border="1" {table_style}'
+            )
+
+            # 4. Extract per-row flag values for both toggles
+            mod8_flags = None
+            if "JSON Name" in df.columns:
+                mod8_flags = [
+                    "true" if is_m_mod8(val) else "false"
+                    for val in df["JSON Name"]
+                ]
+
+            m_less_k_flags = None
+            if "m > k" in df.columns:
+                m_less_k_flags = [
+                    "true" if bool(val) is True else "false"
+                    for val in df["m > k"]
+                ]
+
+            # 5. Inject data attributes into <tbody> <tr> tags
+            if (mod8_flags is not None or m_less_k_flags is not None) and "<tbody>" in styled_html:
+                header_part, body_part = styled_html.split("<tbody>", 1)
+                body_content, close_part = body_part.split("</tbody>", 1)
+
+                rows = body_content.split("<tr")
+                rebuilt_rows = [rows[0]]
+
+                for idx, row_chunk in enumerate(rows[1:]):
+                    attrs = ""
+                    if mod8_flags is not None:
+                        flag_mod8 = mod8_flags[idx] if idx < len(mod8_flags) else "false"
+                        attrs += f' data-m-mod8="{flag_mod8}"'
+                    if m_less_k_flags is not None:
+                        flag_less = m_less_k_flags[idx] if idx < len(m_less_k_flags) else "false"
+                        attrs += f' data-m-greater-k="{flag_less}"'
+
+                    rebuilt_rows.append(f"{attrs}{row_chunk}")
+
+                styled_html = (
+                    header_part
+                    + "<tbody>"
+                    + "<tr".join(rebuilt_rows)
+                    + "</tbody>"
+                    + close_part
+                )
+
+            html_sections.append(styled_html)
+
+        except KeyError as e:
+            html_sections.append(
+                f"<p style='color: red;'>Error rendering table: Missing column {e}</p>"
+            )
+
+    return "\n".join(html_sections)
+
 def stack_dfs_to_html(df_list, titles, columns_subset, main_title=None, include_index=False):
     """
     Concatenates multiple DataFrames into a single HTML string with section titles.
