@@ -5,7 +5,7 @@ import subprocess
 # python graph.py user="emily" fresh-ana output="hoodle"
 
 # Default configurations
-USER = "hoppip"
+USER = "emily"#"hoppip"
 OUTPUT_DIR = "output"
 
 # Parse CLI arguments
