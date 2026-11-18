@@ -12,6 +12,7 @@ from typing import List
 import numpy as np
 from typing import Tuple
 import tile_selection.selection_methods as sm
+from typing import List, Union
 # # 1. Resolve paths
 # # Root directory: scripts
 # PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -532,17 +533,70 @@ def maxMinAvg(expName, timed, point_ids, point_labels, verbose=False):
     ]
     return pd.DataFrame(result_rows, columns=cols)
 
+def print_dfs_top10_table(
+    df_list: List[pd.DataFrame],
+    names: List[str],
+    output_path: Union[str, pathlib.Path],
+) -> None:
+    """Combines the first 10 rows of ['JSON Name', 'timed'] from each DataFrame
+
+    into a single table with MultiIndex columns (Name -> Subcolumns) and writes
+    it to the specified file. Handles empty DataFrames and validates required
+    columns.
+    """
+    if len(df_list) != len(names):
+        raise ValueError(
+            f"Length mismatch: {len(df_list)} DataFrames provided, but {len(names)} names given."
+        )
+
+    target_cols = ["JSON Name", "timed"]
+
+    prepared_dfs = []
+    for name, df in zip(names, df_list):
+        # Empty DataFrame handling: construct a clean 0-row schema placeholder
+        if df.empty:
+            sliced_df = pd.DataFrame(columns=target_cols)
+        else:
+            # Check that required columns exist before slicing to prevent KeyError
+            missing = [c for c in target_cols if c not in df.columns]
+            if missing:
+                raise KeyError(
+                    f"DataFrame '{name}' is missing required columns: {missing}"
+                )
+            sliced_df = df[target_cols].head(10).reset_index(drop=True)
+
+        prepared_dfs.append(sliced_df)
+
+    # Concatenate side-by-side with MultiIndex column hierarchy
+    combined_table = pd.concat(prepared_dfs, axis=1, keys=names)
+
+    # Ensure the parent directory exists
+    out_file = pathlib.Path(output_path)
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+
+    # Write string representation to file
+    with open(out_file, "w", encoding="utf-8") as f:
+        f.write(combined_table.to_string())
+
 
 def pruneApproach5(timed, analyzed, full):
      expName = getExpName(timed)
      mnk_ties, mnk_priority = sm.mnk(full,timed)
      mnk_mDiv8_ties, mDiv8_priority = sm.mnk_mDiv8(full,timed)
      deeploy_ties, deeploy_priority = sm.deeploy(full,timed)
+     theDFs = [mnk_priority, mDiv8_priority,deeploy_priority]
+     theNames=["naive mnk", "naive mnk, m | 8","deeploy"]
+     theFile=f"{pathlib.Path(__file__).parent.resolve()}/out/{expName}-top10s.out"
+     if deeploy_ties is not None:
+        print_dfs_top10_table(theDFs,theNames,theFile)
+     else:
+        print_dfs_top10_table(theDFs[:-1],theNames[:-1],theFile)
+
      myrtle_ties, table2, myrtle_priority = sm.myrtle(analyzed,timed)
      #new_myrtle_ties, table2, myrtle_priority = sm.new_myrtle(analyzed,timed)
      mnk_myrtle_ties, table3, mnk_myrtle_priority = sm.mnk_myrtle(analyzed,timed)
      fastestID = bestObserved(timed)["FakeNN JSON Name"]
-     point_labels=["naive mnk", "naive mnk, m | 8","fastest observed","myrtle","red + myrtle","deeploy"]
+     point_labels=["naive mnk", "naive mnk, m | 8","fastest observed","myrtle","naive mnk + myrtle pruning","deeploy"]
      pointIDs=[getPointIDs(mnk_ties),getPointIDs(mnk_mDiv8_ties),[fastestID],getPointIDs(myrtle_ties),getPointIDs(mnk_myrtle_ties),getPointIDs(deeploy_ties)]
      sel_stats = maxMinAvg(expName,timed,point_ids=pointIDs,point_labels=point_labels)
      nickname=f"{expName}w-sel-method-comparison"
@@ -613,6 +667,7 @@ def pruneApproach5(timed, analyzed, full):
      ))     
      #special_figs,more_figs=graphingExploration(more_figs,special_figs,timed,ut,analyzed,hover_data,prunePoint,asDF,expStats,fastestID,mnkMaxID)
      return special_figs,more_figs,f"<span>{table2}</span><span></span>"
+     #return special_figs,more_figs,f"<div>MYRTLE-MNK Selection Method!</div><span>{table3}</span>"
 
 def graphingExploration(more_figs,special_figs,timed,ut,analyzed,hover_data,prunePoint,asDF,expStats,fastestID,mnkMaxID):
      minimal_hover = [

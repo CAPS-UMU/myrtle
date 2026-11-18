@@ -360,7 +360,8 @@ def stack_dfs_to_html_w_toggles(
 
     Includes top-right toggles:
     - 'mMod8': filters rows where m (X in X-Y-Z) % 8 == 0.
-    - 'm < k': hides rows where column "m < k" is True.
+    - 'm < k': hides rows where column "m > k" is True.
+    - 'n < k': hides rows where column "n > k" is True.
     """
     if len(df_list) != len(titles):
         raise ValueError(
@@ -369,7 +370,7 @@ def stack_dfs_to_html_w_toggles(
 
     html_sections = []
 
-    # Inject CSS & JavaScript for both toggle controls
+    # Inject CSS & JavaScript for all three toggle controls
     toggle_header = """
     <div style="display: flex; justify-content: space-between; align-items: center; font-family: Arial, sans-serif; margin-bottom: 20px;">
         <div style="flex-grow: 1;">
@@ -384,24 +385,32 @@ def stack_dfs_to_html_w_toggles(
                 <label for="mLessKToggle" style="font-weight: bold; font-size: 14px; cursor: pointer; user-select: none;">m &lt; k</label>
                 <input type="checkbox" id="mLessKToggle" onchange="applyRowFilters()" style="cursor: pointer; width: 18px; height: 18px;">
             </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="nLessKToggle" style="font-weight: bold; font-size: 14px; cursor: pointer; user-select: none;">n &lt; k</label>
+                <input type="checkbox" id="nLessKToggle" onchange="applyRowFilters()" style="cursor: pointer; width: 18px; height: 18px;">
+            </div>
         </div>
     </div>
     <script>
     function applyRowFilters() {
         const filterMod8 = document.getElementById('mMod8Toggle').checked;
-        const hideMLessK = document.getElementById('mLessKToggle').checked;
+        const hideMGreaterK = document.getElementById('mLessKToggle').checked;
+        const hideNGreaterK = document.getElementById('nLessKToggle').checked;
 
         const rows = document.querySelectorAll('tbody tr');
         rows.forEach(row => {
             const isMod8 = row.getAttribute('data-m-mod8') === 'true';
-            const isMLessK = row.getAttribute('data-m-greater-k') === 'true';
+            const isMGreaterK = row.getAttribute('data-m-greater-k') === 'true';
+            const isNGreaterK = row.getAttribute('data-n-greater-k') === 'true';
 
             // Hide if mMod8 toggle is active and row is not divisible by 8
             const failsMod8 = filterMod8 && !isMod8;
-            // Hide if m < k toggle is active and row has 'm < k' == True
-            const failsMLessK = hideMLessK && isMLessK;
+            // Hide if m < k toggle is active and row has 'm > k' == True
+            const failsMLessK = hideMGreaterK && isMGreaterK;
+            // Hide if n < k toggle is active and row has 'n > k' == True
+            const failsNLessK = hideNGreaterK && isNGreaterK;
 
-            if (failsMod8 || failsMLessK) {
+            if (failsMod8 || failsMLessK || failsNLessK) {
                 row.style.display = 'none';
             } else {
                 row.style.display = '';
@@ -487,7 +496,7 @@ def stack_dfs_to_html_w_toggles(
                 "<table", f'<table border="1" {table_style}'
             )
 
-            # 4. Extract per-row flag values for both toggles
+            # 4. Extract per-row flag values for all toggles
             mod8_flags = None
             if "JSON Name" in df.columns:
                 mod8_flags = [
@@ -495,15 +504,26 @@ def stack_dfs_to_html_w_toggles(
                     for val in df["JSON Name"]
                 ]
 
-            m_less_k_flags = None
+            m_greater_k_flags = None
             if "m > k" in df.columns:
-                m_less_k_flags = [
+                m_greater_k_flags = [
                     "true" if bool(val) is True else "false"
                     for val in df["m > k"]
                 ]
 
+            n_greater_k_flags = None
+            if "n > k" in df.columns:
+                n_greater_k_flags = [
+                    "true" if bool(val) is True else "false"
+                    for val in df["n > k"]
+                ]
+
             # 5. Inject data attributes into <tbody> <tr> tags
-            if (mod8_flags is not None or m_less_k_flags is not None) and "<tbody>" in styled_html:
+            if (
+                mod8_flags is not None
+                or m_greater_k_flags is not None
+                or n_greater_k_flags is not None
+            ) and "<tbody>" in styled_html:
                 header_part, body_part = styled_html.split("<tbody>", 1)
                 body_content, close_part = body_part.split("</tbody>", 1)
 
@@ -515,9 +535,12 @@ def stack_dfs_to_html_w_toggles(
                     if mod8_flags is not None:
                         flag_mod8 = mod8_flags[idx] if idx < len(mod8_flags) else "false"
                         attrs += f' data-m-mod8="{flag_mod8}"'
-                    if m_less_k_flags is not None:
-                        flag_less = m_less_k_flags[idx] if idx < len(m_less_k_flags) else "false"
-                        attrs += f' data-m-greater-k="{flag_less}"'
+                    if m_greater_k_flags is not None:
+                        flag_m = m_greater_k_flags[idx] if idx < len(m_greater_k_flags) else "false"
+                        attrs += f' data-m-greater-k="{flag_m}"'
+                    if n_greater_k_flags is not None:
+                        flag_n = n_greater_k_flags[idx] if idx < len(n_greater_k_flags) else "false"
+                        attrs += f' data-n-greater-k="{flag_n}"'
 
                     rebuilt_rows.append(f"{attrs}{row_chunk}")
 

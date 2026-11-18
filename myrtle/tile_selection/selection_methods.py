@@ -58,8 +58,8 @@ def rankWithShelves(title, df, colorCol, shelfMetric="FMADDsMULsPerCore",htmlTab
         "mnkRem",
         "mMod8",
         "m > k",
+        "n > k",
         "nMod32",
-        "m / k",
         colorCol,
         "Avg C-M Ratio",
         "Time (cycles)",
@@ -249,6 +249,7 @@ def mnk(full,timed):
         toTime.to_csv(f"{pathlib.Path(__file__).parent.resolve()}/out/{filename}",index=False)
     else:
         print(f"all ties were timed for mnk {nickname}.")
+    full["timed"] = full["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"]) 
     return ties,full
 
 # less naive solution
@@ -273,6 +274,7 @@ def mnk_mDiv8(full,timed):
         toTime.to_csv(f"{pathlib.Path(__file__).parent.resolve()}/out/{filename}",index=False)
     else:
         print(f"all ties were timed for mnk_mDiv8 {nickname}.")
+    pruned["timed"] = pruned["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])
     return ties,pruned
 
 
@@ -320,25 +322,32 @@ def deeploy(full,timed):
         toTime.to_csv(f"{pathlib.Path(__file__).parent.resolve()}/out/{filename}",index=False)
     else:
         print(f"all ties were timed for deeploy {nickname}.")
+    pruned["timed"] = pruned["FakeNN JSON Name"].isin(timed["FakeNN JSON Name"])
     return ties,pruned
 
 # myrtle original
 # prune by min third cluster tiles
 # prune by n-dim not-divisible-by-32
 # prune by m-boundary tile divisible-by-8
-# maximize by per-core-mnk product
+# prune out m,n > k
+# maximize by per-core-mnk product (FMADDs per core)
 # prefer tiling schemes with m divisible by 8
 # tie break with smaller mn/k ratio
 def myrtle(analyzed,timed,htmlTable=True):
     def prune(df):
-         df["nMod32"]=df["n"]%32
-         df= df[df["nMod32"]!=0].copy()
-         df= df[df["nMod32"]!=16].copy()
+        #  df["nMod32"]=df["n"]%32
+        #  df= df[df["nMod32"]!=0].copy()
+        #  df= df[df["nMod32"]!=16].copy()
+         df["nMod16"]=df["n"]%16
+         df= df[df["nMod16"]!=0].copy()
          if df.empty:
              raise(Exception("DF empty after removing n-dim nMod32 = 0, 16"))
          df= df[df["m > k"]==False].copy()
          if df.empty:
             raise(Exception("DF empty after removing ts with m > k"))
+         df= df[df["n > k"]==False].copy()
+         if df.empty:
+            raise(Exception("DF empty after removing ts with n > k"))
          df = df[df["niceMRem"]].copy()
          return df
     m=timed["M"][0]

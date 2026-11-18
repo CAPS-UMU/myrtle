@@ -255,6 +255,7 @@ class TSA_C_Remainder(TileSizeAnalyzer):
         df["m/mRem"]=df["m"]/df["mRem"]
         df["m % 8"]=df["m"] % 8
         df["m > k"] = df["m"] > df["k"]
+        df["n > k"] = df["n"] > df["k"]
         df["m / k"] = df["m"] / df["k"]
         df["niceM"] = df["m"].apply(lambda r: True if r % 8 == 0 else False)
         df["niceMRem"] = df["mRem"].apply(lambda r: True if r == 0 or r % 8 == 0 else False)

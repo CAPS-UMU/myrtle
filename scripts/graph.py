@@ -3,6 +3,7 @@ from pathlib import Path
 import subprocess
 
 # python graph.py user="emily" fresh-ana output="hoodle"
+# python graph.py output="compare-mnk2"
 
 # Default configurations
 USER = "emily"#"hoppip"
